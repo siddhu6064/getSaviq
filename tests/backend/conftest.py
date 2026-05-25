@@ -168,6 +168,14 @@ class FakeDB:
         self.savings_goals = FakeCollection()
         self.user_settings = FakeCollection()
         self.weekly_digests = FakeCollection()
+        # Phase 1-5 collections
+        self.assets = FakeCollection()
+        self.liabilities = FakeCollection()
+        self.net_worth_snapshots = FakeCollection()
+        self.push_tokens = FakeCollection()
+        self.notifications = FakeCollection()
+        self.profile_members = FakeCollection()
+        self.bills = FakeCollection()
 
     async def command(self, command_name):
         if command_name == "ping":
@@ -179,6 +187,7 @@ class FakeDB:
 def fake_db(monkeypatch):
     import database
     from routers import auth, analytics, insights, budgets, expenses, profiles, categories, misc, savings_goals, forecast, ai, subscriptions, weekly_digest, dashboard_metrics
+    from routers import net_worth, push, notifications, invites, bills
     import deps
     import main
 
@@ -201,6 +210,11 @@ def fake_db(monkeypatch):
     monkeypatch.setattr(subscriptions, "db", db)
     monkeypatch.setattr(weekly_digest, "db", db)
     monkeypatch.setattr(dashboard_metrics, "db", db)
+    monkeypatch.setattr(net_worth, "db", db)
+    monkeypatch.setattr(push, "db", db)
+    monkeypatch.setattr(notifications, "db", db)
+    monkeypatch.setattr(invites, "db", db)
+    monkeypatch.setattr(bills, "db", db)
     monkeypatch.setattr(deps, "db", db)
 
     async def _noop():
