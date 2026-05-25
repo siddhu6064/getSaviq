@@ -10,13 +10,26 @@ export interface User {
   created_at: string;
 }
 
+export interface ProfileMember {
+  member_id: string;
+  profile_id: string;
+  invited_email: string;
+  role: string;
+  status: "pending" | "accepted" | "declined";
+  invited_at: string;
+  accepted_at?: string;
+}
+
 export interface Profile {
   profile_id: string;
   user_id: string;
   name: string;
-  profile_type: 'personal' | 'business' | 'shared';
+  profile_type: "personal" | "business" | "shared";
   is_default: boolean;
   created_at: string;
+  // Enriched fields returned by GET /api/profiles (Phase 3)
+  caller_role?: "owner" | "member";
+  members?: ProfileMember[];
 }
 
 export interface Category {
@@ -34,13 +47,13 @@ export interface PaymentMethod {
   payment_id: string;
   user_id: string;
   name: string;
-  type: 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'other';
+  type: "cash" | "credit_card" | "debit_card" | "bank_transfer" | "other";
   last_four?: string;
   is_default: boolean;
   created_at: string;
 }
 
-export type TransactionType = 'expense' | 'income' | 'transfer';
+export type TransactionType = "expense" | "income" | "transfer";
 
 export interface Transaction {
   transaction_id: string;
@@ -56,6 +69,7 @@ export interface Transaction {
   time?: string;
   receipt_image?: string;
   notes?: string;
+  attachments?: string[];
   to_payment_method_id?: string;
   is_pending: boolean;
   is_recurring: boolean;
@@ -76,7 +90,7 @@ export interface Budget {
   profile_id: string;
   category_id?: string;
   amount: number;
-  period: 'weekly' | 'monthly' | 'yearly';
+  period: "weekly" | "monthly" | "yearly";
   start_date?: string;
   created_at: string;
   updated_at: string;

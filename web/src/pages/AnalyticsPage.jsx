@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAppData } from '../contexts/AppDataContext';
-import { Card, Spinner, Tabs } from '../components/ui';
-import {
-  TrendingUp,
-  TrendingDown,
-  PieChart as PieChartIcon,
-  BarChart3,
-} from 'lucide-react';
-import { formatCurrency, cn, getCategoryIcon } from '../lib/utils';
-import { statsAPI } from '../services/api';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useAppData } from "../contexts/AppDataContext";
+import { Card, Spinner, Tabs } from "../components/ui";
+import { TrendingUp, TrendingDown, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
+import { formatCurrency, cn, getCategoryIcon } from "../lib/utils";
+import { statsAPI } from "../services/api";
 import {
   AreaChart,
   Area,
@@ -22,14 +17,14 @@ import {
   BarChart,
   Bar,
   Legend,
-} from 'recharts';
+} from "recharts";
 
 export default function AnalyticsPage() {
   const { profiles, activeProfile, setActiveProfile, loading } = useAppData();
 
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState({ stats: {}, insights: [] });
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState("month");
   const [error, setError] = useState(null);
 
   const isMounted = useRef(false);
@@ -47,10 +42,17 @@ export default function AnalyticsPage() {
         statsAPI.getSummary({ profile_id: activeProfile.profile_id, period }),
         statsAPI.getInsights({ profile_id: activeProfile.profile_id }),
       ]);
-      if (isMounted.current) { setSummary(summaryRes.data); setInsights(insightsRes.data); setError(null); }
+      if (isMounted.current) {
+        setSummary(summaryRes.data);
+        setInsights(insightsRes.data);
+        setError(null);
+      }
     } catch (error) {
-      console.error('analytics.load_failed', { message: error?.message, status: error?.response?.status });
-      if (isMounted.current) setError('Failed to load data. Please try again.');
+      console.error("analytics.load_failed", {
+        message: error?.message,
+        status: error?.response?.status,
+      });
+      if (isMounted.current) setError("Failed to load data. Please try again.");
     }
   }, [activeProfile?.profile_id, period]);
 
@@ -58,36 +60,44 @@ export default function AnalyticsPage() {
     loadStats();
   }, [loadStats]);
 
-  const pieChartData = useMemo(() =>
-    summary?.by_category?.map(cat => ({
-      name: cat.name,
-      value: cat.amount,
-      color: cat.color,
-    })) || [],
-  [summary]);
+  const pieChartData = useMemo(
+    () =>
+      summary?.by_category?.map((cat) => ({
+        name: cat.name,
+        value: cat.amount,
+        color: cat.color,
+      })) || [],
+    [summary],
+  );
 
-  const comparisonData = useMemo(() => insights.stats ? [
-    {
-      name: 'Last Week',
-      Income: insights.stats.last_week_income || 0,
-      Expenses: insights.stats.last_week_total || 0,
-    },
-    {
-      name: 'This Week',
-      Income: insights.stats.this_week_income || 0,
-      Expenses: insights.stats.this_week_total || 0,
-    },
-    {
-      name: 'Last Month',
-      Income: insights.stats.last_month_income || 0,
-      Expenses: insights.stats.last_month_total || 0,
-    },
-    {
-      name: 'This Month',
-      Income: insights.stats.this_month_income || 0,
-      Expenses: insights.stats.this_month_total || 0,
-    },
-  ] : [], [insights.stats]);
+  const comparisonData = useMemo(
+    () =>
+      insights.stats
+        ? [
+            {
+              name: "Last Week",
+              Income: insights.stats.last_week_income || 0,
+              Expenses: insights.stats.last_week_total || 0,
+            },
+            {
+              name: "This Week",
+              Income: insights.stats.this_week_income || 0,
+              Expenses: insights.stats.this_week_total || 0,
+            },
+            {
+              name: "Last Month",
+              Income: insights.stats.last_month_income || 0,
+              Expenses: insights.stats.last_month_total || 0,
+            },
+            {
+              name: "This Month",
+              Income: insights.stats.this_month_income || 0,
+              Expenses: insights.stats.this_month_total || 0,
+            },
+          ]
+        : [],
+    [insights.stats],
+  );
 
   if (loading) {
     return (
@@ -115,9 +125,9 @@ export default function AnalyticsPage() {
 
         <div className="flex items-center gap-3">
           <select
-            value={activeProfile?.profile_id || ''}
+            value={activeProfile?.profile_id || ""}
             onChange={(e) => {
-              const profile = profiles.find(p => p.profile_id === e.target.value);
+              const profile = profiles.find((p) => p.profile_id === e.target.value);
               setActiveProfile(profile);
             }}
             className="px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
@@ -132,9 +142,9 @@ export default function AnalyticsPage() {
 
           <Tabs
             tabs={[
-              { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
-              { value: 'year', label: 'Year' },
+              { value: "week", label: "Week" },
+              { value: "month", label: "Month" },
+              { value: "year", label: "Year" },
             ]}
             activeTab={period}
             onChange={setPeriod}
@@ -246,20 +256,20 @@ export default function AnalyticsPage() {
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#73716D', fontSize: 12 }}
+                  tick={{ fill: "#73716D", fontSize: 12 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#73716D', fontSize: 12 }}
+                  tick={{ fill: "#73716D", fontSize: 12 }}
                   tickFormatter={(value) => `$${value}`}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: '#fff',
-                    border: '1px solid #E5E2DC',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    background: "#fff",
+                    border: "1px solid #E5E2DC",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
                   formatter={(value) => formatCurrency(value)}
                 />
@@ -286,7 +296,7 @@ export default function AnalyticsPage() {
                 <div key={cat.category_id} className="flex items-center gap-4">
                   <div
                     className="p-3 rounded-xl flex-shrink-0"
-                    style={{ backgroundColor: cat.color + '20' }}
+                    style={{ backgroundColor: cat.color + "20" }}
                   >
                     <IconComponent className="w-5 h-5" style={{ color: cat.color }} />
                   </div>
@@ -304,7 +314,7 @@ export default function AnalyticsPage() {
                           className="h-full rounded-full transition-all duration-500"
                           style={{
                             width: `${cat.percentage}%`,
-                            backgroundColor: cat.color
+                            backgroundColor: cat.color,
                           }}
                         />
                       </div>

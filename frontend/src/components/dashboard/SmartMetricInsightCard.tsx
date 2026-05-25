@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NeumorphicCard, lightTheme } from '../NeumorphicUI';
-import { useTheme } from '../../contexts/ThemeContext';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { FloatingIcon } from "../FloatingIcon";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface SmartMetricInsightCardProps {
   title: string;
@@ -19,6 +20,7 @@ interface SmartMetricInsightCardProps {
   } | null;
   loadingLabel: string;
   emptyLabel: string;
+  entryDelay?: number;
 }
 
 export function SmartMetricInsightCard({
@@ -30,6 +32,7 @@ export function SmartMetricInsightCard({
   metric,
   loadingLabel,
   emptyLabel,
+  entryDelay = 0,
 }: SmartMetricInsightCardProps) {
   const { colors } = useTheme();
   const [showHelperText, setShowHelperText] = React.useState(false);
@@ -37,15 +40,23 @@ export function SmartMetricInsightCard({
   const helperText = metric?.helperText || null;
 
   return (
-    <NeumorphicCard style={[styles.card, { backgroundColor: colors.surface }]}>
+    <NeumorphicCard
+      style={[styles.card, { backgroundColor: colors.surface }]}
+      entryDelay={entryDelay}
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name={icon} size={18} color={accentColor} />
+          <FloatingIcon amplitude={3} duration={2800} delay={entryDelay}>
+            <Ionicons name={icon} size={18} color={accentColor} />
+          </FloatingIcon>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
         </View>
         {helperText ? (
           <TouchableOpacity
-            style={[styles.helperButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            style={[
+              styles.helperButton,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
             onPress={() => setShowHelperText((prev) => !prev)}
             activeOpacity={0.8}
             accessibilityRole="button"
@@ -72,7 +83,9 @@ export function SmartMetricInsightCard({
             <Text style={[styles.context, { color: colors.textSecondary }]}>{metric.context}</Text>
           </>
         )}
-        {showHelperText && helperText ? <Text style={[styles.helperCaption, { color: colors.textSecondary }]}>{helperText}</Text> : null}
+        {showHelperText && helperText ? (
+          <Text style={[styles.helperCaption, { color: colors.textSecondary }]}>{helperText}</Text>
+        ) : null}
       </View>
     </NeumorphicCard>
   );
@@ -81,52 +94,52 @@ export function SmartMetricInsightCard({
 const styles = StyleSheet.create({
   card: { marginTop: 8 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   helperButton: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 0.5,
     borderColor: lightTheme.colors.border,
     backgroundColor: lightTheme.colors.cardBackground,
   },
   content: {
     minHeight: 56,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   helper: {
     fontSize: 14,
     color: lightTheme.colors.textTertiary,
   },
   valueRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   value: {
     fontSize: 27,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   badge: {
     fontSize: 11,
     color: lightTheme.colors.textSecondary,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   context: {
     marginTop: 6,

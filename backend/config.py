@@ -51,6 +51,13 @@ class Settings:
     SECURE_COOKIES: bool
     COOKIE_SAMESITE: str
     COOKIE_DOMAIN: str | None
+    RESEND_API_KEY: str | None
+    # Cloudflare R2
+    CLOUDFLARE_ACCOUNT_ID: str | None
+    CLOUDFLARE_R2_ACCESS_KEY_ID: str | None
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY: str | None
+    CLOUDFLARE_R2_BUCKET_NAME: str | None
+    CLOUDFLARE_R2_PUBLIC_URL: str | None  # e.g. https://pub-xxx.r2.dev
 
 
 
@@ -110,6 +117,12 @@ def get_settings() -> Settings:
         SECURE_COOKIES=_get_bool("SECURE_COOKIES", app_env.lower() in {"production", "prod"}),
         COOKIE_SAMESITE=cookie_samesite,
         COOKIE_DOMAIN=os.getenv("COOKIE_DOMAIN") or None,
+        RESEND_API_KEY=os.getenv("RESEND_API_KEY") or None,
+        CLOUDFLARE_ACCOUNT_ID=os.getenv("CLOUDFLARE_ACCOUNT_ID") or None,
+        CLOUDFLARE_R2_ACCESS_KEY_ID=os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID") or None,
+        CLOUDFLARE_R2_SECRET_ACCESS_KEY=os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY") or None,
+        CLOUDFLARE_R2_BUCKET_NAME=os.getenv("CLOUDFLARE_R2_BUCKET_NAME") or None,
+        CLOUDFLARE_R2_PUBLIC_URL=os.getenv("CLOUDFLARE_R2_PUBLIC_URL") or None,
     )
     _validate_settings(settings)
     return settings

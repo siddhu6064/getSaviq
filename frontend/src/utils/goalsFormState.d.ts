@@ -5,7 +5,7 @@ export function validateGoalForm(
     current_amount?: string | number;
     deadline?: string;
   },
-  now?: Date
+  now?: Date,
 ): Record<string, string>;
 
 export function toGoalPayload(
@@ -17,7 +17,7 @@ export function toGoalPayload(
     category?: string;
     status?: string;
   },
-  profileId: string
+  profileId: string,
 ): {
   profile_id: string;
   title: string;

@@ -1,32 +1,34 @@
 function formatCurrencyValue(value) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    Number(value || 0),
+  );
 }
 
 function formatDateValue(value) {
-  if (!value) return 'N/A';
+  if (!value) return "N/A";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'N/A';
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
 export function getProjectedCompletionText(goal) {
   const projection = goal?.projected_completion;
-  if (!projection) return 'Projection unavailable';
+  if (!projection) return "Projection unavailable";
 
-  if (projection.basis === 'already_completed') {
-    return 'Projected completion: Completed';
+  if (projection.basis === "already_completed") {
+    return "Projected completion: Completed";
   }
 
   if (projection.projected_completion_date) {
     return `Projected completion: ${formatDateValue(projection.projected_completion_date)}`;
   }
 
-  if (typeof projection.months_remaining === 'number') {
+  if (typeof projection.months_remaining === "number") {
     const months = projection.months_remaining.toFixed(1);
     return `Projected completion: ~${months} months`;
   }
 
-  return 'Projection unavailable';
+  return "Projection unavailable";
 }
 
 export function buildGoalDisplayModel(goal) {
@@ -43,7 +45,7 @@ export function buildGoalDisplayModel(goal) {
 export function selectTopPriorityGoal(goals = []) {
   const candidates = goals.filter((goal) => {
     const remaining = Number(goal.target_amount || 0) - Number(goal.current_amount || 0);
-    return remaining > 0 && !['completed', 'cancelled'].includes(goal.status);
+    return remaining > 0 && !["completed", "cancelled"].includes(goal.status);
   });
 
   if (!candidates.length) return null;

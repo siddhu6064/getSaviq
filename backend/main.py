@@ -8,6 +8,8 @@ from starlette.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from database import create_indexes, close_db, db
 from errors import (
     http_exception_handler,
@@ -30,6 +32,12 @@ from routers.subscriptions import router as subscriptions_router
 from routers.weekly_digest import router as weekly_digest_router
 from routers.dashboard_metrics import router as dashboard_metrics_router
 from routers.misc import settings_router, export_router
+from routers.net_worth import router as net_worth_router, take_net_worth_snapshots
+from routers.push import router as push_router
+from routers.notifications import router as notifications_router
+from routers.invites import router as invites_router
+from routers.bills import router as bills_router, check_bill_due_reminders
+from services.push_service import send_weekly_digest_pushes
 from models import ApiRootResponse, StatusResponse
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
@@ -40,7 +48,29 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app):
     await create_indexes()
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        take_net_worth_snapshots,
+        CronTrigger(hour=0, minute=0, timezone="UTC"),
+        id="net_worth_nightly_snapshot",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        send_weekly_digest_pushes,
+        CronTrigger(day_of_week="mon", hour=9, minute=0, timezone="UTC"),
+        id="weekly_digest_push",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        check_bill_due_reminders,
+        CronTrigger(hour=8, minute=0, timezone="UTC"),
+        id="bill_due_reminders",
+        replace_existing=True,
+    )
+    scheduler.start()
+    logger.info("APScheduler started — net_worth + weekly_digest_push + bill_due_reminders jobs registered")
     yield
+    scheduler.shutdown(wait=False)
     await close_db()
 
 app = FastAPI(title="SAVIQ API", version="2.0.0", lifespan=lifespan)
@@ -102,6 +132,11 @@ app.include_router(weekly_digest_router, prefix=PREFIX)
 app.include_router(dashboard_metrics_router, prefix=PREFIX)
 app.include_router(settings_router,   prefix=PREFIX)
 app.include_router(export_router,     prefix=PREFIX)
+app.include_router(net_worth_router,  prefix=PREFIX)
+app.include_router(push_router,       prefix=PREFIX)
+app.include_router(notifications_router, prefix=PREFIX)
+app.include_router(invites_router,      prefix=PREFIX)
+app.include_router(bills_router,        prefix=PREFIX)
 
 @app.get("/api", response_model=ApiRootResponse)
 async def root():

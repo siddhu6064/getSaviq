@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useAppStore } from '../store/appStore';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useAppStore } from "../store/appStore";
+import { Ionicons } from "@expo/vector-icons";
 
 export function ProfileToggle() {
   const { profiles, activeProfile, setActiveProfile, fetchExpenses, fetchSummary } = useAppStore();
   const iconForProfileType = (profileType?: string) => {
-    if (profileType === 'business') return 'briefcase';
-    if (profileType === 'shared') return 'people';
-    return 'person';
+    if (profileType === "business") return "briefcase";
+    if (profileType === "shared") return "people";
+    return "person";
   };
 
   const handleToggle = async (profile: typeof activeProfile) => {
@@ -33,7 +33,7 @@ export function ProfileToggle() {
           <Ionicons
             name={iconForProfileType(profile.profile_type)}
             size={16}
-            color={activeProfile?.profile_id === profile.profile_id ? '#fff' : '#6b7280'}
+            color={activeProfile?.profile_id === profile.profile_id ? "#fff" : "#6b7280"}
           />
           <Text
             style={[
@@ -51,28 +51,28 @@ export function ProfileToggle() {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    backgroundColor: '#1f2937',
+    flexDirection: "row",
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 4,
   },
   toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
     gap: 6,
   },
   activeButton: {
-    backgroundColor: '#6366f1',
+    backgroundColor: "#6366f1",
   },
   toggleText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
   },
   activeText: {
-    color: '#fff',
+    color: "#fff",
   },
 });

@@ -3,7 +3,7 @@ export function createTotalBudgetModalState() {
     editingBudgetId: null,
     isCategoryBudgetForm: false,
     selectedCategory: null,
-    budgetAmount: '',
+    budgetAmount: "",
     showBudgetModal: true,
   };
 }
@@ -13,7 +13,7 @@ export function createCategoryBudgetModalState() {
     editingBudgetId: null,
     isCategoryBudgetForm: true,
     selectedCategory: null,
-    budgetAmount: '',
+    budgetAmount: "",
     showBudgetModal: true,
   };
 }
@@ -23,29 +23,30 @@ export function editBudgetModalState(budget) {
     editingBudgetId: budget?.budget_id || null,
     isCategoryBudgetForm: Boolean(budget?.category_id),
     selectedCategory: budget?.category_id || null,
-    budgetAmount: String(budget?.amount ?? ''),
+    budgetAmount: String(budget?.amount ?? ""),
     showBudgetModal: true,
   };
 }
 
 export function deriveBudgetsViewState({ activeProfile, isLoading }) {
-  if (!activeProfile) return 'no_profile';
-  if (isLoading) return 'loading';
-  return 'ready';
+  if (!activeProfile) return "no_profile";
+  if (isLoading) return "loading";
+  return "ready";
 }
 
 export function deriveBudgetSaveMode(editingBudgetId) {
-  return editingBudgetId ? 'update' : 'create';
+  return editingBudgetId ? "update" : "create";
 }
 
 export function deriveBudgetModalTitle({ editingBudgetId, isCategoryBudgetForm }) {
-  if (editingBudgetId) return 'Edit Budget';
-  return isCategoryBudgetForm ? 'Add Category Budget' : 'Set Total Budget';
+  if (editingBudgetId) return "Edit Budget";
+  return isCategoryBudgetForm ? "Add Category Budget" : "Set Total Budget";
 }
 
 export function removeBudgetFromProgress(progress, budgetId) {
   const current = progress || { budgets: [], total_budget: null };
-  const nextTotalBudget = current?.total_budget?.budget_id === budgetId ? null : current?.total_budget || null;
+  const nextTotalBudget =
+    current?.total_budget?.budget_id === budgetId ? null : current?.total_budget || null;
   const nextBudgets = Array.isArray(current?.budgets)
     ? current.budgets.filter((budget) => budget?.budget_id !== budgetId)
     : [];

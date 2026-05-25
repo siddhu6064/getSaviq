@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NeumorphicCard, lightTheme } from '../NeumorphicUI';
-import { MoMSummary } from '../../utils/monthSpend';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { MoMSummary } from "../../utils/monthSpend";
 
 interface MoMChangeCardProps {
   isLoading: boolean;
@@ -25,26 +25,26 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
   const noBaseline = previousMonthSpend <= 0 && currentMonthSpend > 0;
 
   const accentColor =
-    direction === 'up'
+    direction === "up"
       ? lightTheme.colors.danger
-      : direction === 'down'
+      : direction === "down"
         ? lightTheme.colors.success
         : lightTheme.colors.textTertiary;
 
   const iconName: keyof typeof Ionicons.glyphMap =
-    direction === 'up'
-      ? 'arrow-up-circle-outline'
-      : direction === 'down'
-        ? 'arrow-down-circle-outline'
-        : 'remove-circle-outline';
+    direction === "up"
+      ? "arrow-up-circle-outline"
+      : direction === "down"
+        ? "arrow-down-circle-outline"
+        : "remove-circle-outline";
 
   const headline = (() => {
-    if (noData) return 'No month-over-month data yet.';
-    if (noBaseline) return 'Spending started this month; no last-month baseline.';
-    if (direction === 'flat') return 'Spending is in line with last month.';
+    if (noData) return "No month-over-month data yet.";
+    if (noBaseline) return "Spending started this month; no last-month baseline.";
+    if (direction === "flat") return "Spending is in line with last month.";
 
     const absPercent = Math.abs(deltaPercent || 0);
-    if (direction === 'up') {
+    if (direction === "up") {
       return `Up ${absPercent.toFixed(1)}% vs last month`;
     }
     return `Down ${absPercent.toFixed(1)}% vs last month`;
@@ -75,7 +75,8 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
 
             <Text style={styles.headline}>{headline}</Text>
             <Text style={styles.subline}>
-              This month $ {currentMonthSpend.toFixed(2)} · Last month $ {previousMonthSpend.toFixed(2)}
+              This month $ {currentMonthSpend.toFixed(2)} · Last month ${" "}
+              {previousMonthSpend.toFixed(2)}
             </Text>
           </>
         )}
@@ -89,19 +90,19 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   helper: {
@@ -109,13 +110,13 @@ const styles = StyleSheet.create({
     color: lightTheme.colors.textTertiary,
   },
   primaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   primaryText: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   headline: {
     marginTop: 6,
@@ -129,6 +130,6 @@ const styles = StyleSheet.create({
   },
   content: {
     minHeight: 68,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

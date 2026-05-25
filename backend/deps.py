@@ -112,3 +112,38 @@ async def get_current_user(
 
     user.pop("password_hash", None)
     return user
+
+
+# ===================== PROFILE ACCESS DEPENDENCY =====================
+
+async def get_accessible_profile(
+    profile_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """
+    Return the profile document if the current user is the owner OR an
+    accepted member.  Raises 404 if not found, 403 if no access.
+    """
+    profile = await db.profiles.find_one({"profile_id": profile_id}, {"_id": 0})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    user_id = current_user["user_id"]
+
+    # Owner — fast path
+    if profile.get("user_id") == user_id:
+        return profile
+
+    # Accepted member check
+    member = await db.profile_members.find_one(
+        {
+            "profile_id": profile_id,
+            "invited_user_id": user_id,
+            "status": "accepted",
+        },
+        {"_id": 0},
+    )
+    if member:
+        return profile
+
+    raise HTTPException(status_code=403, detail="Access denied")

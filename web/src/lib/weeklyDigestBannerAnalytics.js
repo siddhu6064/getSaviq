@@ -20,7 +20,11 @@ export function getWeeklyDigestBannerViewKey({ profileId, bannerResponse }) {
   return `${profileId}:${week.week_start}:${week.week_end}`;
 }
 
-export function buildWeeklyDigestBannerEventPayload({ profileId, bannerResponse, sourceSurface = 'banner' }) {
+export function buildWeeklyDigestBannerEventPayload({
+  profileId,
+  bannerResponse,
+  sourceSurface = "banner",
+}) {
   const week = getWeekFromBannerResponse(bannerResponse);
   return {
     profile_id: profileId || null,
@@ -32,14 +36,14 @@ export function buildWeeklyDigestBannerEventPayload({ profileId, bannerResponse,
 
 export function trackWeeklyDigestViewed({ profileId, bannerResponse, viewedKeys, emit }) {
   const digest = bannerResponse?.digest;
-  if (!digest || typeof emit !== 'function' || !viewedKeys) return false;
+  if (!digest || typeof emit !== "function" || !viewedKeys) return false;
 
   const key = getWeeklyDigestBannerViewKey({ profileId, bannerResponse });
   if (!key || viewedKeys.has(key)) return false;
 
   const payload = buildWeeklyDigestBannerEventPayload({ profileId, bannerResponse });
   try {
-    emit('weekly_digest_viewed', payload);
+    emit("weekly_digest_viewed", payload);
   } catch (_error) {
     viewedKeys.add(key);
     return false;
@@ -51,11 +55,11 @@ export function trackWeeklyDigestViewed({ profileId, bannerResponse, viewedKeys,
 
 export function trackWeeklyDigestDismissed({ profileId, bannerResponse, emit }) {
   const digest = bannerResponse?.digest;
-  if (!digest || typeof emit !== 'function') return false;
+  if (!digest || typeof emit !== "function") return false;
 
   const payload = buildWeeklyDigestBannerEventPayload({ profileId, bannerResponse });
   try {
-    emit('weekly_digest_dismissed', payload);
+    emit("weekly_digest_dismissed", payload);
   } catch (_error) {
     return false;
   }

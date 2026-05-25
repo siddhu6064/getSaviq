@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   Modal,
   Platform,
   ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface AutomationOnboardingModalProps {
   visible: boolean;
@@ -22,16 +22,16 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
       <View style={modalStyles.overlay}>
         <View style={modalStyles.container}>
           {/* Dark section */}
-          <LinearGradient colors={['#1C1C1E', '#2C2C2E']} style={modalStyles.darkSection}>
+          <LinearGradient colors={["#1C1C1E", "#2C2C2E"]} style={modalStyles.darkSection}>
             {/* Phone mockup */}
             <View style={modalStyles.phoneMockup}>
               <View style={modalStyles.phoneScreen}>
                 <View style={modalStyles.mockHeader}>
-                  <View style={[modalStyles.mockBtn, { backgroundColor: '#3A3A3C' }]}>
+                  <View style={[modalStyles.mockBtn, { backgroundColor: "#3A3A3C" }]}>
                     <Text style={modalStyles.mockBtnText}>Cancel</Text>
                   </View>
-                  <View style={[modalStyles.mockBtn, { backgroundColor: '#007AFF' }]}>
-                    <Text style={[modalStyles.mockBtnText, { color: '#FFF' }]}>Done</Text>
+                  <View style={[modalStyles.mockBtn, { backgroundColor: "#007AFF" }]}>
+                    <Text style={[modalStyles.mockBtnText, { color: "#FFF" }]}>Done</Text>
                   </View>
                 </View>
                 {/* Amount display */}
@@ -40,17 +40,25 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
                 </View>
                 {/* Category chips */}
                 <View style={modalStyles.mockChipsRow}>
-                  {['🍔', '🚕', '🛒', '⚡'].map(emoji => (
+                  {["🍔", "🚕", "🛒", "⚡"].map((emoji) => (
                     <View key={emoji} style={modalStyles.mockChip}>
                       <Text style={modalStyles.mockChipText}>{emoji}</Text>
                     </View>
                   ))}
                 </View>
                 {/* Keyboard mockup */}
-                {[['1','2','3'],['4','5','6'],['7','8','9'],['.',  '0','✓']].map((row, ri) => (
+                {[
+                  ["1", "2", "3"],
+                  ["4", "5", "6"],
+                  ["7", "8", "9"],
+                  [".", "0", "✓"],
+                ].map((row, ri) => (
                   <View key={ri} style={modalStyles.mockKeyRow}>
-                    {row.map(key => (
-                      <View key={key} style={[modalStyles.mockKey, key === '✓' && { backgroundColor: '#007AFF' }]}>
+                    {row.map((key) => (
+                      <View
+                        key={key}
+                        style={[modalStyles.mockKey, key === "✓" && { backgroundColor: "#007AFF" }]}
+                      >
                         <Text style={modalStyles.mockKeyText}>{key}</Text>
                       </View>
                     ))}
@@ -71,7 +79,7 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
             <View style={modalStyles.breadcrumb}>
               <Text style={modalStyles.breadcrumbText}>More</Text>
               <Ionicons name="chevron-forward" size={14} color="#8E8E93" />
-              <Text style={[modalStyles.breadcrumbText, { color: '#007AFF' }]}>Automation</Text>
+              <Text style={[modalStyles.breadcrumbText, { color: "#007AFF" }]}>Automation</Text>
             </View>
           </LinearGradient>
 
@@ -88,37 +96,37 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
   },
   container: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    overflow: 'hidden',
-    backgroundColor: '#1C1C1E',
+    overflow: "hidden",
+    backgroundColor: "#1C1C1E",
   },
   darkSection: {
     padding: 28,
-    alignItems: 'center',
+    alignItems: "center",
   },
   phoneMockup: {
     width: 160,
     height: 260,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: "#2C2C2E",
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 28,
     borderWidth: 1,
-    borderColor: '#3A3A3C',
+    borderColor: "#3A3A3C",
   },
   phoneScreen: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     padding: 8,
   },
   mockHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 6,
     paddingHorizontal: 2,
   },
@@ -129,26 +137,26 @@ const modalStyles = StyleSheet.create({
   },
   mockBtnText: {
     fontSize: 9,
-    color: '#FFF',
-    fontWeight: '600',
+    color: "#FFF",
+    fontWeight: "600",
   },
   mockAmountRow: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 6,
   },
   mockAmount: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#FFF',
+    fontWeight: "800",
+    color: "#FFF",
   },
   mockChipsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 6,
     marginBottom: 8,
   },
   mockChip: {
-    backgroundColor: '#3A3A3C',
+    backgroundColor: "#3A3A3C",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -157,66 +165,66 @@ const modalStyles = StyleSheet.create({
     fontSize: 12,
   },
   mockKeyRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 3,
     marginBottom: 3,
   },
   mockKey: {
     flex: 1,
-    backgroundColor: '#3A3A3C',
+    backgroundColor: "#3A3A3C",
     borderRadius: 6,
     paddingVertical: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   mockKeyText: {
     fontSize: 11,
-    color: '#FFF',
-    fontWeight: '600',
+    color: "#FFF",
+    fontWeight: "600",
   },
   darkTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "800",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 12,
   },
   darkSubtitle: {
     fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
+    color: "#8E8E93",
+    textAlign: "center",
     lineHeight: 22,
   },
   darkDivider: {
     height: 1,
-    backgroundColor: '#3A3A3C',
-    width: '100%',
+    backgroundColor: "#3A3A3C",
+    width: "100%",
     marginVertical: 20,
   },
   whereTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
+    fontWeight: "700",
+    color: "#FFF",
     marginBottom: 12,
   },
   breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   breadcrumbText: {
     fontSize: 15,
-    color: '#8E8E93',
-    fontWeight: '500',
+    color: "#8E8E93",
+    fontWeight: "500",
   },
   gotItBtn: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingVertical: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   gotItText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
+    fontWeight: "700",
+    color: "#FFF",
   },
 });

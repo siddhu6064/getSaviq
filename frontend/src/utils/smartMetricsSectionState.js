@@ -3,8 +3,8 @@ function isMetricActive(metric) {
 }
 
 export function deriveSmartMetricsViewState({ isLoading, isRefreshing = false, error, cards }) {
-  if (isLoading || isRefreshing) return 'loading';
-  if (error) return 'error';
+  if (isLoading || isRefreshing) return "loading";
+  if (error) return "error";
   const hasAnyData =
     isMetricActive(cards?.savingsScore) ||
     isMetricActive(cards?.spendVelocity) ||
@@ -12,6 +12,5 @@ export function deriveSmartMetricsViewState({ isLoading, isRefreshing = false, e
     isMetricActive(cards?.budgetConfidence) ||
     isMetricActive(cards?.topCategorySummary) ||
     isMetricActive(cards?.projectedSavingsSummary);
-  return hasAnyData ? 'success' : 'empty';
+  return hasAnyData ? "success" : "empty";
 }
-

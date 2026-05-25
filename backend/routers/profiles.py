@@ -4,7 +4,16 @@ from pymongo.errors import DuplicateKeyError
 
 from database import db
 from deps import get_current_user
-from models import MessageResponse, Profile, ProfileCreate, ProfileUpdate
+from models import (
+    MessageResponse,
+    Profile,
+    ProfileCreate,
+    ProfileMemberInfo,
+    ProfileMemberResponse,
+    ProfileMemberRole,
+    ProfileUpdate,
+    ProfileWithMembers,
+)
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -18,17 +27,63 @@ def _infer_profile_type(name: str) -> str:
     return "personal"
 
 
-@router.get("", response_model=list[Profile])
+async def _enrich_profile(profile: dict, caller_user_id: str) -> dict:
+    """Add caller_role + members list to a profile dict."""
+    if not profile.get("profile_type"):
+        profile["profile_type"] = _infer_profile_type(profile.get("name", ""))
+
+    is_owner = profile.get("user_id") == caller_user_id
+    profile["caller_role"] = "owner" if is_owner else "member"
+
+    raw_members = await db.profile_members.find(
+        {"profile_id": profile["profile_id"]},
+        {"_id": 0, "member_id": 1, "invited_email": 1, "role": 1, "status": 1},
+    ).to_list(200)
+    profile["members"] = [
+        {
+            "member_id": m["member_id"],
+            "invited_email": m["invited_email"],
+            "role": m["role"],
+            "status": m["status"],
+        }
+        for m in raw_members
+    ]
+    return profile
+
+
+@router.get("", response_model=list[ProfileWithMembers])
 async def get_profiles(current_user: dict = Depends(get_current_user)):
-    """Get all profiles for current user"""
-    profiles = await db.profiles.find(
-        {"user_id": current_user["user_id"]},
-        {"_id": 0}
+    """Get all profiles accessible to current user (owned + member)."""
+    user_id = current_user["user_id"]
+
+    # Owned profiles
+    owned = await db.profiles.find(
+        {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(100)
-    for profile in profiles:
-        if not profile.get("profile_type"):
-            profile["profile_type"] = _infer_profile_type(profile.get("name", ""))
-    return profiles
+
+    # Profiles where user is an accepted member
+    memberships = await db.profile_members.find(
+        {"invited_user_id": user_id, "status": "accepted"},
+        {"_id": 0, "profile_id": 1},
+    ).to_list(100)
+    member_profile_ids = {m["profile_id"] for m in memberships}
+
+    # Exclude owned ones already in the list
+    owned_ids = {p["profile_id"] for p in owned}
+    member_profile_ids -= owned_ids
+
+    member_profiles: list[dict] = []
+    for pid in member_profile_ids:
+        doc = await db.profiles.find_one({"profile_id": pid}, {"_id": 0})
+        if doc:
+            member_profiles.append(doc)
+
+    all_profiles = owned + member_profiles
+
+    result = []
+    for p in all_profiles:
+        result.append(await _enrich_profile(p, user_id))
+    return result
 
 
 @router.post("", response_model=Profile)
@@ -108,4 +163,28 @@ async def delete_profile(profile_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=409, detail="Profile is referenced by existing expenses or budgets")
 
     await db.profiles.delete_one({"profile_id": profile_id, "user_id": current_user["user_id"]})
+    # Clean up member records for this profile
+    await db.profile_members.delete_many({"profile_id": profile_id})
     return {"message": "Profile deleted"}
+
+
+@router.delete("/{profile_id}/members/{member_id}", response_model=MessageResponse)
+async def remove_profile_member(
+    profile_id: str,
+    member_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Remove a member from a shared profile. Only the owner can do this."""
+    profile = await db.profiles.find_one(
+        {"profile_id": profile_id, "user_id": current_user["user_id"]},
+        {"_id": 0, "profile_id": 1},
+    )
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found or not owner")
+
+    result = await db.profile_members.delete_one(
+        {"member_id": member_id, "profile_id": profile_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Member not found")
+    return {"message": "Member removed"}

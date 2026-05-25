@@ -32,11 +32,18 @@
 
       body {
         margin: 0;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-          Helvetica, Arial, sans-serif;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
         color: var(--text);
-        background: radial-gradient(circle at top right, #e8faf6 0%, transparent 42%),
-          var(--bg);
+        background: radial-gradient(circle at top right, #e8faf6 0%, transparent 42%), var(--bg);
         line-height: 1.5;
       }
 
@@ -125,7 +132,9 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: transform 0.18s ease, opacity 0.18s ease;
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
       }
 
       .btn:hover {
@@ -307,9 +316,9 @@
           <div class="eyebrow">Modern expense tracking + AI financial intelligence</div>
           <h1>SAVIQ helps you turn everyday spending into smarter financial decisions.</h1>
           <p>
-            SAVIQ combines real-time expense tracking, AI insights, goal-based savings,
-            forecasting, subscription detection, and weekly financial summaries so you can make
-            confident decisions across web and mobile.
+            SAVIQ combines real-time expense tracking, AI insights, goal-based savings, forecasting,
+            subscription detection, and weekly financial summaries so you can make confident
+            decisions across web and mobile.
           </p>
           <div class="cta-row">
             <a class="btn btn-primary" href="#waitlist">Join the Waitlist</a>
@@ -322,20 +331,72 @@
         <div class="container">
           <h2>SAVIQ services and capabilities</h2>
           <p class="section-copy">
-            Built from SAVIQ V2 product capabilities with a focus on practical intelligence,
-            strong visibility into spending, and clear next steps.
+            Built from SAVIQ V2 product capabilities with a focus on practical intelligence, strong
+            visibility into spending, and clear next steps.
           </p>
           <div class="grid">
-            <article class="card"><h3>Real-time expense tracking</h3><p>Track spending as it happens with immediate visibility into daily financial activity.</p></article>
-            <article class="card"><h3>AI Spending Intelligence</h3><p>Receive AI-powered insights and recommendations to understand trends and budget risk.</p></article>
-            <article class="card"><h3>Smart Dashboard Cards</h3><p>Monitor core metrics such as net balance, income, spend, and month-over-month changes.</p></article>
-            <article class="card"><h3>Goal-Based Savings</h3><p>Create and track savings goals with progress updates, milestones, and projected completion.</p></article>
-            <article class="card"><h3>Forecast &amp; Prediction Engine</h3><p>Use 7-day and 30-day projections plus month-end forecasts for better planning.</p></article>
-            <article class="card"><h3>Smart Metrics</h3><p>Understand savings score, spend velocity, financial health, and budget confidence signals.</p></article>
-            <article class="card"><h3>Weekly Financial Digest</h3><p>Review a weekly summary of income, expenses, changes, and narrative financial insights.</p></article>
-            <article class="card"><h3>Subscription Detection</h3><p>Spot recurring spend patterns and evaluate likely subscriptions in one view.</p></article>
-            <article class="card"><h3>AI Chat Insights</h3><p>Ask follow-up questions in a conversational assistant for deeper financial context.</p></article>
-            <article class="card"><h3>Web + Mobile parity</h3><p>Use SAVIQ across web and mobile with consistent core experiences and feature depth.</p></article>
+            <article class="card">
+              <h3>Real-time expense tracking</h3>
+              <p>
+                Track spending as it happens with immediate visibility into daily financial
+                activity.
+              </p>
+            </article>
+            <article class="card">
+              <h3>AI Spending Intelligence</h3>
+              <p>
+                Receive AI-powered insights and recommendations to understand trends and budget
+                risk.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Smart Dashboard Cards</h3>
+              <p>
+                Monitor core metrics such as net balance, income, spend, and month-over-month
+                changes.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Goal-Based Savings</h3>
+              <p>
+                Create and track savings goals with progress updates, milestones, and projected
+                completion.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Forecast &amp; Prediction Engine</h3>
+              <p>Use 7-day and 30-day projections plus month-end forecasts for better planning.</p>
+            </article>
+            <article class="card">
+              <h3>Smart Metrics</h3>
+              <p>
+                Understand savings score, spend velocity, financial health, and budget confidence
+                signals.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Weekly Financial Digest</h3>
+              <p>
+                Review a weekly summary of income, expenses, changes, and narrative financial
+                insights.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Subscription Detection</h3>
+              <p>Spot recurring spend patterns and evaluate likely subscriptions in one view.</p>
+            </article>
+            <article class="card">
+              <h3>AI Chat Insights</h3>
+              <p>
+                Ask follow-up questions in a conversational assistant for deeper financial context.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Web + Mobile parity</h3>
+              <p>
+                Use SAVIQ across web and mobile with consistent core experiences and feature depth.
+              </p>
+            </article>
           </div>
         </div>
       </section>
@@ -394,8 +455,8 @@
         <div class="container trust">
           <h2>Built and ready for internal beta</h2>
           <p>
-            SAVIQ V2 engineering is complete with web and mobile parity. Access is currently
-            managed through controlled beta/waitlist onboarding rather than broad public release.
+            SAVIQ V2 engineering is complete with web and mobile parity. Access is currently managed
+            through controlled beta/waitlist onboarding rather than broad public release.
           </p>
         </div>
       </section>
@@ -414,28 +475,28 @@
     </footer>
 
     <script>
-      const waitlistForm = document.getElementById('waitlistForm');
-      const emailInput = document.getElementById('email');
-      const emailError = document.getElementById('emailError');
-      const successMessage = document.getElementById('successMessage');
+      const waitlistForm = document.getElementById("waitlistForm");
+      const emailInput = document.getElementById("email");
+      const emailError = document.getElementById("emailError");
+      const successMessage = document.getElementById("successMessage");
 
       const isLikelyEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 
-      waitlistForm.addEventListener('submit', (event) => {
+      waitlistForm.addEventListener("submit", (event) => {
         event.preventDefault();
 
         const emailValue = emailInput.value.trim();
-        emailError.textContent = '';
-        successMessage.style.display = 'none';
+        emailError.textContent = "";
+        successMessage.style.display = "none";
 
         if (!isLikelyEmail(emailValue)) {
-          emailError.textContent = 'Please enter a valid email address.';
+          emailError.textContent = "Please enter a valid email address.";
           emailInput.focus();
           return;
         }
 
         waitlistForm.reset();
-        successMessage.style.display = 'block';
+        successMessage.style.display = "block";
       });
     </script>
   </body>

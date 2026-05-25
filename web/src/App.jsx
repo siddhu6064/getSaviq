@@ -1,19 +1,23 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { AppDataProvider } from './contexts/AppDataContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import ErrorBoundary from './components/ErrorBoundary';
-import Layout from './components/Layout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import TransactionsPage from './pages/TransactionsPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import SettingsPage from './pages/SettingsPage';
-import BudgetsPage from './pages/BudgetsPage';
-import ExportPage from './pages/ExportPage';
-import GoalsPage from './pages/GoalsPage';
-import { Spinner } from './components/ui';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AppDataProvider } from "./contexts/AppDataContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import ErrorBoundary from "./components/ErrorBoundary";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import TransactionsPage from "./pages/TransactionsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SettingsPage from "./pages/SettingsPage";
+import BudgetsPage from "./pages/BudgetsPage";
+import ExportPage from "./pages/ExportPage";
+import GoalsPage from "./pages/GoalsPage";
+import BillsPage from "./pages/BillsPage";
+import NetWorthPage from "./pages/NetWorthPage";
+import SAVIQDashboard from "./pages/SAVIQDashboard";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
+import { Spinner } from "./components/ui";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -54,70 +58,106 @@ function PublicRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           <PublicRoute>
             <LoginPage />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><DashboardPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <DashboardPage />
+            </ErrorBoundary>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/transactions" 
+      <Route
+        path="/transactions"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><TransactionsPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <TransactionsPage />
+            </ErrorBoundary>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/analytics" 
+      <Route
+        path="/analytics"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><AnalyticsPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <AnalyticsPage />
+            </ErrorBoundary>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/settings" 
+      <Route
+        path="/settings"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><SettingsPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <SettingsPage />
+            </ErrorBoundary>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/budgets" 
+      <Route
+        path="/budgets"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><BudgetsPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <BudgetsPage />
+            </ErrorBoundary>
           </ProtectedRoute>
-        } 
+        }
+      />
+      <Route
+        path="/bills"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary>
+              <BillsPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/goals"
         element={
           <ProtectedRoute>
-            <ErrorBoundary><GoalsPage /></ErrorBoundary>
+            <ErrorBoundary>
+              <GoalsPage />
+            </ErrorBoundary>
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/export" 
+      <Route
+        path="/net-worth"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary>
+              <NetWorthPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/export"
         element={
           <ProtectedRoute>
             <ExportPage />
           </ProtectedRoute>
-        } 
+        }
       />
+      {/* Design preview — no auth required */}
+      <Route path="/preview" element={<SAVIQDashboard />} />
+      {/* Accept invite — auth handled inside the component */}
+      <Route path="/accept-invite" element={<AcceptInvitePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

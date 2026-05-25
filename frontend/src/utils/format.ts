@@ -7,4 +7,4 @@ export {
   calculatePercentage,
   getInitials,
   groupByDate,
-} from '@shared/utils';
+} from "@shared/utils";

@@ -25,15 +25,11 @@ export function shouldApplySmartMetricsResponse({
   latestRequestId,
   requestedProfileId,
 }) {
-  return Boolean(
-    isMounted
-      && requestId === latestRequestId
-      && requestedProfileId
-  );
+  return Boolean(isMounted && requestId === latestRequestId && requestedProfileId);
 }
 
 export function getSmartMetricsGridClass(cardCount = 6) {
-  if (cardCount <= 1) return 'grid grid-cols-1 gap-4';
-  if (cardCount <= 2) return 'grid grid-cols-1 sm:grid-cols-2 gap-4';
-  return 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4';
+  if (cardCount <= 1) return "grid grid-cols-1 gap-4";
+  if (cardCount <= 2) return "grid grid-cols-1 sm:grid-cols-2 gap-4";
+  return "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4";
 }

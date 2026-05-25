@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -5,8 +7,62 @@ from fastapi import APIRouter, Depends, HTTPException
 from pymongo import ReturnDocument
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from models import MessageResponse, SavingsGoal, SavingsGoalCreate, SavingsGoalResponse, SavingsGoalUpdate
+
+logger = logging.getLogger(__name__)
+
+GOAL_MILESTONES = [25, 50, 75, 100]
+
+
+async def _goal_milestone_alert(
+    user_id: str,
+    goal_id: str,
+    goal_name: str,
+    old_amount: float,
+    new_amount: float,
+    target_amount: float,
+) -> None:
+    """Fire push for each newly crossed milestone (25/50/75/100%)."""
+    try:
+        from services.push_service import send_push
+
+        if target_amount <= 0:
+            return
+
+        old_pct = (old_amount / target_amount) * 100
+        new_pct = (new_amount / target_amount) * 100
+
+        # Fetch already-sent milestones from goal doc
+        goal_doc = await db.savings_goals.find_one(
+            {"goal_id": goal_id, "user_id": user_id},
+            {"_id": 0, "milestone_notifications_sent": 1},
+        )
+        sent: list[int] = goal_doc.get("milestone_notifications_sent", []) if goal_doc else []
+
+        newly_crossed = [
+            m for m in GOAL_MILESTONES
+            if m not in sent and old_pct < m <= new_pct
+        ]
+
+        for milestone in newly_crossed:
+            await send_push(
+                user_id=user_id,
+                title="Goal Milestone 🎉",
+                body=f"{goal_name} is {milestone}% complete!",
+                data={"link": "/goals", "goal_id": goal_id},
+                notif_type="goal_milestone",
+                link="/goals",
+            )
+            sent.append(milestone)
+
+        if newly_crossed:
+            await db.savings_goals.update_one(
+                {"goal_id": goal_id, "user_id": user_id},
+                {"$set": {"milestone_notifications_sent": sent}},
+            )
+    except Exception:
+        logger.exception("_goal_milestone_alert failed goal_id=%s", goal_id)
 from services.savings_goals_service import (
     calculate_goal_progress_percentage,
     calculate_monthly_savings_recommendation,
@@ -67,7 +123,7 @@ async def create_savings_goal(
     data: SavingsGoalCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    await _ensure_profile_owned(data.profile_id, current_user["user_id"])
+    await get_accessible_profile(data.profile_id, current_user)
 
     goal = SavingsGoal(user_id=current_user["user_id"], **data.model_dump())
     await db.savings_goals.insert_one(goal.model_dump())
@@ -80,9 +136,11 @@ async def list_savings_goals(
     manual_monthly_contribution: Optional[float] = None,
     current_user: dict = Depends(get_current_user),
 ):
-    query = {"user_id": current_user["user_id"]}
     if profile_id:
-        query["profile_id"] = profile_id
+        await get_accessible_profile(profile_id, current_user)
+        query: dict = {"profile_id": profile_id}
+    else:
+        query = {"user_id": current_user["user_id"]}
 
     goals = await db.savings_goals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     profile_velocity: dict[str, float] = {}
@@ -139,7 +197,7 @@ async def update_savings_goal(
         raise HTTPException(status_code=400, detail="No data to update")
 
     target_profile_id = update_data.get("profile_id", existing["profile_id"])
-    await _ensure_profile_owned(target_profile_id, current_user["user_id"])
+    await get_accessible_profile(target_profile_id, current_user)
 
     update_data["updated_at"] = datetime.now(timezone.utc)
 
@@ -149,6 +207,20 @@ async def update_savings_goal(
         projection={"_id": 0},
         return_document=ReturnDocument.AFTER,
     )
+
+    # Fire milestone alert if current_amount changed
+    if "current_amount" in update_data:
+        asyncio.create_task(
+            _goal_milestone_alert(
+                user_id=current_user["user_id"],
+                goal_id=goal_id,
+                goal_name=updated.get("name", "Your goal"),
+                old_amount=float(existing.get("current_amount", 0)),
+                new_amount=float(updated.get("current_amount", 0)),
+                target_amount=float(updated.get("target_amount", 1)),
+            )
+        )
+
     return await _enrich_goal(updated, current_user["user_id"])
 
 

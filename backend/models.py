@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -32,6 +33,32 @@ class Profile(BaseModel):
     profile_type: Literal["personal", "business", "shared"] = "personal"
     is_default: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ===================== PROFILE MEMBER MODELS =====================
+
+class ProfileMemberRole(str, Enum):
+    owner = "owner"
+    member = "member"
+
+
+class ProfileMemberStatus(str, Enum):
+    pending = "pending"
+    accepted = "accepted"
+    declined = "declined"
+
+
+class ProfileMember(BaseModel):
+    member_id: str = Field(default_factory=lambda: f"pmem_{uuid.uuid4().hex[:12]}")
+    profile_id: str
+    user_id: str  # profile owner
+    invited_user_id: Optional[str] = None  # set once invitee registers/is found
+    invited_email: str
+    role: ProfileMemberRole = ProfileMemberRole.member
+    status: ProfileMemberStatus = ProfileMemberStatus.pending
+    invite_token: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    invited_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    accepted_at: Optional[datetime] = None
 
 
 class Category(BaseModel):
@@ -70,6 +97,7 @@ class Expense(BaseModel):
     time: Optional[str] = None  # HH:MM format
     receipt_image: Optional[str] = None  # Base64 encoded image
     notes: Optional[str] = None
+    attachments: List[str] = Field(default_factory=list)  # R2 public URLs
     is_pending: bool = False
     # Recurring transaction fields
     is_recurring: bool = False
@@ -110,6 +138,11 @@ class UserSettings(BaseModel):
     user_id: str
     dark_mode: bool = False
     currency: str = "USD"
+    # Push notification preferences
+    push_budget_alerts: bool = True
+    push_goal_milestones: bool = True
+    push_large_transactions: bool = True
+    weekly_digest_push: bool = True
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -221,6 +254,43 @@ class ProfileUpdate(BaseModel):
     is_default: Optional[bool] = None
 
 
+class ProfileMemberCreate(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value):
+            raise ValueError("Invalid email address")
+        return value
+
+
+class ProfileMemberResponse(BaseModel):
+    member_id: str
+    profile_id: str
+    invited_email: str
+    role: ProfileMemberRole
+    status: ProfileMemberStatus
+    invited_at: datetime
+    accepted_at: Optional[datetime] = None
+    # invite_token intentionally excluded
+
+
+class ProfileMemberInfo(BaseModel):
+    """Lightweight member info embedded in profile list responses."""
+    member_id: str
+    invited_email: str
+    role: ProfileMemberRole
+    status: ProfileMemberStatus
+
+
+class ProfileWithMembers(Profile):
+    """Profile enriched with member list and caller's role."""
+    caller_role: ProfileMemberRole = ProfileMemberRole.owner
+    members: List[ProfileMemberInfo] = Field(default_factory=list)
+
+
 class CategoryCreate(BaseModel):
     name: str
     icon: str = "tag"
@@ -295,6 +365,7 @@ class ExpenseCreate(BaseModel):
     time: Optional[str] = None
     receipt_image: Optional[str] = None
     notes: Optional[str] = None
+    attachments: List[str] = Field(default_factory=list)
     is_pending: bool = False
     # Recurring transaction fields
     is_recurring: bool = False
@@ -308,6 +379,13 @@ class ExpenseCreate(BaseModel):
         if not value or not value.strip():
             raise ValueError("Description cannot be blank")
         return value.strip()
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and len(value) > 500:
+            raise ValueError("Notes must be 500 characters or fewer")
+        return value
 
     @field_validator("time")
     @classmethod
@@ -347,6 +425,7 @@ class ExpenseUpdate(BaseModel):
     time: Optional[str] = None
     receipt_image: Optional[str] = None
     notes: Optional[str] = None
+    attachments: Optional[List[str]] = None
     is_pending: Optional[bool] = None
     # Recurring transaction fields
     is_recurring: Optional[bool] = None
@@ -369,6 +448,13 @@ class ExpenseUpdate(BaseModel):
         if not value.strip():
             raise ValueError("Description cannot be blank")
         return value.strip()
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and len(value) > 500:
+            raise ValueError("Notes must be 500 characters or fewer")
+        return value
 
     @field_validator("time")
     @classmethod
@@ -499,6 +585,10 @@ class SavingsGoalResponse(SavingsGoal):
 class UserSettingsUpdate(BaseModel):
     dark_mode: Optional[bool] = None
     currency: Optional[str] = None
+    push_budget_alerts: Optional[bool] = None
+    push_goal_milestones: Optional[bool] = None
+    push_large_transactions: Optional[bool] = None
+    weekly_digest_push: Optional[bool] = None
 
 
 class ScanReceiptRequest(BaseModel):
@@ -517,3 +607,313 @@ class ChatInsightsResponse(BaseModel):
     context: dict
     prompt_template: dict
     recommendation: dict
+
+
+# ===================== NET WORTH MODELS =====================
+
+class AssetType(str, Enum):
+    cash = "cash"
+    property = "property"
+    investment = "investment"
+    other = "other"
+
+
+class LiabilityType(str, Enum):
+    loan = "loan"
+    credit = "credit"
+    mortgage = "mortgage"
+    other = "other"
+
+
+class Asset(BaseModel):
+    asset_id: str = Field(default_factory=lambda: f"asset_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    profile_id: str
+    name: str
+    type: AssetType
+    value: float
+    currency: str = "USD"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AssetCreate(BaseModel):
+    profile_id: str
+    name: str
+    type: AssetType
+    value: float = Field(ge=0)
+    currency: str = "USD"
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+
+class AssetUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[AssetType] = None
+    value: Optional[float] = None
+    currency: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+    @field_validator("value")
+    @classmethod
+    def validate_value(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and value < 0:
+            raise ValueError("value cannot be negative")
+        return value
+
+
+class AssetResponse(Asset):
+    pass
+
+
+class Liability(BaseModel):
+    liability_id: str = Field(default_factory=lambda: f"liab_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    profile_id: str
+    name: str
+    type: LiabilityType
+    balance: float
+    interest_rate: Optional[float] = None
+    monthly_payment: Optional[float] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class LiabilityCreate(BaseModel):
+    profile_id: str
+    name: str
+    type: LiabilityType
+    balance: float = Field(ge=0)
+    interest_rate: Optional[float] = None
+    monthly_payment: Optional[float] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+
+class LiabilityUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[LiabilityType] = None
+    balance: Optional[float] = None
+    interest_rate: Optional[float] = None
+    monthly_payment: Optional[float] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+    @field_validator("balance")
+    @classmethod
+    def validate_balance(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and value < 0:
+            raise ValueError("balance cannot be negative")
+        return value
+
+
+class LiabilityResponse(Liability):
+    pass
+
+
+class NetWorthSnapshot(BaseModel):
+    snapshot_id: str = Field(default_factory=lambda: f"snap_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    profile_id: str
+    date: datetime
+    net_worth: float
+    assets_total: float
+    liabilities_total: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NetWorthProfileBreakdown(BaseModel):
+    profile_id: str
+    assets_total: float
+    liabilities_total: float
+    net_worth: float
+
+
+class NetWorthResponse(BaseModel):
+    assets_total: float
+    liabilities_total: float
+    net_worth: float
+    by_profile: List[NetWorthProfileBreakdown]
+
+
+# ===================== PUSH NOTIFICATIONS =====================
+
+class DeviceType(str, Enum):
+    ios = "ios"
+    android = "android"
+
+
+class PushToken(BaseModel):
+    token_id: str = Field(default_factory=lambda: f"tok_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    expo_push_token: str
+    device_type: DeviceType
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PushTokenCreate(BaseModel):
+    expo_push_token: str
+    device_type: DeviceType
+
+    @field_validator("expo_push_token")
+    @classmethod
+    def validate_token(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("expo_push_token cannot be blank")
+        return value
+
+
+class Notification(BaseModel):
+    notif_id: str = Field(default_factory=lambda: f"notif_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    type: str
+    title: str
+    body: str
+    read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    link: Optional[str] = None
+
+
+class NotificationResponse(Notification):
+    pass
+
+
+# ===================== BILL MODELS =====================
+
+class BillFrequency(str, Enum):
+    monthly = "monthly"
+    weekly = "weekly"
+    annual = "annual"
+
+
+class BillStatus(str, Enum):
+    active = "active"
+    paused = "paused"
+
+
+class Bill(BaseModel):
+    bill_id: str = Field(default_factory=lambda: f"bill_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    profile_id: str
+    name: str
+    merchant: Optional[str] = None
+    expected_amount: float
+    frequency: BillFrequency
+    due_day: int  # 1–31
+    auto_detected: bool = False
+    linked_expense_ids: List[str] = Field(default_factory=list)
+    status: BillStatus = BillStatus.active
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class BillCreate(BaseModel):
+    profile_id: str
+    name: str
+    merchant: Optional[str] = None
+    expected_amount: float = Field(gt=0)
+    frequency: BillFrequency
+    due_day: int
+    auto_detected: bool = False
+    linked_expense_ids: List[str] = Field(default_factory=list)
+    status: BillStatus = BillStatus.active
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+    @field_validator("due_day")
+    @classmethod
+    def validate_due_day(cls, value: int) -> int:
+        if not (1 <= value <= 31):
+            raise ValueError("due_day must be between 1 and 31")
+        return value
+
+
+class BillUpdate(BaseModel):
+    name: Optional[str] = None
+    merchant: Optional[str] = None
+    expected_amount: Optional[float] = None
+    frequency: Optional[BillFrequency] = None
+    due_day: Optional[int] = None
+    status: Optional[BillStatus] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("name cannot be blank")
+        return value.strip()
+
+    @field_validator("expected_amount")
+    @classmethod
+    def validate_amount(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and value <= 0:
+            raise ValueError("expected_amount must be greater than 0")
+        return value
+
+    @field_validator("due_day")
+    @classmethod
+    def validate_due_day(cls, value: Optional[int]) -> Optional[int]:
+        if value is not None and not (1 <= value <= 31):
+            raise ValueError("due_day must be between 1 and 31")
+        return value
+
+
+class BillResponse(Bill):
+    pass
+
+
+class BillFromSubscriptionCreate(BaseModel):
+    """Lightweight create for promoting a detected subscription to a bill."""
+    profile_id: str
+    name: str
+    merchant: str
+    expected_amount: float = Field(gt=0)
+    frequency: BillFrequency
+    due_day: int
+
+    @field_validator("name", "merchant")
+    @classmethod
+    def validate_non_blank(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("Field cannot be blank")
+        return value.strip()
+
+    @field_validator("due_day")
+    @classmethod
+    def validate_due_day(cls, value: int) -> int:
+        if not (1 <= value <= 31):
+            raise ValueError("due_day must be between 1 and 31")
+        return value

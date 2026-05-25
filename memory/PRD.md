@@ -1,11 +1,13 @@
 # SAVIQ - Product Requirements Document
 
 ## Overview
+
 Full-stack expense tracking application with mobile (React Native/Expo) and web (React/Vite) frontends sharing a common FastAPI backend with MongoDB database.
 
 ## Architecture
 
 ### Tech Stack
+
 - **Backend**: FastAPI (Python) with MongoDB
 - **Mobile Frontend**: React Native + Expo
 - **Web Frontend**: React + Vite + Tailwind CSS
@@ -14,6 +16,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - **AI Integration**: OpenAI GPT-4.1 for receipt scanning and insights
 
 ### Project Structure
+
 ```
 /app
 ├── backend/          # FastAPI Python backend
@@ -26,6 +29,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 ```
 
 ### Key Services
+
 - Authentication (Email/Password, Google OAuth, Guest Mode)
 - Transaction Management (Expenses, Income, Transfers)
 - Profile Management (Personal, Business, Custom)
@@ -47,12 +51,14 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 ## Core Requirements
 
 ### Authentication
+
 - [x] Email/password registration and login
 - [x] Google OAuth integration
 - [x] Guest mode with local storage
 - [x] Session management with JWT
 
 ### Transaction Management
+
 - [x] Create/Read/Update/Delete transactions
 - [x] Support for Expense, Income, and Transfer types
 - [x] Category assignment
@@ -62,6 +68,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - [x] Receipt image attachment
 
 ### Budget Management
+
 - [x] Total budget (profile-wide) setting
 - [x] Category-specific budgets
 - [x] Budget progress tracking (spent/remaining)
@@ -69,6 +76,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - [x] Over-budget alerts
 
 ### Analytics & Insights
+
 - [x] Total balance, income, expenses, transfers
 - [x] Spending by category breakdown
 - [x] Period comparison (week, month, year)
@@ -76,12 +84,14 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - [x] Cash flow charts
 
 ### Data Export
+
 - [x] CSV export for spreadsheets
 - [x] PDF export for reports
 - [x] Date range filtering
 - [x] Summary statistics included
 
 ### Settings & Management
+
 - [x] Profile management (Personal, Business, Custom)
 - [x] Category management with colors/icons
 - [x] Payment method management
@@ -92,6 +102,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 ### Date: January 27, 2026
 
 #### Shared Module (New)
+
 - Created `/app/shared` with centralized types, constants, and utilities
 - TypeScript interfaces for User, Transaction, Budget, etc.
 - Shared constants: CATEGORY_COLORS, PAYMENT_TYPES, THEME colors
@@ -100,6 +111,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - Mobile app uses @shared via tsconfig paths
 
 #### New Features (Both Web & Mobile)
+
 1. **Budget Management**
    - Total budget for each profile
    - Category-specific budgets
@@ -120,6 +132,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
    - Persistent across sessions
 
 #### Backend Endpoints Added
+
 - POST/GET/PUT/DELETE /api/budgets
 - GET /api/budgets/progress
 - GET/PUT /api/settings
@@ -129,6 +142,7 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 ## Prioritized Backlog
 
 ### P0 (Critical) - Done
+
 - [x] User authentication
 - [x] Transaction CRUD
 - [x] Dashboard analytics
@@ -138,17 +152,20 @@ Full-stack expense tracking application with mobile (React Native/Expo) and web 
 - [x] Dark mode toggle
 
 ### P1 (High Priority)
+
 - [ ] Budget notifications (when nearing limit)
 - [ ] Transaction categories editing in-line
 - [ ] Recurring transaction auto-creation
 
 ### P2 (Medium Priority)
+
 - [ ] Transaction search by date range
 - [ ] Transaction bulk actions (delete multiple)
 - [ ] Currency preferences
 - [ ] Multi-currency support
 
 ### P3 (Low Priority)
+
 - [ ] Transaction tags
 - [ ] Split transactions
 - [ ] Transaction templates

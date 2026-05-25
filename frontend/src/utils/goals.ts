@@ -17,7 +17,7 @@ export interface SavingsGoal {
 export function selectTopPriorityGoal(goals: SavingsGoal[] = []): SavingsGoal | null {
   const candidates = goals.filter((goal) => {
     const remaining = Number(goal.target_amount || 0) - Number(goal.current_amount || 0);
-    return remaining > 0 && !['completed', 'cancelled'].includes((goal.status || '').toLowerCase());
+    return remaining > 0 && !["completed", "cancelled"].includes((goal.status || "").toLowerCase());
   });
 
   if (!candidates.length) return null;
@@ -35,24 +35,24 @@ export function selectTopPriorityGoal(goals: SavingsGoal[] = []): SavingsGoal | 
 }
 
 export function getGoalProjectionText(goal: SavingsGoal | null): string {
-  if (!goal?.projected_completion) return 'Projection unavailable';
+  if (!goal?.projected_completion) return "Projection unavailable";
 
   const projection = goal.projected_completion;
-  if (projection.basis === 'already_completed') {
-    return 'Completed';
+  if (projection.basis === "already_completed") {
+    return "Completed";
   }
 
   const projectedDate = projection.projected_completion_date || projection.projected_date;
   if (projectedDate) {
     const date = new Date(projectedDate);
     if (!Number.isNaN(date.getTime())) {
-      return `Projected ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      return `Projected ${date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
     }
   }
 
-  if (typeof projection.months_remaining === 'number') {
+  if (typeof projection.months_remaining === "number") {
     return `Projected in ~${projection.months_remaining.toFixed(1)} months`;
   }
 
-  return 'Projection unavailable';
+  return "Projection unavailable";
 }

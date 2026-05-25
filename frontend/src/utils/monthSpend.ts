@@ -1,6 +1,6 @@
-import { Expense } from '../types';
+import { Expense } from "../types";
 
-export type MoMDirection = 'up' | 'down' | 'flat' | 'none';
+export type MoMDirection = "up" | "down" | "flat" | "none";
 
 export interface MoMSummary {
   currentMonthSpend: number;
@@ -22,7 +22,8 @@ function monthKey(date: Date): string {
 }
 
 function previousMonthKey(referenceDate: Date): string {
-  const year = referenceDate.getMonth() === 0 ? referenceDate.getFullYear() - 1 : referenceDate.getFullYear();
+  const year =
+    referenceDate.getMonth() === 0 ? referenceDate.getFullYear() - 1 : referenceDate.getFullYear();
   const month = referenceDate.getMonth() === 0 ? 11 : referenceDate.getMonth() - 1;
   return `${year}-${month}`;
 }
@@ -37,7 +38,7 @@ export function buildMonthSpendSummary(expenses: Expense[], now = new Date()): M
   let hasPreviousData = false;
 
   expenses.forEach((expense) => {
-    if (expense.type === 'income' || expense.type === 'transfer') return;
+    if (expense.type === "income" || expense.type === "transfer") return;
 
     const parsed = parseExpenseDate(expense.date as any);
     if (!parsed) return;
@@ -58,15 +59,15 @@ export function buildMonthSpendSummary(expenses: Expense[], now = new Date()): M
     deltaPercent = (deltaAmount / previousMonthSpend) * 100;
   }
 
-  let direction: MoMDirection = 'none';
+  let direction: MoMDirection = "none";
   if (currentMonthSpend === 0 && previousMonthSpend === 0) {
-    direction = 'none';
+    direction = "none";
   } else if (Math.abs(deltaAmount) < 0.01) {
-    direction = 'flat';
+    direction = "flat";
   } else if (deltaAmount > 0) {
-    direction = 'up';
+    direction = "up";
   } else {
-    direction = 'down';
+    direction = "down";
   }
 
   return {

@@ -1,7 +1,7 @@
-import React, { useReducer, useRef, useState } from 'react';
-import { Modal, Button, Spinner } from './ui';
-import { MessageCircle, Sparkles } from 'lucide-react';
-import { aiAPI } from '../services/api';
+import React, { useReducer, useRef, useState } from "react";
+import { Modal, Button, Spinner } from "./ui";
+import { MessageCircle, Sparkles } from "lucide-react";
+import { aiAPI } from "../services/api";
 import {
   AI_CHAT_SESSION_KEY,
   AI_CHAT_PROMPT_SUGGESTIONS,
@@ -14,9 +14,9 @@ import {
   initialAIChatState,
   normalizeRecommendationResponse,
   shouldSubmitOnKeyDown,
-} from '../lib/aiInsightsChatState';
+} from "../lib/aiInsightsChatState";
 
-const DEFAULT_QUESTION = 'How can I save more this month?';
+const DEFAULT_QUESTION = "How can I save more this month?";
 
 export default function AIInsightsChat({ isOpen, onClose, profileId }) {
   const [question, setQuestion] = useState(DEFAULT_QUESTION);
@@ -30,19 +30,22 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
 
     const payload = buildChatInsightsPayload({ profileId, question: questionText });
     if (!payload.question) {
-      dispatch({ type: 'SUBMIT_ERROR', error: 'Please enter a question to continue.' });
+      dispatch({ type: "SUBMIT_ERROR", error: "Please enter a question to continue." });
       return;
     }
 
-    dispatch({ type: 'SUBMIT_START', question: payload.question });
+    dispatch({ type: "SUBMIT_START", question: payload.question });
     try {
       const response = await aiAPI.chatInsights(payload);
       dispatch({
-        type: 'SUBMIT_SUCCESS',
+        type: "SUBMIT_SUCCESS",
         recommendation: normalizeRecommendationResponse(response.data),
       });
     } catch (error) {
-      dispatch({ type: 'SUBMIT_ERROR', error: 'We couldn’t generate insights right now. Please try again.' });
+      dispatch({
+        type: "SUBMIT_ERROR",
+        error: "We couldn’t generate insights right now. Please try again.",
+      });
     }
   };
 
@@ -53,7 +56,7 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
 
   const handleSuggestionClick = async (suggestion) => {
     setQuestion(suggestion);
-    dispatch({ type: 'SET_QUESTION', question: suggestion });
+    dispatch({ type: "SET_QUESTION", question: suggestion });
     await askQuestion(suggestion);
   };
 
@@ -63,33 +66,33 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
   };
 
   const handleClose = () => {
-    dispatch({ type: 'CLOSE' });
+    dispatch({ type: "CLOSE" });
     onClose();
   };
 
   React.useEffect(() => {
     if (isOpen) {
-      dispatch({ type: 'OPEN' });
+      dispatch({ type: "OPEN" });
       setTimeout(() => questionInputRef.current?.focus(), 0);
     } else {
-      dispatch({ type: 'CLOSE' });
+      dispatch({ type: "CLOSE" });
       setQuestion(DEFAULT_QUESTION);
     }
   }, [isOpen]);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const hydrated = hydrateChatSession(window.sessionStorage.getItem(AI_CHAT_SESSION_KEY));
     if (hydrated) {
-      dispatch({ type: 'HYDRATE_SESSION', payload: hydrated });
+      dispatch({ type: "HYDRATE_SESSION", payload: hydrated });
     }
   }, []);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     window.sessionStorage.setItem(
       AI_CHAT_SESSION_KEY,
-      JSON.stringify(buildPersistableChatState(state))
+      JSON.stringify(buildPersistableChatState(state)),
     );
   }, [state.messages, state.recommendation, state.lastQuestion]);
 
@@ -98,11 +101,19 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
       <div className="space-y-4" data-testid="ai-insights-chat">
         <div className="p-3 rounded-xl bg-brand-primary/10 text-sm text-text-secondary flex items-start gap-2">
           <Sparkles className="w-4 h-4 text-brand-primary mt-0.5" />
-          <p>Ask a focused money question. SAVIQ responds using your recent spend, trends, budgets, and forecast data.</p>
+          <p>
+            Ask a focused money question. SAVIQ responds using your recent spend, trends, budgets,
+            and forecast data.
+          </p>
         </div>
 
         <form onSubmit={submitQuestion} className="space-y-3">
-          <label htmlFor="ai-chat-question-input" className="block text-sm font-medium text-text-primary">Question</label>
+          <label
+            htmlFor="ai-chat-question-input"
+            className="block text-sm font-medium text-text-primary"
+          >
+            Question
+          </label>
           <textarea
             id="ai-chat-question-input"
             ref={questionInputRef}
@@ -118,7 +129,12 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
             data-testid="ai-chat-question-input"
           />
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={handleClose} data-testid="ai-chat-close">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              data-testid="ai-chat-close"
+            >
               Close
             </Button>
             <Button
@@ -159,7 +175,13 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
         {state.error && (
           <div className="text-sm text-expense space-y-2" data-testid="ai-chat-error" role="alert">
             <p>{state.error}</p>
-            <Button type="button" variant="secondary" size="sm" onClick={handleRetry} data-testid="ai-chat-retry">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleRetry}
+              data-testid="ai-chat-retry"
+            >
               Try again
             </Button>
           </div>
@@ -171,7 +193,7 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => dispatch({ type: 'CLEAR_CONVERSATION' })}
+            onClick={() => dispatch({ type: "CLEAR_CONVERSATION" })}
             data-testid="ai-chat-clear"
           >
             Clear
@@ -182,16 +204,22 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
           {state.messages.map((message) => (
             <div
               key={message.id}
-              className={message.role === 'user'
-                ? 'ml-8 bg-brand-primary text-white rounded-xl p-3 text-sm'
-                : 'mr-8 border border-border-color rounded-xl p-3 text-sm'}
+              className={
+                message.role === "user"
+                  ? "ml-8 bg-brand-primary text-white rounded-xl p-3 text-sm"
+                  : "mr-8 border border-border-color rounded-xl p-3 text-sm"
+              }
             >
-              {message.role === 'user' ? (
+              {message.role === "user" ? (
                 <p>{message.text}</p>
               ) : (
                 <>
-                  <h3 className="font-semibold text-text-primary">{message.recommendation?.title}</h3>
-                  <p className="text-sm text-text-secondary mt-1">{message.recommendation?.summary}</p>
+                  <h3 className="font-semibold text-text-primary">
+                    {message.recommendation?.title}
+                  </h3>
+                  <p className="text-sm text-text-secondary mt-1">
+                    {message.recommendation?.summary}
+                  </p>
                   {(message.recommendation?.actions || []).length > 0 && (
                     <ul className="list-disc ml-5 space-y-1 text-sm text-text-primary mt-2">
                       {(message.recommendation?.actions || []).map((item, idx) => (
@@ -205,11 +233,17 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
           ))}
 
           {state.isLoading && (
-            <div className="mr-8 border border-border-color rounded-xl p-3 space-y-2" data-testid="ai-chat-loading-skeleton">
+            <div
+              className="mr-8 border border-border-color rounded-xl p-3 space-y-2"
+              data-testid="ai-chat-loading-skeleton"
+            >
               <div className="h-3 bg-surface-hover rounded w-2/3 animate-pulse" />
               <div className="h-3 bg-surface-hover rounded w-full animate-pulse" />
               <div className="h-3 bg-surface-hover rounded w-5/6 animate-pulse" />
-              <p className="text-xs text-text-secondary flex items-center gap-1 mt-2" data-testid="ai-chat-typing">
+              <p
+                className="text-xs text-text-secondary flex items-center gap-1 mt-2"
+                data-testid="ai-chat-typing"
+              >
                 <Spinner size="sm" /> SAVIQ is preparing your guidance...
               </p>
             </div>
@@ -217,7 +251,11 @@ export default function AIInsightsChat({ isOpen, onClose, profileId }) {
         </div>
 
         {recommendation && (
-          <div className="border border-border-color rounded-xl p-4 space-y-2" data-testid="ai-chat-latest-response" aria-live="polite">
+          <div
+            className="border border-border-color rounded-xl p-4 space-y-2"
+            data-testid="ai-chat-latest-response"
+            aria-live="polite"
+          >
             <h4 className="text-xs uppercase tracking-wide text-text-secondary">Latest response</h4>
             <p className="text-sm font-semibold text-text-primary">{recommendation.title}</p>
           </div>

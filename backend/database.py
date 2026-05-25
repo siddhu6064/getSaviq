@@ -75,6 +75,43 @@ async def create_indexes():
 
     await db.weekly_digests.create_index([("user_id", 1), ("profile_id", 1), ("week_start", 1), ("week_end", 1)], unique=True)
     await db.weekly_digests.create_index([("user_id", 1), ("profile_id", 1), ("updated_at", -1)])
+
+    # Net worth indexes
+    await db.assets.create_index([("asset_id", 1)], unique=True)
+    await db.assets.create_index([("user_id", 1), ("profile_id", 1)])
+
+    await db.liabilities.create_index([("liability_id", 1)], unique=True)
+    await db.liabilities.create_index([("user_id", 1), ("profile_id", 1)])
+
+    await db.net_worth_snapshots.create_index([("snapshot_id", 1)], unique=True)
+    await db.net_worth_snapshots.create_index([("user_id", 1), ("date", -1)])
+    await db.net_worth_snapshots.create_index(
+        [("user_id", 1), ("profile_id", 1), ("date", 1)], unique=True
+    )
+
+    # Push notifications indexes
+    await db.push_tokens.create_index(
+        [("user_id", 1), ("expo_push_token", 1)], unique=True
+    )
+    await db.push_tokens.create_index([("token_id", 1)], unique=True)
+
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
+    await db.notifications.create_index([("user_id", 1), ("read", 1)])
+    await db.notifications.create_index([("notif_id", 1)], unique=True)
+
+    # Profile members indexes
+    await db.profile_members.create_index([("member_id", 1)], unique=True)
+    await db.profile_members.create_index([("invite_token", 1)], unique=True)
+    await db.profile_members.create_index([("profile_id", 1)])
+    await db.profile_members.create_index([("invited_email", 1), ("status", 1)])
+    await db.profile_members.create_index([("invited_user_id", 1), ("status", 1)], sparse=True)
+
+    # Bills indexes
+    await db.bills.create_index([("bill_id", 1)], unique=True)
+    await db.bills.create_index([("user_id", 1), ("profile_id", 1)])
+    await db.bills.create_index([("user_id", 1), ("status", 1)])
+    await db.bills.create_index([("user_id", 1), ("due_day", 1)])
+
     logger.info("MongoDB indexes ensured")
 
 async def close_db():

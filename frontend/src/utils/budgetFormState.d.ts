@@ -17,5 +17,5 @@ export function buildBudgetPayload(input: {
   profile_id: string;
   category_id: string | null;
   amount: number;
-  period: 'monthly';
+  period: "monthly";
 };

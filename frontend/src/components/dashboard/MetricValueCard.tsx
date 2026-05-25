@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NeumorphicCard, lightTheme } from '../NeumorphicUI';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { FloatingIcon } from "../FloatingIcon";
 
 interface MetricValueCardProps {
   title: string;
@@ -13,6 +14,7 @@ interface MetricValueCardProps {
   value: number;
   loadingLabel: string;
   emptyLabel: string;
+  entryDelay?: number;
 }
 
 export function MetricValueCard({
@@ -25,12 +27,15 @@ export function MetricValueCard({
   value,
   loadingLabel,
   emptyLabel,
+  entryDelay = 0,
 }: MetricValueCardProps) {
   return (
-    <NeumorphicCard style={styles.card}>
+    <NeumorphicCard style={styles.card} entryDelay={entryDelay}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name={icon} size={18} color={accentColor} />
+          <FloatingIcon amplitude={3} duration={2800} delay={entryDelay}>
+            <Ionicons name={icon} size={18} color={accentColor} />
+          </FloatingIcon>
           <Text style={styles.title}>{title}</Text>
         </View>
       </View>
@@ -55,24 +60,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   amount: {
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   helper: {
     fontSize: 14,
@@ -80,6 +85,6 @@ const styles = StyleSheet.create({
   },
   content: {
     minHeight: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

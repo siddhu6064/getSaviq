@@ -2,19 +2,22 @@
 
 Date: 2026-04-21  
 Scope: final closeout validation for:
-1) Android-focused static review, and  
-2) dark mode/theme consistency across parity surfaces.
+
+1. Android-focused static review, and
+2. dark mode/theme consistency across parity surfaces.
 
 ---
 
 ## 1) What was actually validated
 
 ### Static code inspection performed
+
 - Android-sensitive interaction paths in app shell and chat modal.
 - Notification/deep-link routing assumptions.
 - Theme usage across parity surfaces (Dashboard, widgets, AI chat, Budgets, Goals, Analytics).
 
 ### Not validated in this environment
+
 - No Android emulator/device runtime execution was available in this environment.
 - No visual snapshot comparison on real Android dark mode was run.
 
@@ -23,22 +26,27 @@ Scope: final closeout validation for:
 ## 2) Android-focused findings
 
 ## A. Modal/back behavior
+
 - AI chat modal uses `onRequestClose`, which maps to Android back behavior and supports dismissal safely.  
   **Result:** good baseline behavior.
 
 ## B. Deep-link + notification route assumptions
+
 - Root-level deep-link and notification handlers route to `/(tabs)/add` and `/(tabs)/stats`, which are valid tab routes.  
   **Result:** no obvious Android route mismatch in static inspection.
 
 ## C. Scroll/input behavior
+
 - Chat modal uses `KeyboardAvoidingView` and thread `ScrollView` with `keyboardShouldPersistTaps="handled"`.  
   **Result:** likely stable, but keyboard animation overlap must be confirmed on real Android devices.
 
 ## D. Touch target ergonomics
+
 - Existing close/send controls were reviewed and were previously tightened to 44pt class sizing in prior pass.  
   **Result:** acceptable touch-size baseline for Android and iOS.
 
 ## Android residual risks (runtime-only)
+
 1. Keyboard + sheet overlap differences on specific OEM Android builds.
 2. Notification tap timing edge cases when app cold-starts.
 3. Gesture/interruption edge cases (rapid back taps while async send is pending).
@@ -48,25 +56,28 @@ Scope: final closeout validation for:
 ## 3) Dark mode/theme consistency findings
 
 ## A. Current theme architecture reality
+
 - Repo has `ThemeContext` with light/dark palettes.
 - Many parity surfaces still consume `lightTheme` directly from `NeumorphicUI`, not dynamic `useTheme()`.
 
 Implication:
+
 - Dark mode is **partially implemented at architecture level** but not consistently applied to parity surfaces.
 
 ## B. Surface-level consistency status
 
-| Surface | Theme consistency status | Notes |
-|---|---|---|
-| Dashboard container + smart-metric accents | Improved / Partial | Dashboard container/title/profile control and smart-metric accent wiring now consume `ThemeContext`; some legacy dashboard cards still use `lightTheme`. |
-| Smart Insights / Forecast / Weekly Digest / Subscription widgets | Improved / Partial | These widgets now consume `ThemeContext` colors for text/background/border; deeper card primitives are still light-themed by default. |
-| AI chat modal | Improved / Partial | Modal now consumes `ThemeContext` for key text/background/border/chips/composer states. |
-| Budgets | Complete (primary flow) | Screen-level cards, chips, modal form, and loading/empty/error-oriented copy now use `ThemeContext` colors. |
-| Goals | Complete (primary flow) | Header/cards/badges/progress/actions/modal fields and status chips now consume theme-driven color tokens. |
-| Analytics | Complete (primary flow) | Overview/category/payment/monthly trend sections and chart/tooltip/list primitives now apply `ThemeContext` colors in runtime render paths. |
-| Transactions list + rows | Complete (primary flow) | List shell, row shells, controls, and detail modal states now consume theme tokens for foreground/surface/border contrast. |
+| Surface                                                          | Theme consistency status | Notes                                                                                                                                                    |
+| ---------------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard container + smart-metric accents                       | Improved / Partial       | Dashboard container/title/profile control and smart-metric accent wiring now consume `ThemeContext`; some legacy dashboard cards still use `lightTheme`. |
+| Smart Insights / Forecast / Weekly Digest / Subscription widgets | Improved / Partial       | These widgets now consume `ThemeContext` colors for text/background/border; deeper card primitives are still light-themed by default.                    |
+| AI chat modal                                                    | Improved / Partial       | Modal now consumes `ThemeContext` for key text/background/border/chips/composer states.                                                                  |
+| Budgets                                                          | Complete (primary flow)  | Screen-level cards, chips, modal form, and loading/empty/error-oriented copy now use `ThemeContext` colors.                                              |
+| Goals                                                            | Complete (primary flow)  | Header/cards/badges/progress/actions/modal fields and status chips now consume theme-driven color tokens.                                                |
+| Analytics                                                        | Complete (primary flow)  | Overview/category/payment/monthly trend sections and chart/tooltip/list primitives now apply `ThemeContext` colors in runtime render paths.              |
+| Transactions list + rows                                         | Complete (primary flow)  | List shell, row shells, controls, and detail modal states now consume theme tokens for foreground/surface/border contrast.                               |
 
 ## C. Severity / launch impact
+
 - **Parity impact:** low (feature parity behavior is intact).
 - **Visual/theme impact:** medium for users expecting full dark-mode parity.
 - **Recommendation:** track as post-closeout polish item unless dark mode is hard launch requirement.

@@ -9,9 +9,9 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: #F9F8F6;
-  color: #2B2A28;
+  font-family: "Inter", sans-serif;
+  background-color: #f9f8f6;
+  color: #2b2a28;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -22,8 +22,13 @@ html.dark body {
   color: #f5f5f5;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Manrope', sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Manrope", sans-serif;
 }
 
 ::-webkit-scrollbar {
@@ -31,7 +36,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F9F8F6;
+  background: #f9f8f6;
 }
 
 .dark ::-webkit-scrollbar-track {
@@ -39,7 +44,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D1CCC2;
+  background: #d1ccc2;
   border-radius: 4px;
 }
 
@@ -48,7 +53,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #B8B3A9;
+  background: #b8b3a9;
 }
 
 .animate-fade-in {
@@ -82,10 +87,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark mode overrides */
-.dark .bg-page { background-color: #1a1a1a; }
-.dark .bg-surface, .dark .bg-white { background-color: #2d2d2d; }
-.dark .bg-surface-hover { background-color: #3d3d3d; }
-.dark .text-text-primary { color: #f5f5f5; }
-.dark .text-text-secondary { color: #a0a0a0; }
-.dark .border-border-color { border-color: #444; }
-.dark .bg-brand-primary\/10 { background-color: rgba(74, 109, 92, 0.2); }
+.dark .bg-page {
+  background-color: #1a1a1a;
+}
+.dark .bg-surface,
+.dark .bg-white {
+  background-color: #2d2d2d;
+}
+.dark .bg-surface-hover {
+  background-color: #3d3d3d;
+}
+.dark .text-text-primary {
+  color: #f5f5f5;
+}
+.dark .text-text-secondary {
+  color: #a0a0a0;
+}
+.dark .border-border-color {
+  border-color: #444;
+}
+.dark .bg-brand-primary\/10 {
+  background-color: rgba(74, 109, 92, 0.2);
+}

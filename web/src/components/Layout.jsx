@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { 
-  LayoutDashboard, 
-  Receipt, 
-  PieChart, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
+import {
+  LayoutDashboard,
+  Receipt,
+  PieChart,
+  Settings,
+  LogOut,
+  Menu,
   X,
   Wallet,
   ChevronDown,
@@ -17,9 +17,12 @@ import {
   Flag,
   Download,
   Moon,
-  Sun
-} from 'lucide-react';
-import { Avatar, Button } from './ui';
+  Sun,
+  BarChart2,
+  ScrollText,
+} from "lucide-react";
+import { Avatar, Button } from "./ui";
+import NotificationBell from "./NotificationBell";
 
 export default function Layout({ children }) {
   const { user, logout, isGuest } = useAuth();
@@ -30,22 +33,24 @@ export default function Layout({ children }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/transactions', icon: Receipt },
-    { name: 'Budgets', href: '/budgets', icon: Target },
-    { name: 'Goals', href: '/goals', icon: Flag },
-    { name: 'Analytics', href: '/analytics', icon: PieChart },
-    { name: 'Export', href: '/export', icon: Download },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Transactions", href: "/transactions", icon: Receipt },
+    { name: "Budgets", href: "/budgets", icon: Target },
+    { name: "Goals", href: "/goals", icon: Flag },
+    { name: "Bills", href: "/bills", icon: ScrollText },
+    { name: "Net Worth", href: "/net-worth", icon: BarChart2 },
+    { name: "Analytics", href: "/analytics", icon: PieChart },
+    { name: "Export", href: "/export", icon: Download },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const isActive = (href) => {
-    if (href === '/') return location.pathname === '/';
+    if (href === "/") return location.pathname === "/";
     return location.pathname.startsWith(href);
   };
 
@@ -53,28 +58,28 @@ export default function Layout({ children }) {
     <div className="min-h-screen bg-page">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`
+      <aside
+        className={`
         fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-border-color
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}
+      >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-border-color">
             <div className="p-2 bg-brand-primary/10 rounded-xl">
               <Wallet className="w-6 h-6 text-brand-primary" />
             </div>
-            <span className="text-xl font-bold font-heading text-text-primary">
-              SAVIQ
-            </span>
+            <span className="text-xl font-bold font-heading text-text-primary">SAVIQ</span>
           </div>
 
           {/* Navigation */}
@@ -90,9 +95,10 @@ export default function Layout({ children }) {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                     transition-all duration-200
-                    ${active 
-                      ? 'bg-brand-primary text-white shadow-sm' 
-                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+                    ${
+                      active
+                        ? "bg-brand-primary text-white shadow-sm"
+                        : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                     }
                   `}
                   data-testid={`nav-${item.name.toLowerCase()}`}
@@ -114,21 +120,25 @@ export default function Layout({ children }) {
             >
               <div className="flex items-center gap-3">
                 {darkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                <span>{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
+                <span>{darkMode ? "Dark Mode" : "Light Mode"}</span>
               </div>
-              <div className={`w-10 h-6 rounded-full transition-colors ${darkMode ? 'bg-brand-primary' : 'bg-gray-300'} relative`}>
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${darkMode ? 'left-5' : 'left-1'}`} />
+              <div
+                className={`w-10 h-6 rounded-full transition-colors ${darkMode ? "bg-brand-primary" : "bg-gray-300"} relative`}
+              >
+                <div
+                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${darkMode ? "left-5" : "left-1"}`}
+                />
               </div>
             </button>
-            
+
             <div className="flex items-center gap-3 px-2 py-2">
               <Avatar name={user?.name} size="sm" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary dark:text-white truncate">
-                  {user?.name || 'Guest'}
+                  {user?.name || "Guest"}
                 </p>
                 <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
-                  {isGuest ? 'Guest Mode' : user?.email}
+                  {isGuest ? "Guest Mode" : user?.email}
                 </p>
               </div>
             </div>
@@ -138,7 +148,7 @@ export default function Layout({ children }) {
               data-testid="logout-button"
             >
               <LogOut className="w-5 h-5" />
-              {isGuest ? 'Exit Guest Mode' : 'Sign Out'}
+              {isGuest ? "Exit Guest Mode" : "Sign Out"}
             </button>
           </div>
         </div>
@@ -159,57 +169,62 @@ export default function Layout({ children }) {
 
             <div className="flex-1 lg:flex-none" />
 
-            {/* User dropdown (desktop) */}
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-hover transition-colors"
-                data-testid="user-menu-button"
-              >
-                <Avatar name={user?.name} size="sm" />
-                <span className="hidden sm:block text-sm font-medium text-text-primary">
-                  {user?.name || 'Guest'}
-                </span>
-                <ChevronDown className="w-4 h-4 text-text-secondary" />
-              </button>
+            {/* Header right actions */}
+            <div className="flex items-center gap-1">
+              <NotificationBell />
 
-              {userMenuOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-border-color py-2 z-50 animate-fade-in">
-                    <div className="px-4 py-3 border-b border-border-color">
-                      <p className="text-sm font-medium text-text-primary">{user?.name}</p>
-                      <p className="text-xs text-text-secondary">{user?.email}</p>
+              {/* User dropdown (desktop) */}
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-hover transition-colors"
+                  data-testid="user-menu-button"
+                >
+                  <Avatar name={user?.name} size="sm" />
+                  <span className="hidden sm:block text-sm font-medium text-text-primary">
+                    {user?.name || "Guest"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-text-secondary" />
+                </button>
+
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-border-color py-2 z-50 animate-fade-in">
+                      <div className="px-4 py-3 border-b border-border-color">
+                        <p className="text-sm font-medium text-text-primary">{user?.name}</p>
+                        <p className="text-xs text-text-secondary">{user?.email}</p>
+                      </div>
+                      <Link
+                        to="/settings"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover"
+                      >
+                        <User className="w-4 h-4" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setUserMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-expense hover:bg-surface-hover"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
                     </div>
-                    <Link
-                      to="/settings"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover"
-                    >
-                      <User className="w-4 h-4" />
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => { handleLogout(); setUserMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-expense hover:bg-surface-hover"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
+              {/* end user dropdown */}
             </div>
+            {/* end header right actions */}
           </div>
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

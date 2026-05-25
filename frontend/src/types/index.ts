@@ -14,4 +14,4 @@ export type {
   ReceiptScanResult,
   UserSettings,
   ExportData,
-} from '@shared/types';
+} from "@shared/types";

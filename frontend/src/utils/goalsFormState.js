@@ -1,31 +1,31 @@
 export function validateGoalForm(form, now = new Date()) {
   const errors = {};
 
-  const title = (form.title || '').trim();
+  const title = (form.title || "").trim();
   if (!title) {
-    errors.title = 'Title is required';
+    errors.title = "Title is required";
   }
 
   const target = Number(form.target_amount);
   if (!Number.isFinite(target) || target <= 0) {
-    errors.target_amount = 'Target amount must be greater than 0';
+    errors.target_amount = "Target amount must be greater than 0";
   }
 
   const current = Number(form.current_amount || 0);
   if (!Number.isFinite(current) || current < 0) {
-    errors.current_amount = 'Current amount cannot be negative';
+    errors.current_amount = "Current amount cannot be negative";
   } else if (Number.isFinite(target) && target > 0 && current > target) {
-    errors.current_amount = 'Current amount cannot exceed target amount';
+    errors.current_amount = "Current amount cannot exceed target amount";
   }
 
   const deadlineValue = form.deadline ? new Date(form.deadline) : null;
   if (!deadlineValue || Number.isNaN(deadlineValue.getTime())) {
-    errors.deadline = 'Deadline is required';
+    errors.deadline = "Deadline is required";
   } else {
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
     if (deadlineValue < startOfToday) {
-      errors.deadline = 'Deadline cannot be in the past';
+      errors.deadline = "Deadline cannot be in the past";
     }
   }
 
@@ -35,11 +35,11 @@ export function validateGoalForm(form, now = new Date()) {
 export function toGoalPayload(form, profileId) {
   return {
     profile_id: profileId,
-    title: (form.title || '').trim(),
+    title: (form.title || "").trim(),
     target_amount: Number(form.target_amount),
     current_amount: Number(form.current_amount || 0),
     deadline: new Date(form.deadline).toISOString(),
-    category: (form.category || '').trim() || 'General',
-    status: form.status || 'active',
+    category: (form.category || "").trim() || "General",
+    status: form.status || "active",
   };
 }

@@ -1,16 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAppData } from '../contexts/AppDataContext';
-import { Card, Button, Input, Modal, Spinner, Badge } from '../components/ui';
-import {
-  Target,
-  Plus,
-  Edit2,
-  Trash2,
-  AlertCircle,
-  CheckCircle2,
-} from 'lucide-react';
-import { formatCurrency, cn, getCategoryIcon } from '../lib/utils';
-import { budgetsAPI } from '../services/api';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useAppData } from "../contexts/AppDataContext";
+import { Card, Button, Input, Modal, Spinner, Badge } from "../components/ui";
+import { Target, Plus, Edit2, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { formatCurrency, cn, getCategoryIcon } from "../lib/utils";
+import { budgetsAPI } from "../services/api";
 
 export default function BudgetsPage() {
   const { profiles, categories, activeProfile, setActiveProfile, loading } = useAppData();
@@ -31,19 +24,25 @@ export default function BudgetsPage() {
   }, []);
 
   const [budgetForm, setBudgetForm] = useState({
-    category_id: '',
-    amount: '',
-    period: 'monthly',
+    category_id: "",
+    amount: "",
+    period: "monthly",
   });
 
   const loadBudgetProgress = useCallback(async () => {
     if (!activeProfile) return;
     try {
       const response = await budgetsAPI.getProgress(activeProfile.profile_id);
-      if (isMounted.current) { setBudgetProgress(response.data); setError(null); }
+      if (isMounted.current) {
+        setBudgetProgress(response.data);
+        setError(null);
+      }
     } catch (error) {
-      console.error('budgets.load_failed', { message: error?.message, status: error?.response?.status });
-      if (isMounted.current) setError('Failed to load data. Please try again.');
+      console.error("budgets.load_failed", {
+        message: error?.message,
+        status: error?.response?.status,
+      });
+      if (isMounted.current) setError("Failed to load data. Please try again.");
     }
   }, [activeProfile?.profile_id]);
 
@@ -73,28 +72,31 @@ export default function BudgetsPage() {
       await loadBudgetProgress();
       setShowModal(false);
       setEditingBudget(null);
-      setBudgetForm({ category_id: '', amount: '', period: 'monthly' });
+      setBudgetForm({ category_id: "", amount: "", period: "monthly" });
     } catch (error) {
-      console.error('Failed to save budget:', error);
+      console.error("Failed to save budget:", error);
     } finally {
       setIsSubmitting(false);
     }
   }, [activeProfile?.profile_id, budgetForm, editingBudget, loadBudgetProgress]);
 
-  const handleDeleteBudget = useCallback(async (budgetId) => {
-    try {
-      await budgetsAPI.delete(budgetId);
-      await loadBudgetProgress();
-      setDeleteConfirm(null);
-    } catch (error) {
-      console.error('Failed to delete budget:', error);
-    }
-  }, [loadBudgetProgress]);
+  const handleDeleteBudget = useCallback(
+    async (budgetId) => {
+      try {
+        await budgetsAPI.delete(budgetId);
+        await loadBudgetProgress();
+        setDeleteConfirm(null);
+      } catch (error) {
+        console.error("Failed to delete budget:", error);
+      }
+    },
+    [loadBudgetProgress],
+  );
 
   const openEditModal = useCallback((budget) => {
     setEditingBudget(budget);
     setBudgetForm({
-      category_id: budget.category_id || '',
+      category_id: budget.category_id || "",
       amount: budget.amount.toString(),
       period: budget.period,
     });
@@ -103,7 +105,7 @@ export default function BudgetsPage() {
 
   const openAddModal = useCallback(() => {
     setEditingBudget(null);
-    setBudgetForm({ category_id: '', amount: '', period: 'monthly' });
+    setBudgetForm({ category_id: "", amount: "", period: "monthly" });
     setShowModal(true);
   }, []);
 
@@ -125,17 +127,15 @@ export default function BudgetsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">
-            Budgets
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">Budgets</h1>
           <p className="text-text-secondary mt-1">Set spending limits and track progress</p>
         </div>
 
         <div className="flex items-center gap-3">
           <select
-            value={activeProfile?.profile_id || ''}
+            value={activeProfile?.profile_id || ""}
             onChange={(e) => {
-              const profile = profiles.find(p => p.profile_id === e.target.value);
+              const profile = profiles.find((p) => p.profile_id === e.target.value);
               setActiveProfile(profile);
             }}
             className="px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
@@ -169,9 +169,7 @@ export default function BudgetsPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-4xl font-bold">
-                {budgetProgress.total_budget.percentage}%
-              </p>
+              <p className="text-4xl font-bold">{budgetProgress.total_budget.percentage}%</p>
               <p className="text-white/80 text-sm">used</p>
             </div>
           </div>
@@ -180,7 +178,7 @@ export default function BudgetsPage() {
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500",
-                budgetProgress.total_budget.is_over_budget ? "bg-expense" : "bg-white"
+                budgetProgress.total_budget.is_over_budget ? "bg-expense" : "bg-white",
               )}
               style={{ width: `${Math.min(budgetProgress.total_budget.percentage, 100)}%` }}
             />
@@ -190,7 +188,9 @@ export default function BudgetsPage() {
             <span>Spent: {formatCurrency(budgetProgress.total_budget.spent)}</span>
             <span>
               {budgetProgress.total_budget.is_over_budget ? (
-                <span className="text-expense-bg">Over by {formatCurrency(Math.abs(budgetProgress.total_budget.remaining))}</span>
+                <span className="text-expense-bg">
+                  Over by {formatCurrency(Math.abs(budgetProgress.total_budget.remaining))}
+                </span>
               ) : (
                 <span>Remaining: {formatCurrency(budgetProgress.total_budget.remaining)}</span>
               )}
@@ -208,8 +208,15 @@ export default function BudgetsPage() {
         <Card className="text-center py-8">
           <Target className="w-12 h-12 text-brand-primary mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-text-primary mb-2">No Total Budget Set</h3>
-          <p className="text-text-secondary mb-4">Set a total monthly budget to track your overall spending</p>
-          <Button onClick={() => { setBudgetForm({ category_id: '', amount: '', period: 'monthly' }); setShowModal(true); }}>
+          <p className="text-text-secondary mb-4">
+            Set a total monthly budget to track your overall spending
+          </p>
+          <Button
+            onClick={() => {
+              setBudgetForm({ category_id: "", amount: "", period: "monthly" });
+              setShowModal(true);
+            }}
+          >
             Set Total Budget
           </Button>
         </Card>
@@ -217,14 +224,12 @@ export default function BudgetsPage() {
 
       {/* Category Budgets */}
       <div>
-        <h2 className="text-lg font-bold font-heading text-text-primary mb-4">
-          Category Budgets
-        </h2>
+        <h2 className="text-lg font-bold font-heading text-text-primary mb-4">Category Budgets</h2>
 
         {budgetProgress.budgets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {budgetProgress.budgets.map((budget) => {
-              const category = categories.find(c => c.category_id === budget.category_id);
+              const category = categories.find((c) => c.category_id === budget.category_id);
               const IconComponent = getCategoryIcon(category?.icon);
 
               return (
@@ -232,14 +237,19 @@ export default function BudgetsPage() {
                   <div className="flex items-start gap-4">
                     <div
                       className="p-3 rounded-xl flex-shrink-0"
-                      style={{ backgroundColor: (category?.color || '#6b7280') + '20' }}
+                      style={{ backgroundColor: (category?.color || "#6b7280") + "20" }}
                     >
-                      <IconComponent className="w-6 h-6" style={{ color: category?.color || '#6b7280' }} />
+                      <IconComponent
+                        className="w-6 h-6"
+                        style={{ color: category?.color || "#6b7280" }}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-text-primary">{category?.name || 'Unknown'}</h3>
+                        <h3 className="font-semibold text-text-primary">
+                          {category?.name || "Unknown"}
+                        </h3>
                         <div className="flex items-center gap-2">
                           {budget.is_over_budget ? (
                             <Badge variant="expense">Over Budget</Badge>
@@ -256,7 +266,11 @@ export default function BudgetsPage() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all duration-500",
-                            budget.is_over_budget ? "bg-expense" : budget.percentage > 80 ? "bg-warning" : "bg-income"
+                            budget.is_over_budget
+                              ? "bg-expense"
+                              : budget.percentage > 80
+                                ? "bg-warning"
+                                : "bg-income",
                           )}
                           style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                         />
@@ -303,14 +317,19 @@ export default function BudgetsPage() {
       {/* Add/Edit Budget Modal */}
       <Modal
         isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingBudget(null); }}
-        title={editingBudget ? 'Edit Budget' : 'Add Budget'}
+        onClose={() => {
+          setShowModal(false);
+          setEditingBudget(null);
+        }}
+        title={editingBudget ? "Edit Budget" : "Add Budget"}
         size="sm"
       >
         <div className="space-y-4">
           {!editingBudget && (
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Budget Type</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Budget Type
+              </label>
               <select
                 value={budgetForm.category_id}
                 onChange={(e) => setBudgetForm({ ...budgetForm, category_id: e.target.value })}
@@ -339,7 +358,7 @@ export default function BudgetsPage() {
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2">Period</label>
             <div className="grid grid-cols-3 gap-2">
-              {['weekly', 'monthly', 'yearly'].map((period) => (
+              {["weekly", "monthly", "yearly"].map((period) => (
                 <button
                   key={period}
                   onClick={() => setBudgetForm({ ...budgetForm, period })}
@@ -347,7 +366,7 @@ export default function BudgetsPage() {
                     "px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     budgetForm.period === period
                       ? "bg-brand-primary text-white"
-                      : "bg-surface-hover text-text-secondary hover:text-text-primary"
+                      : "bg-surface-hover text-text-secondary hover:text-text-primary",
                   )}
                 >
                   {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -359,7 +378,10 @@ export default function BudgetsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
-              onClick={() => { setShowModal(false); setEditingBudget(null); }}
+              onClick={() => {
+                setShowModal(false);
+                setEditingBudget(null);
+              }}
               className="flex-1"
             >
               Cancel
@@ -370,7 +392,7 @@ export default function BudgetsPage() {
               className="flex-1"
               data-testid="save-budget-button"
             >
-              {isSubmitting ? <Spinner size="sm" className="text-white" /> : 'Save Budget'}
+              {isSubmitting ? <Spinner size="sm" className="text-white" /> : "Save Budget"}
             </Button>
           </div>
         </div>
@@ -387,11 +409,7 @@ export default function BudgetsPage() {
           Are you sure you want to delete this budget? This action cannot be undone.
         </p>
         <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setDeleteConfirm(null)}
-            className="flex-1"
-          >
+          <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">
             Cancel
           </Button>
           <Button

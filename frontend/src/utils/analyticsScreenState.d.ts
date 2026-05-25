@@ -5,7 +5,13 @@ export function sanitizeAnalyticsPayload(payload: any): {
     total_spend: number;
     month_over_month_change_pct: number;
   };
-  categoryItems: Array<{ id: string; label: string; fullLabel: string; amount: number; percentage: number }>;
+  categoryItems: Array<{
+    id: string;
+    label: string;
+    fullLabel: string;
+    amount: number;
+    percentage: number;
+  }>;
   paymentItems: Array<{ id: string; label: string; fullLabel: string; amount: number }>;
   trendItems: Array<{ id: string; month: string; amount: number }>;
 };
@@ -17,4 +23,4 @@ export function deriveAnalyticsViewState(input: {
   categoryItems: any[];
   paymentItems: any[];
   trendItems: any[];
-}): 'loading' | 'error' | 'success' | 'empty';
+}): "loading" | "error" | "success" | "empty";

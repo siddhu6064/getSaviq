@@ -5,6 +5,7 @@
 This report tracks web→mobile parity at route level and captures dependency order for implementation.
 
 Phase M1 progress in this update:
+
 - Dashboard is a first-class mobile route shell (`/(tabs)/index`).
 - Budgets now has a standalone mobile route (`/(tabs)/budgets`).
 - Goals now has a standalone mobile route (`/(tabs)/goals`) with loading/empty/error/success list states.
@@ -14,6 +15,7 @@ Phase M1 progress in this update:
 ## Current surface map (evidence baseline)
 
 ### Web major routes
+
 - `/login`
 - `/` (Dashboard)
 - `/transactions`
@@ -24,6 +26,7 @@ Phase M1 progress in this update:
 - `/settings`
 
 ### Mobile current routes/screens
+
 - `/` (login)
 - `/(tabs)/index` (Dashboard shell)
 - `/(tabs)/transactions` (Transactions)
@@ -38,16 +41,16 @@ Phase M1 progress in this update:
 
 ## Parity matrix (route-level)
 
-| Web route | Mobile equivalent | Status | Evidence-grounded note |
-|---|---|---|---|
-| `/login` | `/` login screen | complete | Both apps expose auth entry before protected app surfaces. |
-| `/` (Dashboard) | `/(tabs)/index` dashboard shell | partial | Dedicated route exists; full dashboard widgets/modules still pending. |
-| `/transactions` | `/(tabs)/transactions` + `/(tabs)/add` | partial | Core list/add-edit flows exist; advanced web depth remains pending. |
-| `/analytics` | `/(tabs)/stats` | partial | Existing stats surface is present, but web analytics depth is broader. |
-| `/budgets` | `/(tabs)/budgets` | partial | Standalone route now exists; deeper parity (e.g., full edit workflows) still pending. |
-| `/goals` | `/(tabs)/goals` | partial | Standalone route exists with fetch/list states; CRUD and richer interactions remain pending. |
-| `/export` | export modal in `/(tabs)/more` | partial | Export capability exists without dedicated route-level parity. |
-| `/settings` | `/(tabs)/more` | partial | Mobile settings are bundled; web has sectioned settings IA. |
+| Web route       | Mobile equivalent                      | Status   | Evidence-grounded note                                                                       |
+| --------------- | -------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `/login`        | `/` login screen                       | complete | Both apps expose auth entry before protected app surfaces.                                   |
+| `/` (Dashboard) | `/(tabs)/index` dashboard shell        | partial  | Dedicated route exists; full dashboard widgets/modules still pending.                        |
+| `/transactions` | `/(tabs)/transactions` + `/(tabs)/add` | partial  | Core list/add-edit flows exist; advanced web depth remains pending.                          |
+| `/analytics`    | `/(tabs)/stats`                        | partial  | Existing stats surface is present, but web analytics depth is broader.                       |
+| `/budgets`      | `/(tabs)/budgets`                      | partial  | Standalone route now exists; deeper parity (e.g., full edit workflows) still pending.        |
+| `/goals`        | `/(tabs)/goals`                        | partial  | Standalone route exists with fetch/list states; CRUD and richer interactions remain pending. |
+| `/export`       | export modal in `/(tabs)/more`         | partial  | Export capability exists without dedicated route-level parity.                               |
+| `/settings`     | `/(tabs)/more`                         | partial  | Mobile settings are bundled; web has sectioned settings IA.                                  |
 
 ---
 

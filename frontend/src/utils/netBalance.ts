@@ -1,4 +1,4 @@
-import { Expense, PaymentMethod } from '../types';
+import { Expense, PaymentMethod } from "../types";
 
 export interface AccountSummaryItem {
   paymentId: string;
@@ -19,7 +19,7 @@ export interface NetBalanceSummary {
 
 export function buildNetBalanceSummary(
   paymentMethods: PaymentMethod[],
-  expenses: Expense[]
+  expenses: Expense[],
 ): NetBalanceSummary {
   const map: Record<string, AccountSummaryItem> = {};
 
@@ -40,17 +40,17 @@ export function buildNetBalanceSummary(
     if (!map[pmId]) {
       map[pmId] = {
         paymentId: pmId,
-        name: 'Unknown',
-        type: 'other',
+        name: "Unknown",
+        type: "other",
         income: 0,
         expense: 0,
         count: 0,
       };
     }
 
-    if (e.type === 'income') {
+    if (e.type === "income") {
       map[pmId].income += e.amount;
-    } else if (e.type !== 'transfer') {
+    } else if (e.type !== "transfer") {
       map[pmId].expense += e.amount;
     }
 

@@ -1,49 +1,54 @@
 function formatCurrency(value) {
   const amount = Number(value || 0);
   const safe = Number.isFinite(amount) ? amount : 0;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 2,
   }).format(safe);
 }
 
 function formatNetDelta(value) {
   const amount = Number(value || 0);
-  if (!Number.isFinite(amount) || amount === 0) return 'Net unchanged vs last week';
-  const direction = amount > 0 ? 'up' : 'down';
-  const sign = amount > 0 ? '+' : '-';
-  return `Net ${direction} ${sign}${formatCurrency(Math.abs(amount)).replace('$', '')} vs last week`;
+  if (!Number.isFinite(amount) || amount === 0) return "Net unchanged vs last week";
+  const direction = amount > 0 ? "up" : "down";
+  const sign = amount > 0 ? "+" : "-";
+  return `Net ${direction} ${sign}${formatCurrency(Math.abs(amount)).replace("$", "")} vs last week`;
 }
 
 function formatWeekLabel(week) {
   const startDate = week?.start_date ? new Date(week.start_date) : null;
   const endDate = week?.end_date ? new Date(week.end_date) : null;
 
-  if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-    return 'Week unavailable';
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return "Week unavailable";
   }
 
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
   });
 
   const startParts = fmt.formatToParts(startDate);
   const endParts = fmt.formatToParts(endDate);
 
-  const startMonth = startParts.find((part) => part.type === 'month')?.value;
-  const startDay = startParts.find((part) => part.type === 'day')?.value;
-  const startYear = startParts.find((part) => part.type === 'year')?.value;
+  const startMonth = startParts.find((part) => part.type === "month")?.value;
+  const startDay = startParts.find((part) => part.type === "day")?.value;
+  const startYear = startParts.find((part) => part.type === "year")?.value;
 
-  const endMonth = endParts.find((part) => part.type === 'month')?.value;
-  const endDay = endParts.find((part) => part.type === 'day')?.value;
-  const endYear = endParts.find((part) => part.type === 'year')?.value;
+  const endMonth = endParts.find((part) => part.type === "month")?.value;
+  const endDay = endParts.find((part) => part.type === "day")?.value;
+  const endYear = endParts.find((part) => part.type === "year")?.value;
 
   if (!startMonth || !startDay || !startYear || !endMonth || !endDay || !endYear) {
-    return 'Week unavailable';
+    return "Week unavailable";
   }
 
   if (startYear === endYear && startMonth === endMonth) {
@@ -66,14 +71,18 @@ function formatPercent(value) {
 function formatLargestExpense(largestExpense) {
   if (!largestExpense) return null;
   const amount = formatCurrency(largestExpense.amount);
-  const title = largestExpense.merchant || largestExpense.description || largestExpense.category_id || 'Expense';
+  const title =
+    largestExpense.merchant ||
+    largestExpense.description ||
+    largestExpense.category_id ||
+    "Expense";
   return `${title} · ${amount}`;
 }
 
 function formatTopExpenseCategories(categories) {
   if (!Array.isArray(categories) || categories.length === 0) return [];
   return categories.slice(0, 3).map((item) => ({
-    categoryId: item?.category_id || 'uncategorized',
+    categoryId: item?.category_id || "uncategorized",
     amount: formatCurrency(item?.total_amount),
   }));
 }

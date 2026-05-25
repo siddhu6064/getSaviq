@@ -21,10 +21,10 @@ export function shouldApplyWeeklyDigestResponse({
   activeProfileId,
 }) {
   return Boolean(
-    isMounted
-      && requestId === latestRequestId
-      && requestedProfileId
-      && activeProfileId
-      && requestedProfileId === activeProfileId
+    isMounted &&
+    requestId === latestRequestId &&
+    requestedProfileId &&
+    activeProfileId &&
+    requestedProfileId === activeProfileId,
   );
 }

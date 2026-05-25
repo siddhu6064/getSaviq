@@ -16,13 +16,8 @@ export function searchTransactions(expenses, query, categoryNameById = {}) {
   if (!normalizedQuery) return expenses;
 
   return expenses.filter((expense) => {
-    const categoryName = categoryNameById[expense.category_id] || '';
-    return [
-      expense.description,
-      expense.merchant,
-      expense.notes,
-      categoryName,
-    ]
+    const categoryName = categoryNameById[expense.category_id] || "";
+    return [expense.description, expense.merchant, expense.notes, categoryName]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedQuery));
   });
@@ -33,17 +28,19 @@ export function deriveVisibleTransactions({
   month,
   year,
   searchQuery,
-  txType = 'all',
+  txType = "all",
   categoryNameById = {},
 }) {
   const monthSlice = filterTransactionsForMonth(expenses, month, year);
   const searched = searchTransactions(monthSlice, searchQuery, categoryNameById);
-  if (txType === 'all') return searched;
+  if (txType === "all") return searched;
   return searched.filter((expense) => expense.type === txType);
 }
 
 export function upsertTransaction(expenses, nextExpense) {
-  const existingIndex = expenses.findIndex((expense) => expense.expense_id === nextExpense.expense_id);
+  const existingIndex = expenses.findIndex(
+    (expense) => expense.expense_id === nextExpense.expense_id,
+  );
   if (existingIndex < 0) return [nextExpense, ...expenses];
 
   const next = [...expenses];
@@ -65,18 +62,18 @@ export function buildTransactionRowHandlers({ expense, onPress, onEdit, onDelete
 
 export function deriveTransactionEmptyState({ hasFiltersApplied, filteredCount }) {
   if (filteredCount > 0) {
-    return { title: '', subtitle: '', showClearFilters: false };
+    return { title: "", subtitle: "", showClearFilters: false };
   }
   if (hasFiltersApplied) {
     return {
-      title: 'No transactions match current filters',
-      subtitle: 'Try clearing search or type filters.',
+      title: "No transactions match current filters",
+      subtitle: "Try clearing search or type filters.",
       showClearFilters: true,
     };
   }
   return {
-    title: 'No transactions this month',
-    subtitle: 'Tap + to add one',
+    title: "No transactions this month",
+    subtitle: "Tap + to add one",
     showClearFilters: false,
   };
 }
@@ -95,18 +92,14 @@ export function shouldResetTransactionDetailOnProfileChange({
   return previousProfileId !== nextProfileId;
 }
 
-export function buildTransactionExportIntentParams({
-  activeProfileId,
-  month,
-  year,
-}) {
-  const safeProfileId = String(activeProfileId || '').trim();
+export function buildTransactionExportIntentParams({ activeProfileId, month, year }) {
+  const safeProfileId = String(activeProfileId || "").trim();
   if (!safeProfileId) return null;
   if (!Number.isInteger(month) || month < 0 || month > 11) return null;
   if (!Number.isInteger(year) || year < 1970) return null;
-  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
   return {
-    intent: 'export',
+    intent: "export",
     profile_id: safeProfileId,
     month: String(month + 1),
     year: String(year),
@@ -114,12 +107,9 @@ export function buildTransactionExportIntentParams({
   };
 }
 
-export function shouldClearExportIntentOnProfileSwitch({
-  intentProfileId,
-  nextProfileId,
-}) {
-  const safeIntentProfileId = String(intentProfileId || '').trim();
-  const safeNextProfileId = String(nextProfileId || '').trim();
+export function shouldClearExportIntentOnProfileSwitch({ intentProfileId, nextProfileId }) {
+  const safeIntentProfileId = String(intentProfileId || "").trim();
+  const safeNextProfileId = String(nextProfileId || "").trim();
   if (!safeIntentProfileId || !safeNextProfileId) return false;
   return safeIntentProfileId !== safeNextProfileId;
 }

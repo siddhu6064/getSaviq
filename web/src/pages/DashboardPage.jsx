@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useAppData } from '../contexts/AppDataContext';
-import { Card, Button, Spinner } from '../components/ui';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useAppData } from "../contexts/AppDataContext";
+import { Card, Button, Spinner } from "../components/ui";
 import {
   Plus,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   Wallet,
   ChevronRight,
+  ChevronDown,
   Lightbulb,
   AlertCircle,
   AlertTriangle,
@@ -17,31 +18,59 @@ import {
   CreditCard,
   PieChart,
   MessageCircle,
-} from 'lucide-react';
-import { formatCurrency, formatShortDate, cn, getCategoryIcon, getPaymentIcon } from '../lib/utils';
-import { analyticsAPI, budgetsAPI, dashboardMetricsAPI, expensesAPI, insightsAPI, savingsGoalsAPI, forecastAPI, subscriptionsAPI, weeklyDigestAPI } from '../services/api';
-import { getUserFriendlyError } from '../lib/errorMessages';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import AddTransactionModal from '../components/AddTransactionModal';
-import SmartInsightsCard from '../components/SmartInsightsCard';
-import { buildGoalDisplayModel, selectTopPriorityGoal } from '../lib/goalsPresentation';
-import ForecastCard from '../components/ForecastCard';
-import SubscriptionsCard from '../components/SubscriptionsCard';
-import WeeklyDigestCard from '../components/WeeklyDigestCard';
-import WeeklyDigestBanner from '../components/WeeklyDigestBanner';
-import SmartMetricsCards from '../components/SmartMetricsCards';
-import AIInsightsChat from '../components/AIInsightsChat';
-import { shouldApplyForecastResponse } from '../lib/forecastCardState';
-import { shouldApplyWeeklyDigestResponse, shouldRequestWeeklyDigest } from '../lib/weeklyDigestDashboardState';
-import { createSmartMetricsMountedLifecycle, shouldApplySmartMetricsResponse, shouldRequestSmartMetrics } from '../lib/smartMetricsDashboardState';
-import { deriveCurrentMonthSpendCardState, deriveIncomeCardState, deriveMonthOverMonthChangeCardState, deriveNetBalanceCardState, deriveTopSavingsGoalCardState, deriveTotalSpendCardState } from '../lib/smartDashboardKickoffState';
-import { emitAnalyticsEvent } from '../lib/analyticsEvents';
-import { trackWeeklyDigestDismissed, trackWeeklyDigestViewed } from '../lib/weeklyDigestBannerAnalytics';
+} from "lucide-react";
+import { formatCurrency, formatShortDate, cn, getCategoryIcon, getPaymentIcon } from "../lib/utils";
+import {
+  analyticsAPI,
+  budgetsAPI,
+  dashboardMetricsAPI,
+  expensesAPI,
+  insightsAPI,
+  savingsGoalsAPI,
+  forecastAPI,
+  subscriptionsAPI,
+  weeklyDigestAPI,
+} from "../services/api";
+import { getUserFriendlyError } from "../lib/errorMessages";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import AddTransactionModal from "../components/AddTransactionModal";
+import SmartInsightsCard from "../components/SmartInsightsCard";
+import { buildGoalDisplayModel, selectTopPriorityGoal } from "../lib/goalsPresentation";
+import ForecastCard from "../components/ForecastCard";
+import SubscriptionsCard from "../components/SubscriptionsCard";
+import WeeklyDigestCard from "../components/WeeklyDigestCard";
+import WeeklyDigestBanner from "../components/WeeklyDigestBanner";
+import SmartMetricsCards from "../components/SmartMetricsCards";
+import AIInsightsChat from "../components/AIInsightsChat";
+import { shouldApplyForecastResponse } from "../lib/forecastCardState";
+import {
+  shouldApplyWeeklyDigestResponse,
+  shouldRequestWeeklyDigest,
+} from "../lib/weeklyDigestDashboardState";
+import {
+  createSmartMetricsMountedLifecycle,
+  shouldApplySmartMetricsResponse,
+  shouldRequestSmartMetrics,
+} from "../lib/smartMetricsDashboardState";
+import {
+  deriveCurrentMonthSpendCardState,
+  deriveIncomeCardState,
+  deriveMonthOverMonthChangeCardState,
+  deriveNetBalanceCardState,
+  deriveTopSavingsGoalCardState,
+  deriveTotalSpendCardState,
+} from "../lib/smartDashboardKickoffState";
+import { emitAnalyticsEvent } from "../lib/analyticsEvents";
+import {
+  trackWeeklyDigestDismissed,
+  trackWeeklyDigestViewed,
+} from "../lib/weeklyDigestBannerAnalytics";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isGuest } = useAuth();
-  const { profiles, categories, paymentMethods, activeProfile, setActiveProfile, loading } = useAppData();
+  const { profiles, categories, paymentMethods, activeProfile, setActiveProfile, loading } =
+    useAppData();
 
   const [transactions, setTransactions] = useState([]);
   const [analyticsSummary, setAnalyticsSummary] = useState(null);
@@ -69,16 +98,18 @@ export default function DashboardPage() {
   const [smartMetrics, setSmartMetrics] = useState(null);
   const [smartMetricsLoading, setSmartMetricsLoading] = useState(false);
   const [smartMetricsError, setSmartMetricsError] = useState(null);
-  const [smartMetricsRequestState, setSmartMetricsRequestState] = useState('idle');
-  const [smartMetricsRequestUrl, setSmartMetricsRequestUrl] = useState('');
-  const [smartMetricsDebugLastStage, setSmartMetricsDebugLastStage] = useState('idle');
+  const [smartMetricsRequestState, setSmartMetricsRequestState] = useState("idle");
+  const [smartMetricsRequestUrl, setSmartMetricsRequestUrl] = useState("");
+  const [smartMetricsDebugLastStage, setSmartMetricsDebugLastStage] = useState("idle");
   const [showAIInsightsChat, setShowAIInsightsChat] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [datePreset, setDatePreset] = useState('6m');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [dateValidationError, setDateValidationError] = useState('');
+  const [datePreset, setDatePreset] = useState("6m");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [dateValidationError, setDateValidationError] = useState("");
   const [error, setError] = useState(null);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
   const [netBalanceCardLoading, setNetBalanceCardLoading] = useState(false);
   const [netBalanceCardError, setNetBalanceCardError] = useState(null);
 
@@ -93,23 +124,23 @@ export default function DashboardPage() {
   useEffect(() => createSmartMetricsMountedLifecycle(isMounted), []);
 
   useEffect(() => {
-    if (datePreset !== 'custom') {
-      setDateValidationError('');
+    if (datePreset !== "custom") {
+      setDateValidationError("");
       return;
     }
     if (!customStartDate || !customEndDate) {
-      setDateValidationError('Select both start and end dates to apply a custom range.');
+      setDateValidationError("Select both start and end dates to apply a custom range.");
       return;
     }
     if (new Date(customEndDate) < new Date(customStartDate)) {
-      setDateValidationError('End date cannot be earlier than start date.');
+      setDateValidationError("End date cannot be earlier than start date.");
       return;
     }
-    setDateValidationError('');
+    setDateValidationError("");
   }, [customEndDate, customStartDate, datePreset]);
 
   const getDateRangeParams = useCallback(() => {
-    if (datePreset === 'custom') {
+    if (datePreset === "custom") {
       if (!customStartDate || !customEndDate) return null;
       const start = new Date(`${customStartDate}T00:00:00`);
       const end = new Date(`${customEndDate}T23:59:59`);
@@ -121,10 +152,10 @@ export default function DashboardPage() {
     }
     const end = new Date();
     const start = new Date(end);
-    if (datePreset === '30d') start.setDate(end.getDate() - 30);
-    if (datePreset === '90d') start.setDate(end.getDate() - 90);
-    if (datePreset === '6m') start.setMonth(end.getMonth() - 6);
-    if (datePreset === '1y') start.setFullYear(end.getFullYear() - 1);
+    if (datePreset === "30d") start.setDate(end.getDate() - 30);
+    if (datePreset === "90d") start.setDate(end.getDate() - 90);
+    if (datePreset === "6m") start.setMonth(end.getMonth() - 6);
+    if (datePreset === "1y") start.setFullYear(end.getFullYear() - 1);
     return {
       start_date: start.toISOString(),
       end_date: end.toISOString(),
@@ -135,10 +166,13 @@ export default function DashboardPage() {
     if (!activeProfile || isGuest) return;
     try {
       const response = await expensesAPI.getAll({ profile_id: activeProfile.profile_id });
-      if (isMounted.current) { setTransactions(response.data); setError(null); }
+      if (isMounted.current) {
+        setTransactions(response.data);
+        setError(null);
+      }
     } catch (error) {
-      if (isMounted.current) console.error('Failed to load transactions:', error);
-      if (isMounted.current) setError('Failed to load data. Please try again.');
+      if (isMounted.current) console.error("Failed to load transactions:", error);
+      if (isMounted.current) setError("Failed to load data. Please try again.");
     }
   }, [activeProfile?.profile_id, isGuest]);
 
@@ -146,7 +180,7 @@ export default function DashboardPage() {
     if (!activeProfile || isGuest) return;
     const range = getDateRangeParams();
     if (!range) {
-      if (isMounted.current && datePreset === 'custom') {
+      if (isMounted.current && datePreset === "custom") {
         setNetBalanceCardLoading(false);
         setNetBalanceCardError(null);
         setAnalyticsSummary(null);
@@ -162,7 +196,15 @@ export default function DashboardPage() {
       setNetBalanceCardLoading(true);
       setNetBalanceCardError(null);
       const params = { profile_id: activeProfile.profile_id, ...range };
-      const [summaryRes, categoryRes, paymentRes, trendRes, overviewRes, recommendationsRes, budgetProgressRes] = await Promise.all([
+      const [
+        summaryRes,
+        categoryRes,
+        paymentRes,
+        trendRes,
+        overviewRes,
+        recommendationsRes,
+        budgetProgressRes,
+      ] = await Promise.all([
         analyticsAPI.getSummary(params),
         analyticsAPI.getCategoryBreakdown(params),
         analyticsAPI.getPaymentMethodBreakdown(params),
@@ -183,7 +225,10 @@ export default function DashboardPage() {
       }
     } catch (error) {
       if (isMounted.current) {
-        const friendlyError = getUserFriendlyError(error, 'Failed to load dashboard insights. Please try again.');
+        const friendlyError = getUserFriendlyError(
+          error,
+          "Failed to load dashboard insights. Please try again.",
+        );
         setError(friendlyError);
         setNetBalanceCardError(friendlyError);
       }
@@ -193,51 +238,52 @@ export default function DashboardPage() {
   }, [activeProfile?.profile_id, getDateRangeParams, isGuest]);
 
   const netBalanceCardState = useMemo(
-    () => deriveNetBalanceCardState({
-      loading: netBalanceCardLoading,
-      error: netBalanceCardError,
-      summary: analyticsSummary,
-    }),
+    () =>
+      deriveNetBalanceCardState({
+        loading: netBalanceCardLoading,
+        error: netBalanceCardError,
+        summary: analyticsSummary,
+      }),
     [analyticsSummary, netBalanceCardError, netBalanceCardLoading],
   );
-
 
   const incomeCardState = useMemo(
-    () => deriveIncomeCardState({
-      loading: netBalanceCardLoading,
-      error: netBalanceCardError,
-      summary: analyticsSummary,
-    }),
+    () =>
+      deriveIncomeCardState({
+        loading: netBalanceCardLoading,
+        error: netBalanceCardError,
+        summary: analyticsSummary,
+      }),
     [analyticsSummary, netBalanceCardError, netBalanceCardLoading],
   );
-
 
   const totalSpendCardState = useMemo(
-    () => deriveTotalSpendCardState({
-      loading: netBalanceCardLoading,
-      error: netBalanceCardError,
-      summary: analyticsSummary,
-    }),
+    () =>
+      deriveTotalSpendCardState({
+        loading: netBalanceCardLoading,
+        error: netBalanceCardError,
+        summary: analyticsSummary,
+      }),
     [analyticsSummary, netBalanceCardError, netBalanceCardLoading],
   );
-
 
   const currentMonthSpendCardState = useMemo(
-    () => deriveCurrentMonthSpendCardState({
-      loading: netBalanceCardLoading,
-      error: netBalanceCardError,
-      summary: analyticsSummary,
-    }),
+    () =>
+      deriveCurrentMonthSpendCardState({
+        loading: netBalanceCardLoading,
+        error: netBalanceCardError,
+        summary: analyticsSummary,
+      }),
     [analyticsSummary, netBalanceCardError, netBalanceCardLoading],
   );
 
-
   const monthOverMonthChangeCardState = useMemo(
-    () => deriveMonthOverMonthChangeCardState({
-      loading: netBalanceCardLoading,
-      error: netBalanceCardError,
-      summary: analyticsSummary,
-    }),
+    () =>
+      deriveMonthOverMonthChangeCardState({
+        loading: netBalanceCardLoading,
+        error: netBalanceCardError,
+        summary: analyticsSummary,
+      }),
     [analyticsSummary, netBalanceCardError, netBalanceCardLoading],
   );
 
@@ -250,9 +296,9 @@ export default function DashboardPage() {
       if (isMounted.current) setSavingsGoals(response.data || []);
     } catch (error) {
       if (isMounted.current) {
-        console.error('Failed to load savings goals:', error);
+        console.error("Failed to load savings goals:", error);
         setSavingsGoals([]);
-        setSavingsGoalsError('Savings goal is unavailable right now.');
+        setSavingsGoalsError("Savings goal is unavailable right now.");
       }
     } finally {
       if (isMounted.current) setSavingsGoalsLoading(false);
@@ -271,35 +317,41 @@ export default function DashboardPage() {
     setForecast(null);
     try {
       const response = await forecastAPI.getOverview({ profile_id: profileId });
-      if (shouldApplyForecastResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: forecastRequestRef.current,
-        requestedProfileId: profileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
+      if (
+        shouldApplyForecastResponse({
+          isMounted: isMounted.current,
+          requestId,
+          latestRequestId: forecastRequestRef.current,
+          requestedProfileId: profileId,
+          activeProfileId: activeProfile?.profile_id,
+        })
+      ) {
         setForecast(response.data || null);
       }
     } catch (error) {
-      if (shouldApplyForecastResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: forecastRequestRef.current,
-        requestedProfileId: profileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
-        console.error('Failed to load forecast:', error);
+      if (
+        shouldApplyForecastResponse({
+          isMounted: isMounted.current,
+          requestId,
+          latestRequestId: forecastRequestRef.current,
+          requestedProfileId: profileId,
+          activeProfileId: activeProfile?.profile_id,
+        })
+      ) {
+        console.error("Failed to load forecast:", error);
         setForecast(null);
-        setForecastError('Forecast unavailable right now. Please try again.');
+        setForecastError("Forecast unavailable right now. Please try again.");
       }
     } finally {
-      if (shouldApplyForecastResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: forecastRequestRef.current,
-        requestedProfileId: profileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
+      if (
+        shouldApplyForecastResponse({
+          isMounted: isMounted.current,
+          requestId,
+          latestRequestId: forecastRequestRef.current,
+          requestedProfileId: profileId,
+          activeProfileId: activeProfile?.profile_id,
+        })
+      ) {
         setForecastLoading(false);
       }
     }
@@ -314,68 +366,76 @@ export default function DashboardPage() {
       if (isMounted.current) setSubscriptionsSummary(response.data || null);
     } catch (error) {
       if (isMounted.current) {
-        console.error('Failed to load subscriptions summary:', error);
+        console.error("Failed to load subscriptions summary:", error);
         setSubscriptionsSummary(null);
-        setSubscriptionsError('Subscriptions unavailable right now. Please try again.');
+        setSubscriptionsError("Subscriptions unavailable right now. Please try again.");
       }
     } finally {
       if (isMounted.current) setSubscriptionsLoading(false);
     }
   }, [activeProfile?.profile_id, isGuest]);
 
-  const loadWeeklyDigest = useCallback(async (forceRefresh = false) => {
-    const activeProfileId = activeProfile?.profile_id;
-    const shouldRequest = shouldRequestWeeklyDigest({
-      isGuest,
-      activeProfileId,
-      loading: weeklyDigestLoading,
-      lastRequestedProfileId: weeklyDigestRequestedProfileRef.current,
-      forceRefresh,
-    });
-    if (!shouldRequest) return;
+  const loadWeeklyDigest = useCallback(
+    async (forceRefresh = false) => {
+      const activeProfileId = activeProfile?.profile_id;
+      const shouldRequest = shouldRequestWeeklyDigest({
+        isGuest,
+        activeProfileId,
+        loading: weeklyDigestLoading,
+        lastRequestedProfileId: weeklyDigestRequestedProfileRef.current,
+        forceRefresh,
+      });
+      if (!shouldRequest) return;
 
-    weeklyDigestRequestedProfileRef.current = activeProfileId;
-    const requestId = weeklyDigestRequestRef.current + 1;
-    weeklyDigestRequestRef.current = requestId;
+      weeklyDigestRequestedProfileRef.current = activeProfileId;
+      const requestId = weeklyDigestRequestRef.current + 1;
+      weeklyDigestRequestRef.current = requestId;
 
-    setWeeklyDigestLoading(true);
-    setWeeklyDigestError(null);
-    try {
-      const response = await weeklyDigestAPI.get({ profile_id: activeProfileId });
-      if (shouldApplyWeeklyDigestResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: weeklyDigestRequestRef.current,
-        requestedProfileId: activeProfileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
-        setWeeklyDigest(response.data || null);
+      setWeeklyDigestLoading(true);
+      setWeeklyDigestError(null);
+      try {
+        const response = await weeklyDigestAPI.get({ profile_id: activeProfileId });
+        if (
+          shouldApplyWeeklyDigestResponse({
+            isMounted: isMounted.current,
+            requestId,
+            latestRequestId: weeklyDigestRequestRef.current,
+            requestedProfileId: activeProfileId,
+            activeProfileId: activeProfile?.profile_id,
+          })
+        ) {
+          setWeeklyDigest(response.data || null);
+        }
+      } catch (error) {
+        if (
+          shouldApplyWeeklyDigestResponse({
+            isMounted: isMounted.current,
+            requestId,
+            latestRequestId: weeklyDigestRequestRef.current,
+            requestedProfileId: activeProfileId,
+            activeProfileId: activeProfile?.profile_id,
+          })
+        ) {
+          console.error("Failed to load weekly digest:", error);
+          setWeeklyDigest(null);
+          setWeeklyDigestError("Weekly digest unavailable right now. Please try again.");
+        }
+      } finally {
+        if (
+          shouldApplyWeeklyDigestResponse({
+            isMounted: isMounted.current,
+            requestId,
+            latestRequestId: weeklyDigestRequestRef.current,
+            requestedProfileId: activeProfileId,
+            activeProfileId: activeProfile?.profile_id,
+          })
+        ) {
+          setWeeklyDigestLoading(false);
+        }
       }
-    } catch (error) {
-      if (shouldApplyWeeklyDigestResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: weeklyDigestRequestRef.current,
-        requestedProfileId: activeProfileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
-        console.error('Failed to load weekly digest:', error);
-        setWeeklyDigest(null);
-        setWeeklyDigestError('Weekly digest unavailable right now. Please try again.');
-      }
-    } finally {
-      if (shouldApplyWeeklyDigestResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: weeklyDigestRequestRef.current,
-        requestedProfileId: activeProfileId,
-        activeProfileId: activeProfile?.profile_id,
-      })) {
-        setWeeklyDigestLoading(false);
-      }
-    }
-  }, [activeProfile?.profile_id, isGuest, weeklyDigestLoading]);
-
+    },
+    [activeProfile?.profile_id, isGuest, weeklyDigestLoading],
+  );
 
   const loadWeeklyDigestBanner = useCallback(async () => {
     if (!activeProfile || isGuest) return;
@@ -386,96 +446,121 @@ export default function DashboardPage() {
       if (isMounted.current) setWeeklyDigestBanner(response.data || null);
     } catch (error) {
       if (isMounted.current) {
-        console.error('Failed to load weekly digest banner:', error);
+        console.error("Failed to load weekly digest banner:", error);
         setWeeklyDigestBanner(null);
-        setWeeklyDigestBannerError('Latest digest banner unavailable right now.');
+        setWeeklyDigestBannerError("Latest digest banner unavailable right now.");
       }
     } finally {
       if (isMounted.current) setWeeklyDigestBannerLoading(false);
     }
   }, [activeProfile?.profile_id, isGuest]);
 
-  const loadSmartMetrics = useCallback(async (forceRefresh = false) => {
-    const activeProfileId = activeProfile?.profile_id;
-    const shouldRequest = shouldRequestSmartMetrics({
-      isGuest,
-      activeProfileId,
-      loading: false,
-      lastRequestedProfileId: smartMetricsRequestedProfileRef.current,
-      hasLoadedForProfile: smartMetricsLoadedProfileRef.current === activeProfileId,
-      forceRefresh,
-    });
-    if (!shouldRequest) return;
+  const loadSmartMetrics = useCallback(
+    async (forceRefresh = false) => {
+      const activeProfileId = activeProfile?.profile_id;
+      const shouldRequest = shouldRequestSmartMetrics({
+        isGuest,
+        activeProfileId,
+        loading: false,
+        lastRequestedProfileId: smartMetricsRequestedProfileRef.current,
+        hasLoadedForProfile: smartMetricsLoadedProfileRef.current === activeProfileId,
+        forceRefresh,
+      });
+      if (!shouldRequest) return;
 
-    smartMetricsRequestedProfileRef.current = activeProfileId;
-    const requestId = smartMetricsRequestRef.current + 1;
-    smartMetricsRequestRef.current = requestId;
-    const requestUrl = dashboardMetricsAPI.getUrl({ profile_id: activeProfileId });
-    setSmartMetricsLoading(true);
-    setSmartMetricsError(null);
-    setSmartMetricsRequestState('requested');
-    setSmartMetricsDebugLastStage('requested');
-    setSmartMetricsRequestUrl(requestUrl);
-    try {
-      const response = await dashboardMetricsAPI.get({ profile_id: activeProfileId });
-      console.log(`[smart-metrics-flow] response-received requestId=${requestId} profile=${activeProfileId} status=${response?.status ?? 'unknown'} payloadType=${typeof response?.data}`);
-      setSmartMetricsDebugLastStage('response-received');
-      const shouldApply = shouldApplySmartMetricsResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: smartMetricsRequestRef.current,
-        requestedProfileId: activeProfileId,
-        activeProfileId: activeProfile?.profile_id,
-      });
-      console.log(`[smart-metrics-flow] response-guard requestId=${requestId} latest=${smartMetricsRequestRef.current} requestedProfile=${activeProfileId} activeProfile=${activeProfile?.profile_id} shouldApply=${String(shouldApply)}`);
-      if (shouldApply) {
-        const payload = response.data || null;
-        console.log(`[smart-metrics-flow] payload-parsed requestId=${requestId} keys=${payload && typeof payload === 'object' ? Object.keys(payload).join(',') : 'none'}`);
-        setSmartMetrics(payload);
-        smartMetricsLoadedProfileRef.current = activeProfileId;
-        const hasPayload = Boolean(payload && typeof payload === 'object' && Object.keys(payload).length > 0);
-        setSmartMetricsDebugLastStage(hasPayload ? 'parsed-success' : 'parsed-empty');
-        console.log(`[smart-metrics-flow] terminal-set requestId=${requestId} state=${hasPayload ? 'settled-success' : 'settled-empty'}`);
-        setSmartMetricsDebugLastStage(hasPayload ? 'terminal-success' : 'terminal-empty');
-        setSmartMetricsRequestState(hasPayload ? 'settled-success' : 'settled-empty');
-      } else {
-        setSmartMetricsDebugLastStage('guard-blocked');
-        console.log(`[smart-metrics-flow] terminal-skipped requestId=${requestId} reason=guard-false`);
+      smartMetricsRequestedProfileRef.current = activeProfileId;
+      const requestId = smartMetricsRequestRef.current + 1;
+      smartMetricsRequestRef.current = requestId;
+      const requestUrl = dashboardMetricsAPI.getUrl({ profile_id: activeProfileId });
+      setSmartMetricsLoading(true);
+      setSmartMetricsError(null);
+      setSmartMetricsRequestState("requested");
+      setSmartMetricsDebugLastStage("requested");
+      setSmartMetricsRequestUrl(requestUrl);
+      try {
+        const response = await dashboardMetricsAPI.get({ profile_id: activeProfileId });
+        console.log(
+          `[smart-metrics-flow] response-received requestId=${requestId} profile=${activeProfileId} status=${response?.status ?? "unknown"} payloadType=${typeof response?.data}`,
+        );
+        setSmartMetricsDebugLastStage("response-received");
+        const shouldApply = shouldApplySmartMetricsResponse({
+          isMounted: isMounted.current,
+          requestId,
+          latestRequestId: smartMetricsRequestRef.current,
+          requestedProfileId: activeProfileId,
+          activeProfileId: activeProfile?.profile_id,
+        });
+        console.log(
+          `[smart-metrics-flow] response-guard requestId=${requestId} latest=${smartMetricsRequestRef.current} requestedProfile=${activeProfileId} activeProfile=${activeProfile?.profile_id} shouldApply=${String(shouldApply)}`,
+        );
+        if (shouldApply) {
+          const payload = response.data || null;
+          console.log(
+            `[smart-metrics-flow] payload-parsed requestId=${requestId} keys=${payload && typeof payload === "object" ? Object.keys(payload).join(",") : "none"}`,
+          );
+          setSmartMetrics(payload);
+          smartMetricsLoadedProfileRef.current = activeProfileId;
+          const hasPayload = Boolean(
+            payload && typeof payload === "object" && Object.keys(payload).length > 0,
+          );
+          setSmartMetricsDebugLastStage(hasPayload ? "parsed-success" : "parsed-empty");
+          console.log(
+            `[smart-metrics-flow] terminal-set requestId=${requestId} state=${hasPayload ? "settled-success" : "settled-empty"}`,
+          );
+          setSmartMetricsDebugLastStage(hasPayload ? "terminal-success" : "terminal-empty");
+          setSmartMetricsRequestState(hasPayload ? "settled-success" : "settled-empty");
+        } else {
+          setSmartMetricsDebugLastStage("guard-blocked");
+          console.log(
+            `[smart-metrics-flow] terminal-skipped requestId=${requestId} reason=guard-false`,
+          );
+        }
+      } catch (fetchError) {
+        console.log(
+          `[smart-metrics-flow] catch requestId=${requestId} profile=${activeProfileId} error=${fetchError?.message || fetchError}`,
+        );
+        setSmartMetricsDebugLastStage("catch-error");
+        const shouldApply = shouldApplySmartMetricsResponse({
+          isMounted: isMounted.current,
+          requestId,
+          latestRequestId: smartMetricsRequestRef.current,
+          requestedProfileId: activeProfileId,
+          activeProfileId: activeProfile?.profile_id,
+        });
+        console.log(
+          `[smart-metrics-flow] catch-guard requestId=${requestId} latest=${smartMetricsRequestRef.current} requestedProfile=${activeProfileId} activeProfile=${activeProfile?.profile_id} shouldApply=${String(shouldApply)}`,
+        );
+        if (shouldApply) {
+          console.error("Failed to load dashboard smart metrics:", fetchError);
+          setSmartMetrics(null);
+          setSmartMetricsError("Please try again in a moment.");
+          smartMetricsLoadedProfileRef.current = activeProfileId;
+          console.log(
+            `[smart-metrics-flow] terminal-set requestId=${requestId} state=settled-error`,
+          );
+          setSmartMetricsDebugLastStage("terminal-error");
+          setSmartMetricsRequestState("settled-error");
+        } else {
+          setSmartMetricsDebugLastStage("guard-blocked");
+          console.log(
+            `[smart-metrics-flow] terminal-skipped requestId=${requestId} reason=catch-guard-false`,
+          );
+        }
+      } finally {
+        const isLatestRequest = requestId === smartMetricsRequestRef.current;
+        console.log(
+          `[smart-metrics-flow] finally requestId=${requestId} latest=${smartMetricsRequestRef.current} isLatest=${String(isLatestRequest)} mounted=${String(isMounted.current)}`,
+        );
+        setSmartMetricsDebugLastStage((previous) =>
+          previous === "requested" || previous === "response-received" ? "finally" : previous,
+        );
+        if (isMounted.current && isLatestRequest) {
+          setSmartMetricsLoading(false);
+        }
       }
-    } catch (fetchError) {
-      console.log(`[smart-metrics-flow] catch requestId=${requestId} profile=${activeProfileId} error=${fetchError?.message || fetchError}`);
-      setSmartMetricsDebugLastStage('catch-error');
-      const shouldApply = shouldApplySmartMetricsResponse({
-        isMounted: isMounted.current,
-        requestId,
-        latestRequestId: smartMetricsRequestRef.current,
-        requestedProfileId: activeProfileId,
-        activeProfileId: activeProfile?.profile_id,
-      });
-      console.log(`[smart-metrics-flow] catch-guard requestId=${requestId} latest=${smartMetricsRequestRef.current} requestedProfile=${activeProfileId} activeProfile=${activeProfile?.profile_id} shouldApply=${String(shouldApply)}`);
-      if (shouldApply) {
-        console.error('Failed to load dashboard smart metrics:', fetchError);
-        setSmartMetrics(null);
-        setSmartMetricsError('Please try again in a moment.');
-        smartMetricsLoadedProfileRef.current = activeProfileId;
-        console.log(`[smart-metrics-flow] terminal-set requestId=${requestId} state=settled-error`);
-        setSmartMetricsDebugLastStage('terminal-error');
-        setSmartMetricsRequestState('settled-error');
-      } else {
-        setSmartMetricsDebugLastStage('guard-blocked');
-        console.log(`[smart-metrics-flow] terminal-skipped requestId=${requestId} reason=catch-guard-false`);
-      }
-    } finally {
-      const isLatestRequest = requestId === smartMetricsRequestRef.current;
-      console.log(`[smart-metrics-flow] finally requestId=${requestId} latest=${smartMetricsRequestRef.current} isLatest=${String(isLatestRequest)} mounted=${String(isMounted.current)}`);
-      setSmartMetricsDebugLastStage((previous) => (
-        previous === 'requested' || previous === 'response-received' ? 'finally' : previous
-      ));
-      if (isMounted.current && isLatestRequest) {
-        setSmartMetricsLoading(false);
-      }
-    }
-  }, [activeProfile?.profile_id, isGuest]);
+    },
+    [activeProfile?.profile_id, isGuest],
+  );
 
   const dismissWeeklyDigestBanner = useCallback(async () => {
     if (!activeProfile || isGuest) return;
@@ -492,7 +577,7 @@ export default function DashboardPage() {
       }
     } catch (error) {
       if (isMounted.current) {
-        console.error('Failed to dismiss weekly digest banner:', error);
+        console.error("Failed to dismiss weekly digest banner:", error);
       }
     }
   }, [activeProfile?.profile_id, isGuest, weeklyDigestBanner]);
@@ -552,50 +637,53 @@ export default function DashboardPage() {
   }, [loadTransactions, loadStats]);
 
   const categoryMap = useMemo(
-    () => Object.fromEntries(categories.map(c => [c.category_id, c])),
-    [categories]
+    () => Object.fromEntries(categories.map((c) => [c.category_id, c])),
+    [categories],
   );
 
   const paymentMethodMap = useMemo(
-    () => Object.fromEntries(paymentMethods.map(p => [p.payment_id, p])),
-    [paymentMethods]
+    () => Object.fromEntries(paymentMethods.map((p) => [p.payment_id, p])),
+    [paymentMethods],
   );
 
-  const chartData = useMemo(() => monthlyTrend.map((item) => ({
-    month: item.month,
-    amount: item.amount,
-  })), [monthlyTrend]);
-
-  const topPriorityGoal = useMemo(
-    () => selectTopPriorityGoal(savingsGoals),
-    [savingsGoals]
+  const chartData = useMemo(
+    () =>
+      monthlyTrend.map((item) => ({
+        month: item.month,
+        amount: item.amount,
+      })),
+    [monthlyTrend],
   );
+
+  const topPriorityGoal = useMemo(() => selectTopPriorityGoal(savingsGoals), [savingsGoals]);
   const topPriorityGoalDisplay = useMemo(
     () => (topPriorityGoal ? buildGoalDisplayModel(topPriorityGoal) : null),
-    [topPriorityGoal]
+    [topPriorityGoal],
   );
 
   const topSavingsGoalCardState = useMemo(
-    () => deriveTopSavingsGoalCardState({
-      loading: savingsGoalsLoading,
-      error: savingsGoalsError,
-      goalDisplay: topPriorityGoalDisplay,
-    }),
+    () =>
+      deriveTopSavingsGoalCardState({
+        loading: savingsGoalsLoading,
+        error: savingsGoalsError,
+        goalDisplay: topPriorityGoalDisplay,
+      }),
     [savingsGoalsError, savingsGoalsLoading, topPriorityGoalDisplay],
   );
 
   const renderSeverityIcon = (severity) => {
-    if (severity === 'warning') return <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />;
-    if (severity === 'positive') return <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />;
+    if (severity === "warning") return <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />;
+    if (severity === "positive") return <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />;
     return <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />;
   };
 
-  const severityClasses = (severity) => cn(
-    "p-3 rounded-xl text-sm",
-    severity === 'warning' && 'bg-expense-bg text-expense',
-    severity === 'positive' && 'bg-income-bg text-income',
-    severity === 'info' && 'bg-brand-primary/10 text-brand-primary'
-  );
+  const severityClasses = (severity) =>
+    cn(
+      "p-3 rounded-xl text-sm",
+      severity === "warning" && "bg-expense-bg text-expense",
+      severity === "positive" && "bg-income-bg text-income",
+      severity === "info" && "bg-brand-primary/10 text-brand-primary",
+    );
 
   const allBudgetItems = useMemo(() => {
     const items = [...(budgetProgress?.budgets || [])];
@@ -606,7 +694,9 @@ export default function DashboardPage() {
   const budgetSummary = useMemo(() => {
     const total = allBudgetItems.length;
     const over = allBudgetItems.filter((b) => b.is_over_budget).length;
-    const near = allBudgetItems.filter((b) => !b.is_over_budget && (b.percentage || 0) >= 80).length;
+    const near = allBudgetItems.filter(
+      (b) => !b.is_over_budget && (b.percentage || 0) >= 80,
+    ).length;
     const topRisk = [...allBudgetItems]
       .filter((b) => (b.percentage || 0) >= 80)
       .sort((a, b) => (b.percentage || 0) - (a.percentage || 0))
@@ -614,48 +704,54 @@ export default function DashboardPage() {
     return { total, over, near, topRisk };
   }, [allBudgetItems]);
 
-  const navigateToTransactions = useCallback((extraParams = {}) => {
-    const params = new URLSearchParams();
-    if (activeProfile?.profile_id) params.set('profile_id', activeProfile.profile_id);
-    const range = getDateRangeParams();
-    if (datePreset === 'custom' && range) {
-      params.set('start_date', range.start_date);
-      params.set('end_date', range.end_date);
-    } else if (datePreset) {
-      params.set('date_preset', datePreset);
-    }
-    Object.entries(extraParams).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-    navigate(`/transactions?${params.toString()}`);
-  }, [activeProfile?.profile_id, datePreset, getDateRangeParams, navigate]);
-
-  const getInsightDrilldownParams = useCallback((item) => {
-    if (!item || !item.type) return null;
-
-    if (item.type === 'trend') {
-      return {};
-    }
-
-    if (item.type === 'payment_concentration') {
-      const topPayment = paymentBreakdown?.[0];
-      if (topPayment?.payment_method_id) {
-        return { payment_method_id: topPayment.payment_method_id };
+  const navigateToTransactions = useCallback(
+    (extraParams = {}) => {
+      const params = new URLSearchParams();
+      if (activeProfile?.profile_id) params.set("profile_id", activeProfile.profile_id);
+      const range = getDateRangeParams();
+      if (datePreset === "custom" && range) {
+        params.set("start_date", range.start_date);
+        params.set("end_date", range.end_date);
+      } else if (datePreset) {
+        params.set("date_preset", datePreset);
       }
+      Object.entries(extraParams).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
+      navigate(`/transactions?${params.toString()}`);
+    },
+    [activeProfile?.profile_id, datePreset, getDateRangeParams, navigate],
+  );
+
+  const getInsightDrilldownParams = useCallback(
+    (item) => {
+      if (!item || !item.type) return null;
+
+      if (item.type === "trend") {
+        return {};
+      }
+
+      if (item.type === "payment_concentration") {
+        const topPayment = paymentBreakdown?.[0];
+        if (topPayment?.payment_method_id) {
+          return { payment_method_id: topPayment.payment_method_id };
+        }
+        return null;
+      }
+
+      if (["top_category", "concentration", "category_control"].includes(item.type)) {
+        const categoryName = item?.metric?.category;
+        if (!categoryName) return null;
+        const category = categories.find(
+          (c) => (c?.name || "").toLowerCase() === String(categoryName).toLowerCase(),
+        );
+        return category?.category_id ? { category_id: category.category_id } : null;
+      }
+
       return null;
-    }
-
-    if (['top_category', 'concentration', 'category_control'].includes(item.type)) {
-      const categoryName = item?.metric?.category;
-      if (!categoryName) return null;
-      const category = categories.find(
-        (c) => (c?.name || '').toLowerCase() === String(categoryName).toLowerCase()
-      );
-      return category?.category_id ? { category_id: category.category_id } : null;
-    }
-
-    return null;
-  }, [categories, paymentBreakdown]);
+    },
+    [categories, paymentBreakdown],
+  );
 
   if (loading) {
     return (
@@ -670,11 +766,10 @@ export default function DashboardPage() {
       <div className="space-y-6 animate-fade-in">
         <div className="text-center py-12">
           <Wallet className="w-16 h-16 text-brand-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold font-heading text-text-primary mb-2">
-            Guest Mode
-          </h2>
+          <h2 className="text-2xl font-bold font-heading text-text-primary mb-2">Guest Mode</h2>
           <p className="text-text-secondary max-w-md mx-auto">
-            You're using the app in guest mode. Sign in or create an account to sync your data across devices.
+            You're using the app in guest mode. Sign in or create an account to sync your data
+            across devices.
           </p>
         </div>
       </div>
@@ -692,27 +787,114 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">
-            Welcome back, {user?.name?.split(' ')[0]}
+            Welcome back, {user?.name?.split(" ")[0]}
           </h1>
           <p className="text-text-secondary mt-1">Here's your financial overview</p>
         </div>
 
         <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-          <select
-            value={activeProfile?.profile_id || ''}
-            onChange={(e) => {
-              const profile = profiles.find(p => p.profile_id === e.target.value);
-              setActiveProfile(profile);
-            }}
-            className="w-full sm:w-auto px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-            data-testid="profile-switch"
-          >
-            {profiles.map((profile) => (
-              <option key={profile.profile_id} value={profile.profile_id}>
-                {profile.name}
-              </option>
-            ))}
-          </select>
+          {/* Custom profile switcher */}
+          <div className="relative" ref={profileDropdownRef}>
+            <button
+              data-testid="profile-switch"
+              onClick={() => setProfileDropdownOpen((o) => !o)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-border-color rounded-xl text-sm hover:bg-surface-hover transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+            >
+              <span className="font-medium text-text-primary">
+                {activeProfile?.name || "Select profile"}
+              </span>
+              {/* accepted member pills for active shared profile */}
+              {activeProfile?.profile_type === "shared" &&
+                (activeProfile.members || [])
+                  .filter((m) => m.status === "accepted" && m.invited_email !== user?.email)
+                  .map((m) => {
+                    const initials = m.invited_email.slice(0, 2).toUpperCase();
+                    const colors = [
+                      "bg-violet-500",
+                      "bg-blue-500",
+                      "bg-emerald-500",
+                      "bg-amber-500",
+                      "bg-rose-500",
+                      "bg-teal-500",
+                    ];
+                    const color =
+                      colors[
+                        m.invited_email.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
+                          colors.length
+                      ];
+                    return (
+                      <span
+                        key={m.member_id}
+                        className={`${color} text-white rounded-full flex items-center justify-center text-[10px] font-bold shrink-0`}
+                        style={{ width: 20, height: 20 }}
+                        title={m.invited_email}
+                      >
+                        {initials}
+                      </span>
+                    );
+                  })}
+              <ChevronDown className="w-4 h-4 text-text-secondary shrink-0" />
+            </button>
+
+            {profileDropdownOpen && (
+              <>
+                {/* overlay to close on outside click */}
+                <div className="fixed inset-0 z-10" onClick={() => setProfileDropdownOpen(false)} />
+                <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border-color rounded-xl shadow-md min-w-[180px] overflow-hidden">
+                  {profiles.map((profile) => {
+                    const isActive = profile.profile_id === activeProfile?.profile_id;
+                    const acceptedMembers = (profile.members || []).filter(
+                      (m) => m.status === "accepted" && m.invited_email !== user?.email,
+                    );
+                    return (
+                      <button
+                        key={profile.profile_id}
+                        onClick={() => {
+                          const p = profiles.find((x) => x.profile_id === profile.profile_id);
+                          setActiveProfile(p);
+                          setProfileDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${
+                          isActive
+                            ? "bg-brand-primary/5 text-brand-primary font-medium"
+                            : "text-text-primary hover:bg-surface-hover"
+                        }`}
+                      >
+                        <span className="flex-1 truncate">{profile.name}</span>
+                        {profile.profile_type === "shared" &&
+                          acceptedMembers.map((m) => {
+                            const initials = m.invited_email.slice(0, 2).toUpperCase();
+                            const colors = [
+                              "bg-violet-500",
+                              "bg-blue-500",
+                              "bg-emerald-500",
+                              "bg-amber-500",
+                              "bg-rose-500",
+                              "bg-teal-500",
+                            ];
+                            const color =
+                              colors[
+                                m.invited_email.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
+                                  colors.length
+                              ];
+                            return (
+                              <span
+                                key={m.member_id}
+                                className={`${color} text-white rounded-full flex items-center justify-center text-[10px] font-bold shrink-0`}
+                                style={{ width: 20, height: 20 }}
+                                title={m.invited_email}
+                              >
+                                {initials}
+                              </span>
+                            );
+                          })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
           <select
             value={datePreset}
             onChange={(e) => setDatePreset(e.target.value)}
@@ -725,7 +907,7 @@ export default function DashboardPage() {
             <option value="1y">Last 1Y</option>
             <option value="custom">Custom</option>
           </select>
-          {datePreset === 'custom' && (
+          {datePreset === "custom" && (
             <>
               <input
                 type="date"
@@ -755,9 +937,7 @@ export default function DashboardPage() {
         </div>
       </div>
       {dateValidationError && (
-        <div className="text-xs text-expense -mt-2">
-          {dateValidationError}
-        </div>
+        <div className="text-xs text-expense -mt-2">{dateValidationError}</div>
       )}
 
       <WeeklyDigestBanner
@@ -783,14 +963,14 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold font-heading text-text-primary">Top Savings Goal</h2>
           <button
-            onClick={() => navigate('/goals')}
+            onClick={() => navigate("/goals")}
             className="text-sm text-brand-primary hover:underline"
           >
             View goals
           </button>
         </div>
 
-        {topSavingsGoalCardState.mode === 'loading' && (
+        {topSavingsGoalCardState.mode === "loading" && (
           <p
             className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
             data-testid="smart-dashboard-top-savings-goal-loading"
@@ -800,7 +980,7 @@ export default function DashboardPage() {
             Loading top savings goal...
           </p>
         )}
-        {topSavingsGoalCardState.mode === 'error' && (
+        {topSavingsGoalCardState.mode === "error" && (
           <p
             className="mt-1 text-sm text-expense"
             data-testid="smart-dashboard-top-savings-goal-error"
@@ -809,7 +989,7 @@ export default function DashboardPage() {
             {topSavingsGoalCardState.message}
           </p>
         )}
-        {topSavingsGoalCardState.mode === 'empty' && (
+        {topSavingsGoalCardState.mode === "empty" && (
           <p
             className="text-text-secondary text-sm"
             data-testid="smart-dashboard-top-savings-goal-empty"
@@ -817,21 +997,33 @@ export default function DashboardPage() {
             {topSavingsGoalCardState.message}
           </p>
         )}
-        {topSavingsGoalCardState.mode === 'success' && (
+        {topSavingsGoalCardState.mode === "success" && (
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-text-primary" data-testid="smart-dashboard-top-savings-goal-title">{topSavingsGoalCardState.goalDisplay.title}</p>
-                <p className="text-sm text-text-secondary">{topSavingsGoalCardState.goalDisplay.projectionText}</p>
+                <p
+                  className="font-semibold text-text-primary"
+                  data-testid="smart-dashboard-top-savings-goal-title"
+                >
+                  {topSavingsGoalCardState.goalDisplay.title}
+                </p>
+                <p className="text-sm text-text-secondary">
+                  {topSavingsGoalCardState.goalDisplay.projectionText}
+                </p>
               </div>
-              <span className="text-sm font-semibold text-text-secondary" data-testid="smart-dashboard-top-savings-goal-progress">
+              <span
+                className="text-sm font-semibold text-text-secondary"
+                data-testid="smart-dashboard-top-savings-goal-progress"
+              >
                 {topSavingsGoalCardState.goalDisplay.progressPercent.toFixed(1)}%
               </span>
             </div>
             <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden">
               <div
                 className="h-full bg-brand-primary rounded-full transition-all"
-                style={{ width: `${Math.min(topSavingsGoalCardState.goalDisplay.progressPercent, 100)}%` }}
+                style={{
+                  width: `${Math.min(topSavingsGoalCardState.goalDisplay.progressPercent, 100)}%`,
+                }}
               />
             </div>
             <div className="flex justify-between text-sm text-text-secondary">
@@ -848,7 +1040,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Net Balance</p>
-              {netBalanceCardState.mode === 'loading' && (
+              {netBalanceCardState.mode === "loading" && (
                 <p
                   className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                   data-testid="smart-dashboard-net-balance-loading"
@@ -858,7 +1050,7 @@ export default function DashboardPage() {
                   Loading net balance...
                 </p>
               )}
-              {netBalanceCardState.mode === 'error' && (
+              {netBalanceCardState.mode === "error" && (
                 <p
                   className="mt-1 text-sm text-expense"
                   data-testid="smart-dashboard-net-balance-error"
@@ -867,7 +1059,7 @@ export default function DashboardPage() {
                   {netBalanceCardState.message}
                 </p>
               )}
-              {netBalanceCardState.mode === 'empty' && (
+              {netBalanceCardState.mode === "empty" && (
                 <p
                   className="mt-1 text-sm text-text-secondary"
                   data-testid="smart-dashboard-net-balance-empty"
@@ -875,11 +1067,11 @@ export default function DashboardPage() {
                   {netBalanceCardState.message}
                 </p>
               )}
-              {netBalanceCardState.mode === 'success' && (
+              {netBalanceCardState.mode === "success" && (
                 <p
                   className={cn(
-                    'text-2xl font-bold font-heading mt-1',
-                    netBalanceCardState.netBalance >= 0 ? 'text-income' : 'text-expense',
+                    "text-2xl font-bold font-heading mt-1",
+                    netBalanceCardState.netBalance >= 0 ? "text-income" : "text-expense",
                   )}
                   data-testid="smart-dashboard-net-balance-value"
                 >
@@ -898,7 +1090,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Income</p>
-              {incomeCardState.mode === 'loading' && (
+              {incomeCardState.mode === "loading" && (
                 <p
                   className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                   data-testid="smart-dashboard-income-loading"
@@ -908,7 +1100,7 @@ export default function DashboardPage() {
                   Loading income...
                 </p>
               )}
-              {incomeCardState.mode === 'error' && (
+              {incomeCardState.mode === "error" && (
                 <p
                   className="mt-1 text-sm text-expense"
                   data-testid="smart-dashboard-income-error"
@@ -917,7 +1109,7 @@ export default function DashboardPage() {
                   {incomeCardState.message}
                 </p>
               )}
-              {incomeCardState.mode === 'empty' && (
+              {incomeCardState.mode === "empty" && (
                 <p
                   className="mt-1 text-sm text-text-secondary"
                   data-testid="smart-dashboard-income-empty"
@@ -925,7 +1117,7 @@ export default function DashboardPage() {
                   {incomeCardState.message}
                 </p>
               )}
-              {incomeCardState.mode === 'success' && (
+              {incomeCardState.mode === "success" && (
                 <p
                   className="text-2xl font-bold font-heading text-income mt-1"
                   data-testid="smart-dashboard-income-value"
@@ -945,7 +1137,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Total Spend</p>
-              {totalSpendCardState.mode === 'loading' && (
+              {totalSpendCardState.mode === "loading" && (
                 <p
                   className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                   data-testid="smart-dashboard-total-spend-loading"
@@ -955,7 +1147,7 @@ export default function DashboardPage() {
                   Loading total spend...
                 </p>
               )}
-              {totalSpendCardState.mode === 'error' && (
+              {totalSpendCardState.mode === "error" && (
                 <p
                   className="mt-1 text-sm text-expense"
                   data-testid="smart-dashboard-total-spend-error"
@@ -964,7 +1156,7 @@ export default function DashboardPage() {
                   {totalSpendCardState.message}
                 </p>
               )}
-              {totalSpendCardState.mode === 'empty' && (
+              {totalSpendCardState.mode === "empty" && (
                 <p
                   className="mt-1 text-sm text-text-secondary"
                   data-testid="smart-dashboard-total-spend-empty"
@@ -972,7 +1164,7 @@ export default function DashboardPage() {
                   {totalSpendCardState.message}
                 </p>
               )}
-              {totalSpendCardState.mode === 'success' && (
+              {totalSpendCardState.mode === "success" && (
                 <p
                   className="text-2xl font-bold font-heading text-expense mt-1"
                   data-testid="smart-dashboard-total-spend-value"
@@ -992,7 +1184,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Current Month Spend</p>
-              {currentMonthSpendCardState.mode === 'loading' && (
+              {currentMonthSpendCardState.mode === "loading" && (
                 <p
                   className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                   data-testid="smart-dashboard-current-month-spend-loading"
@@ -1002,7 +1194,7 @@ export default function DashboardPage() {
                   Loading current month spend...
                 </p>
               )}
-              {currentMonthSpendCardState.mode === 'error' && (
+              {currentMonthSpendCardState.mode === "error" && (
                 <p
                   className="mt-1 text-sm text-expense"
                   data-testid="smart-dashboard-current-month-spend-error"
@@ -1011,7 +1203,7 @@ export default function DashboardPage() {
                   {currentMonthSpendCardState.message}
                 </p>
               )}
-              {currentMonthSpendCardState.mode === 'empty' && (
+              {currentMonthSpendCardState.mode === "empty" && (
                 <p
                   className="mt-1 text-sm text-text-secondary"
                   data-testid="smart-dashboard-current-month-spend-empty"
@@ -1019,7 +1211,7 @@ export default function DashboardPage() {
                   {currentMonthSpendCardState.message}
                 </p>
               )}
-              {currentMonthSpendCardState.mode === 'success' && (
+              {currentMonthSpendCardState.mode === "success" && (
                 <p
                   className="text-2xl font-bold font-heading text-text-primary mt-1"
                   data-testid="smart-dashboard-current-month-spend-value"
@@ -1039,7 +1231,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">MoM Change</p>
-              {monthOverMonthChangeCardState.mode === 'loading' && (
+              {monthOverMonthChangeCardState.mode === "loading" && (
                 <p
                   className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                   data-testid="smart-dashboard-mom-change-loading"
@@ -1049,7 +1241,7 @@ export default function DashboardPage() {
                   Loading MoM change...
                 </p>
               )}
-              {monthOverMonthChangeCardState.mode === 'error' && (
+              {monthOverMonthChangeCardState.mode === "error" && (
                 <p
                   className="mt-1 text-sm text-expense"
                   data-testid="smart-dashboard-mom-change-error"
@@ -1058,7 +1250,7 @@ export default function DashboardPage() {
                   {monthOverMonthChangeCardState.message}
                 </p>
               )}
-              {monthOverMonthChangeCardState.mode === 'empty' && (
+              {monthOverMonthChangeCardState.mode === "empty" && (
                 <p
                   className="mt-1 text-sm text-text-secondary"
                   data-testid="smart-dashboard-mom-change-empty"
@@ -1066,11 +1258,13 @@ export default function DashboardPage() {
                   {monthOverMonthChangeCardState.message}
                 </p>
               )}
-              {monthOverMonthChangeCardState.mode === 'success' && (
+              {monthOverMonthChangeCardState.mode === "success" && (
                 <p
                   className={cn(
-                    'text-2xl font-bold font-heading mt-1',
-                    monthOverMonthChangeCardState.monthOverMonthChange <= 0 ? 'text-income' : 'text-expense'
+                    "text-2xl font-bold font-heading mt-1",
+                    monthOverMonthChangeCardState.monthOverMonthChange <= 0
+                      ? "text-income"
+                      : "text-expense",
                   )}
                   data-testid="smart-dashboard-mom-change-value"
                 >
@@ -1079,7 +1273,8 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="p-3 bg-surface-hover rounded-xl">
-              {monthOverMonthChangeCardState.mode === 'success' && monthOverMonthChangeCardState.monthOverMonthChange <= 0 ? (
+              {monthOverMonthChangeCardState.mode === "success" &&
+              monthOverMonthChangeCardState.monthOverMonthChange <= 0 ? (
                 <TrendingDownIcon className="w-6 h-6 text-income" />
               ) : (
                 <TrendingUpIcon className="w-6 h-6 text-expense" />
@@ -1104,41 +1299,41 @@ export default function DashboardPage() {
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#247BA0" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#247BA0" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#73716D', fontSize: 12 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#73716D', fontSize: 12 }}
-                  tickFormatter={(value) => `$${value}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: '#fff',
-                    border: '1px solid #E5E2DC',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  }}
-                  formatter={(value) => formatCurrency(value)}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#247BA0"
-                  strokeWidth={2}
-                  fill="url(#trendGradient)"
-                />
-              </AreaChart>
+                  <defs>
+                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#247BA0" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#247BA0" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#73716D", fontSize: 12 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#73716D", fontSize: 12 }}
+                    tickFormatter={(value) => `$${value}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#fff",
+                      border: "1px solid #E5E2DC",
+                      borderRadius: "12px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                    formatter={(value) => formatCurrency(value)}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#247BA0"
+                    strokeWidth={2}
+                    fill="url(#trendGradient)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-text-secondary text-sm">
@@ -1174,14 +1369,14 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
               <h2 className="text-lg font-bold font-heading text-text-primary">Top Savings Goal</h2>
               <button
-                onClick={() => navigate('/goals')}
+                onClick={() => navigate("/goals")}
                 className="text-sm text-brand-primary hover:underline text-left sm:text-right"
               >
                 View goals
               </button>
             </div>
 
-            {topSavingsGoalCardState.mode === 'loading' && (
+            {topSavingsGoalCardState.mode === "loading" && (
               <p
                 className="mt-1 inline-flex items-center gap-2 text-sm text-text-secondary"
                 data-testid="smart-dashboard-top-savings-goal-loading-secondary"
@@ -1191,7 +1386,7 @@ export default function DashboardPage() {
                 Loading top savings goal...
               </p>
             )}
-            {topSavingsGoalCardState.mode === 'error' && (
+            {topSavingsGoalCardState.mode === "error" && (
               <p
                 className="mt-1 text-sm text-expense"
                 data-testid="smart-dashboard-top-savings-goal-error-secondary"
@@ -1200,17 +1395,24 @@ export default function DashboardPage() {
                 {topSavingsGoalCardState.message}
               </p>
             )}
-            {topSavingsGoalCardState.mode === 'empty' && (
-              <p className="text-text-secondary text-sm" data-testid="smart-dashboard-top-savings-goal-empty-secondary">
+            {topSavingsGoalCardState.mode === "empty" && (
+              <p
+                className="text-text-secondary text-sm"
+                data-testid="smart-dashboard-top-savings-goal-empty-secondary"
+              >
                 {topSavingsGoalCardState.message}
               </p>
             )}
-            {topSavingsGoalCardState.mode === 'success' && (
+            {topSavingsGoalCardState.mode === "success" && (
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-text-primary break-words">{topSavingsGoalCardState.goalDisplay.title}</p>
-                    <p className="text-sm text-text-secondary">{topSavingsGoalCardState.goalDisplay.projectionText}</p>
+                    <p className="font-semibold text-text-primary break-words">
+                      {topSavingsGoalCardState.goalDisplay.title}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      {topSavingsGoalCardState.goalDisplay.projectionText}
+                    </p>
                   </div>
                   <span className="text-sm font-semibold text-text-secondary whitespace-nowrap">
                     {topSavingsGoalCardState.goalDisplay.progressPercent.toFixed(1)}%
@@ -1219,7 +1421,9 @@ export default function DashboardPage() {
                 <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden">
                   <div
                     className="h-full bg-brand-primary rounded-full transition-all"
-                    style={{ width: `${Math.min(topSavingsGoalCardState.goalDisplay.progressPercent, 100)}%` }}
+                    style={{
+                      width: `${Math.min(topSavingsGoalCardState.goalDisplay.progressPercent, 100)}%`,
+                    }}
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm text-text-secondary">
@@ -1239,9 +1443,9 @@ export default function DashboardPage() {
             {categoryBreakdown.length > 0 ? (
               <div className="space-y-3">
                 {categoryBreakdown.slice(0, 5).map((cat) => {
-                  const categoryObj = categories.find(c => c.category_id === cat.category_id);
+                  const categoryObj = categories.find((c) => c.category_id === cat.category_id);
                   const IconComponent = getCategoryIcon(categoryObj?.icon);
-                  const barColor = categoryObj?.color || '#247BA0';
+                  const barColor = categoryObj?.color || "#247BA0";
                   return (
                     <button
                       key={cat.category_id}
@@ -1250,23 +1454,24 @@ export default function DashboardPage() {
                       className="w-full flex items-center gap-3 text-left hover:bg-surface-hover rounded-xl p-1.5 transition-colors"
                       data-testid={`drilldown-category-${cat.category_id}`}
                     >
-                      <div
-                        className="p-2 rounded-lg"
-                        style={{ backgroundColor: barColor + '20' }}
-                      >
+                      <div className="p-2 rounded-lg" style={{ backgroundColor: barColor + "20" }}>
                         <IconComponent className="w-4 h-4" style={{ color: barColor }} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-text-primary">{cat.category_name}</span>
-                          <span className="text-sm text-text-secondary">{formatCurrency(cat.amount)}</span>
+                          <span className="text-sm font-medium text-text-primary">
+                            {cat.category_name}
+                          </span>
+                          <span className="text-sm text-text-secondary">
+                            {formatCurrency(cat.amount)}
+                          </span>
                         </div>
                         <div className="w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
                               width: `${cat.percentage}%`,
-                              backgroundColor: barColor
+                              backgroundColor: barColor,
                             }}
                           />
                         </div>
@@ -1292,12 +1497,16 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     key={item.payment_method_id}
-                    onClick={() => navigateToTransactions({ payment_method_id: item.payment_method_id })}
+                    onClick={() =>
+                      navigateToTransactions({ payment_method_id: item.payment_method_id })
+                    }
                     className="w-full flex items-center justify-between hover:bg-surface-hover rounded-xl p-1.5 transition-colors"
                     data-testid={`drilldown-payment-${item.payment_method_id}`}
                   >
                     <span className="text-sm text-text-primary">{item.payment_method_name}</span>
-                    <span className="text-sm font-medium text-text-secondary">{formatCurrency(item.amount)}</span>
+                    <span className="text-sm font-medium text-text-secondary">
+                      {formatCurrency(item.amount)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -1324,16 +1533,17 @@ export default function DashboardPage() {
                   key={idx}
                   className={cn(
                     severityClasses(insight.severity),
-                    getInsightDrilldownParams(insight) && 'cursor-pointer hover:shadow-sm transition-shadow'
+                    getInsightDrilldownParams(insight) &&
+                      "cursor-pointer hover:shadow-sm transition-shadow",
                   )}
                   onClick={() => {
                     const params = getInsightDrilldownParams(insight);
                     if (params) navigateToTransactions(params);
                   }}
-                  role={getInsightDrilldownParams(insight) ? 'button' : undefined}
+                  role={getInsightDrilldownParams(insight) ? "button" : undefined}
                   tabIndex={getInsightDrilldownParams(insight) ? 0 : undefined}
                   onKeyDown={(e) => {
-                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    if (e.key !== "Enter" && e.key !== " ") return;
                     const params = getInsightDrilldownParams(insight);
                     if (params) navigateToTransactions(params);
                   }}
@@ -1352,7 +1562,9 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-text-secondary text-sm">No insights yet. Add transactions to unlock insights.</p>
+            <p className="text-text-secondary text-sm">
+              No insights yet. Add transactions to unlock insights.
+            </p>
           )}
         </Card>
 
@@ -1362,7 +1574,10 @@ export default function DashboardPage() {
             <h2 className="text-lg font-bold font-heading text-text-primary">
               Recent Transactions
             </h2>
-            <a href="/transactions" className="text-sm text-brand-primary hover:underline flex items-center gap-1">
+            <a
+              href="/transactions"
+              className="text-sm text-brand-primary hover:underline flex items-center gap-1"
+            >
               View all <ChevronRight className="w-4 h-4" />
             </a>
           </div>
@@ -1383,26 +1598,31 @@ export default function DashboardPage() {
                   >
                     <div
                       className="p-2.5 rounded-xl"
-                      style={{ backgroundColor: (category?.color || '#6b7280') + '20' }}
+                      style={{ backgroundColor: (category?.color || "#6b7280") + "20" }}
                     >
-                      <CategoryIcon className="w-5 h-5" style={{ color: category?.color || '#6b7280' }} />
+                      <CategoryIcon
+                        className="w-5 h-5"
+                        style={{ color: category?.color || "#6b7280" }}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-text-primary truncate">{tx.description}</p>
                       <p className="text-sm text-text-secondary">
-                        {category?.name || 'Uncategorized'} • {formatShortDate(tx.date)}
+                        {category?.name || "Uncategorized"} • {formatShortDate(tx.date)}
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <p className={cn(
-                        "font-semibold",
-                        tx.type === 'income' && 'text-income',
-                        tx.type === 'expense' && 'text-expense',
-                        tx.type === 'transfer' && 'text-transfer'
-                      )}>
-                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                      <p
+                        className={cn(
+                          "font-semibold",
+                          tx.type === "income" && "text-income",
+                          tx.type === "expense" && "text-expense",
+                          tx.type === "transfer" && "text-transfer",
+                        )}
+                      >
+                        {tx.type === "income" ? "+" : tx.type === "expense" ? "-" : ""}
                         {formatCurrency(tx.amount)}
                       </p>
                       <div className="flex items-center justify-end gap-1 text-text-secondary">
@@ -1442,16 +1662,17 @@ export default function DashboardPage() {
                 key={idx}
                 className={cn(
                   severityClasses(item.severity),
-                  getInsightDrilldownParams(item) && 'cursor-pointer hover:shadow-sm transition-shadow'
+                  getInsightDrilldownParams(item) &&
+                    "cursor-pointer hover:shadow-sm transition-shadow",
                 )}
                 onClick={() => {
                   const params = getInsightDrilldownParams(item);
                   if (params) navigateToTransactions(params);
                 }}
-                role={getInsightDrilldownParams(item) ? 'button' : undefined}
+                role={getInsightDrilldownParams(item) ? "button" : undefined}
                 tabIndex={getInsightDrilldownParams(item) ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  if (e.key !== "Enter" && e.key !== " ") return;
                   const params = getInsightDrilldownParams(item);
                   if (params) navigateToTransactions(params);
                 }}
@@ -1506,11 +1727,17 @@ export default function DashboardPage() {
                     key={`${item.budget_id}-${idx}`}
                     className={cn(
                       "p-3 rounded-xl text-sm",
-                      item.is_over_budget ? "bg-expense-bg text-expense" : "bg-warning/10 text-warning"
+                      item.is_over_budget
+                        ? "bg-expense-bg text-expense"
+                        : "bg-warning/10 text-warning",
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <span>{item.category_id ? (categoryMap[item.category_id]?.name || 'Category') : 'Total Budget'}</span>
+                      <span>
+                        {item.category_id
+                          ? categoryMap[item.category_id]?.name || "Category"
+                          : "Total Budget"}
+                      </span>
                       <span className="font-semibold">{(item.percentage || 0).toFixed(1)}%</span>
                     </div>
                   </div>
@@ -1520,9 +1747,15 @@ export default function DashboardPage() {
 
             <div className="space-y-3">
               {allBudgetItems.map((item) => {
-                const label = item.category_id ? (categoryMap[item.category_id]?.name || 'Category') : 'Total Budget';
+                const label = item.category_id
+                  ? categoryMap[item.category_id]?.name || "Category"
+                  : "Total Budget";
                 const percent = Math.max(0, Math.min(100, item.percentage || 0));
-                const barClass = item.is_over_budget ? 'bg-expense' : percent >= 80 ? 'bg-warning' : 'bg-income';
+                const barClass = item.is_over_budget
+                  ? "bg-expense"
+                  : percent >= 80
+                    ? "bg-warning"
+                    : "bg-income";
                 return (
                   <div key={item.budget_id} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
@@ -1532,7 +1765,10 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden">
-                      <div className={cn("h-full rounded-full", barClass)} style={{ width: `${percent}%` }} />
+                      <div
+                        className={cn("h-full rounded-full", barClass)}
+                        style={{ width: `${percent}%` }}
+                      />
                     </div>
                   </div>
                 );

@@ -5,6 +5,7 @@ Purpose: define the least-disruptive standards for upcoming mobile parity work, 
 ## 1) Route and file placement conventions (`frontend/app/`)
 
 ### Current repo pattern
+
 - Expo Router with root layout and tab group:
   - `app/_layout.tsx` controls auth/deeplink gating.
   - `app/index.tsx` is login/entry.
@@ -12,6 +13,7 @@ Purpose: define the least-disruptive standards for upcoming mobile parity work, 
   - tab screens currently live as flat files in `app/(tabs)/`.
 
 ### Standard for parity work
+
 - **Route-level screens** for web-major surfaces should be placed in `app/(tabs)/` (or a new route group if needed), one file per route.
 - **Do not bury route-level parity features only inside modals/sub-tabs** when the web surface is a major top-level route.
 - For new multi-step surfaces, use route segments (e.g., `app/(tabs)/goals/index.tsx`, `app/(tabs)/goals/[id].tsx`) only when needed; otherwise prefer single-screen route file to minimize churn.
@@ -19,9 +21,11 @@ Purpose: define the least-disruptive standards for upcoming mobile parity work, 
 ## 2) Shared components placement (`frontend/src/components/`)
 
 ### Current repo pattern
+
 - Reusable UI primitives and common widgets live under `src/components` (e.g., `NeumorphicUI.tsx`, `ExpenseCard.tsx`, automation/onboarding modals).
 
 ### Standard for parity work
+
 - Put reusable presentation components in `src/components/`.
 - Keep **screen orchestration** (fetching, route params, navigation events, modals open/close state) in route screen files under `app/`.
 - If a component is used by only one screen and is tightly coupled to that screen’s local behavior, keep it local to that screen file until a second consumer exists.
@@ -29,10 +33,12 @@ Purpose: define the least-disruptive standards for upcoming mobile parity work, 
 ## 3) State/store usage expectations
 
 ### Current repo pattern
+
 - Global app/domain state is centralized in Zustand store (`src/store/appStore.ts`).
 - Screen-level UI state is held locally with React state in each screen file.
 
 ### Standard for parity work
+
 - Use `useAppStore` for shared entities and cross-screen state:
   - profiles, categories, payment methods, expenses, summary, CRUD actions.
 - Keep ephemeral UI state local:
@@ -42,10 +48,12 @@ Purpose: define the least-disruptive standards for upcoming mobile parity work, 
 ## 4) API/service usage expectations
 
 ### Current repo pattern
+
 - API access is centralized in `src/services/api.ts` (axios instance + grouped service helpers).
 - Auth context and store actions consume this layer.
 
 ### Standard for parity work
+
 - Use existing `api` instance or exported grouped APIs from `src/services/api.ts`.
 - Add new service helpers there when needed; do not call ad-hoc fetch/axios clients directly inside many screens.
 - Keep endpoint contracts unchanged for this phase; parity work should compose existing backend behavior.
@@ -66,10 +74,12 @@ Rule of thumb: if logic depends on router/store composition, keep it in screen; 
 ## 6) Modal / drawer / navigation conventions
 
 ### Current repo pattern
+
 - Modals are primarily controlled in-screen via local state and React Native `Modal`.
 - Tab navigation is primary app shell navigation.
 
 ### Standard for parity work
+
 - Keep modal state in the owning screen unless multiple screens need shared control.
 - Prefer dedicated route screens over large monolithic modal flows for major web parity surfaces.
 - Use modal for focused tasks (picker, confirmation, small create/edit interaction), not for replacing entire top-level routes.

@@ -17,20 +17,20 @@ Scope: web → mobile parity validation for implemented M1–M4 surfaces.
 
 ## Parity matrix
 
-| Surface | Status | Evidence note (repo-grounded) | Remaining gap | Severity / launch impact |
-|---|---|---|---|---|
-| Route/screen parity | **Complete** | Mobile tab routes include dashboard, transactions, stats, budgets, goals, more, add, accounts. | None identified in implemented scope. | Low |
-| Dashboard core cards + modules | **Complete** | Dashboard renders net balance, income/spend/month cards, top goal, smart metrics, smart insights, forecast, weekly digest, subscriptions, and AI chat modal entrypoint. | None functionally identified via code inspection. | Low |
-| Transactions parity | **Complete** | Dedicated `transactions` and `add` routes exist with store-backed expense CRUD flows. | Full runtime parity still needs device confirmation. | Medium |
-| Budgets parity | **Complete** | Standalone budgets route exists and budget contracts are integrated in app store/api usage. | Device runtime confirmation pending. | Medium |
-| Goals parity | **Complete** | Standalone goals route exists; dashboard top-goal integration present. | Device runtime confirmation pending. | Medium |
-| Smart Metrics parity | **Complete** | Dashboard smart metric cards consume `dashboard/metrics` payload and render guarded metric states. | None seen in static audit. | Low |
-| Analytics parity | **Complete** | Stats/analytics route exists with parity utilities and state-safe rendering logic. | Device runtime confirmation pending. | Medium |
-| Weekly Digest parity | **Complete** | Dashboard fetches `/weekly-digest/latest` and renders loading/error/empty/success via widget state logic. | None seen in static audit. | Low |
-| Subscription Detection parity | **Complete** | Dashboard fetches `/subscriptions/summary` and renders concise detection widget with guarded states. | None seen in static audit. | Low |
-| AI chat parity (text flow) | **Complete** | Modal chat supports empty/start, suggestions, send, pending typing, failure, retry, and per-profile message isolation. | None seen in static audit. | Low |
-| AI chat persistence + restart restore | **Complete** | `aiChatSessions` persisted in AsyncStorage (`ai_chat_sessions_v1`) + hydrated at auth bootstrap; pending degraded to retryable failed on restore. | None seen in static audit. | Low |
-| Voice-input task (exploration) | **Complete (exploration)** | Voice input exploration doc delivered with options, tradeoffs, and recommended path. | No implementation by design. | Low |
+| Surface                               | Status                     | Evidence note (repo-grounded)                                                                                                                                           | Remaining gap                                        | Severity / launch impact |
+| ------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------ |
+| Route/screen parity                   | **Complete**               | Mobile tab routes include dashboard, transactions, stats, budgets, goals, more, add, accounts.                                                                          | None identified in implemented scope.                | Low                      |
+| Dashboard core cards + modules        | **Complete**               | Dashboard renders net balance, income/spend/month cards, top goal, smart metrics, smart insights, forecast, weekly digest, subscriptions, and AI chat modal entrypoint. | None functionally identified via code inspection.    | Low                      |
+| Transactions parity                   | **Complete**               | Dedicated `transactions` and `add` routes exist with store-backed expense CRUD flows.                                                                                   | Full runtime parity still needs device confirmation. | Medium                   |
+| Budgets parity                        | **Complete**               | Standalone budgets route exists and budget contracts are integrated in app store/api usage.                                                                             | Device runtime confirmation pending.                 | Medium                   |
+| Goals parity                          | **Complete**               | Standalone goals route exists; dashboard top-goal integration present.                                                                                                  | Device runtime confirmation pending.                 | Medium                   |
+| Smart Metrics parity                  | **Complete**               | Dashboard smart metric cards consume `dashboard/metrics` payload and render guarded metric states.                                                                      | None seen in static audit.                           | Low                      |
+| Analytics parity                      | **Complete**               | Stats/analytics route exists with parity utilities and state-safe rendering logic.                                                                                      | Device runtime confirmation pending.                 | Medium                   |
+| Weekly Digest parity                  | **Complete**               | Dashboard fetches `/weekly-digest/latest` and renders loading/error/empty/success via widget state logic.                                                               | None seen in static audit.                           | Low                      |
+| Subscription Detection parity         | **Complete**               | Dashboard fetches `/subscriptions/summary` and renders concise detection widget with guarded states.                                                                    | None seen in static audit.                           | Low                      |
+| AI chat parity (text flow)            | **Complete**               | Modal chat supports empty/start, suggestions, send, pending typing, failure, retry, and per-profile message isolation.                                                  | None seen in static audit.                           | Low                      |
+| AI chat persistence + restart restore | **Complete**               | `aiChatSessions` persisted in AsyncStorage (`ai_chat_sessions_v1`) + hydrated at auth bootstrap; pending degraded to retryable failed on restore.                       | None seen in static audit.                           | Low                      |
+| Voice-input task (exploration)        | **Complete (exploration)** | Voice input exploration doc delivered with options, tradeoffs, and recommended path.                                                                                    | No implementation by design.                         | Low                      |
 
 ---
 
@@ -56,6 +56,7 @@ Result: **profile isolation and restart behavior appear parity-safe in code**.
 ## iOS-focused static validation findings
 
 ### What was inspected
+
 - Modal/page sheet usage in AI chat.
 - Safe-area patterns in dashboard/tab screens.
 - Scroll/touch behavior in chat modal.
@@ -63,10 +64,12 @@ Result: **profile isolation and restart behavior appear parity-safe in code**.
 - Touch target sizes for key chat actions.
 
 ### iOS risk summary
+
 - No blocking iOS-specific logic conflicts found in inspected code paths.
 - Small targeted usability risk found and fixed: key chat controls were under 44pt minimum tap target.
 
 ### Targeted fix applied
+
 - Increased AI chat close button and send button tap targets to 44x44.
 - Increased composer input minimum height to 44 for iOS-friendly touch ergonomics.
 
@@ -76,12 +79,12 @@ Residual risk: **runtime-only behaviors still require real iOS simulator/device 
 
 ## Remaining gaps
 
-1. **No real iOS simulator/device run in this environment**  
-   - Gap: runtime verification not executable here.  
+1. **No real iOS simulator/device run in this environment**
+   - Gap: runtime verification not executable here.
    - Severity: **Medium** (launch confidence risk, not known functional defect).
 
-2. **No end-to-end automated UI parity suite**  
-   - Gap: closeout relies on static audit + focused utility tests.  
+2. **No end-to-end automated UI parity suite**
+   - Gap: closeout relies on static audit + focused utility tests.
    - Severity: **Low/Medium** depending on release tolerance.
 
 ---
@@ -91,6 +94,7 @@ Residual risk: **runtime-only behaviors still require real iOS simulator/device 
 **Recommendation: Launch-ready from parity implementation standpoint, conditional on final iOS device pass.**
 
 Required before final release sign-off:
+
 - Execute iOS checklist (below) on at least one iPhone + one iOS simulator profile set.
 - Confirm AI chat modal keyboard, scroll, retry, and restart restore behavior in runtime.
 

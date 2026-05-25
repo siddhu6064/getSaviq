@@ -1,18 +1,204 @@
 import asyncio
+import logging
+import urllib.parse
+import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from models import Expense, ExpenseCreate, ExpenseUpdate, MessageResponse
 
 router = APIRouter(tags=["expenses"])
+logger = logging.getLogger(__name__)
+
+MAX_ATTACHMENTS = 3
+MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/heic", "application/pdf"}
 
 STATS_PROJECTION = {"_id": 0, "amount": 1, "type": 1, "category_id": 1}
+
+
+# ===================== BACKGROUND ALERT TASKS =====================
+
+async def _budget_alert(user_id: str, profile_id: str, category_id: str, amount: float) -> None:
+    """Fire budget alert push if category >= 80% used this month. Once per category per day."""
+    try:
+        from services.push_service import send_push
+
+        budget = await db.budgets.find_one(
+            {"user_id": user_id, "profile_id": profile_id, "category_id": category_id},
+            {"_id": 0, "amount": 1},
+        )
+        if not budget or not budget.get("amount"):
+            return
+
+        budget_limit = float(budget["amount"])
+        now = datetime.now(timezone.utc)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        pipeline = [
+            {
+                "$match": {
+                    "user_id": user_id,
+                    "profile_id": profile_id,
+                    "category_id": category_id,
+                    "type": "expense",
+                    "date": {"$gte": month_start},
+                }
+            },
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
+        ]
+        result = await db.expenses.aggregate(pipeline).to_list(1)
+        spent = result[0]["total"] if result else 0.0
+
+        pct = int((spent / budget_limit) * 100)
+        if pct < 80:
+            return
+
+        # Deduplicate: one alert per category per day
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        existing = await db.notifications.find_one(
+            {
+                "user_id": user_id,
+                "type": "budget_alert",
+                "created_at": {"$gte": day_start},
+                "body": {"$regex": category_id},
+            }
+        )
+        if existing:
+            return
+
+        # Get category name
+        cat = await db.categories.find_one({"category_id": category_id}, {"_id": 0, "name": 1})
+        cat_name = cat["name"] if cat else category_id
+
+        await send_push(
+            user_id=user_id,
+            title="Budget Alert",
+            body=f"{cat_name} is at {pct}% of your monthly limit",
+            data={"link": "/budgets", "category_id": category_id},
+            notif_type="budget_alert",
+            link="/budgets",
+        )
+    except Exception:
+        logger.exception("_budget_alert failed user_id=%s category_id=%s", user_id, category_id)
+
+
+async def _large_transaction_alert(
+    user_id: str, profile_id: str, amount: float, description: str
+) -> None:
+    """Fire large transaction push if amount > 3x 30-day average daily spend."""
+    try:
+        from services.push_service import send_push
+
+        now = datetime.now(timezone.utc)
+        thirty_days_ago = now - timedelta(days=30)
+
+        pipeline = [
+            {
+                "$match": {
+                    "user_id": user_id,
+                    "profile_id": profile_id,
+                    "type": "expense",
+                    "date": {"$gte": thirty_days_ago},
+                }
+            },
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
+        ]
+        result = await db.expenses.aggregate(pipeline).to_list(1)
+        total_30d = result[0]["total"] if result else 0.0
+        avg_daily = total_30d / 30
+
+        if avg_daily <= 0 or amount <= avg_daily * 3:
+            return
+
+        label = description or "A transaction"
+        await send_push(
+            user_id=user_id,
+            title="Large Transaction",
+            body=f"{label} of ${amount:,.2f} is unusually large",
+            data={"link": "/transactions"},
+            notif_type="large_transaction",
+            link="/transactions",
+        )
+    except Exception:
+        logger.exception("_large_transaction_alert failed user_id=%s", user_id)
+
+
+async def _match_expense_to_bills(
+    user_id: str,
+    expense_id: str,
+    description: str,
+    merchant: str,
+    amount: float,
+) -> None:
+    """
+    Fire-and-forget: match a new expense against active bills by merchant/description.
+    On match, push expense_id into bill.linked_expense_ids.
+    If amount differs >10% from expected, fire a bill_variance push.
+    """
+    try:
+        from services.push_service import send_push
+
+        needle_desc = (description or "").lower().strip()
+        needle_merch = (merchant or "").lower().strip()
+        if not needle_desc and not needle_merch:
+            return
+
+        bills = await db.bills.find(
+            {"user_id": user_id, "status": "active", "merchant": {"$exists": True, "$ne": ""}},
+            {"_id": 0},
+        ).to_list(500)
+
+        for bill in bills:
+            bill_merchant = (bill.get("merchant") or "").lower().strip()
+            if not bill_merchant:
+                continue
+
+            match = bill_merchant in needle_merch or bill_merchant in needle_desc
+            if not match:
+                continue
+
+            bill_id = bill["bill_id"]
+
+            # Link the expense
+            await db.bills.update_one(
+                {"bill_id": bill_id, "user_id": user_id},
+                {"$addToSet": {"linked_expense_ids": expense_id}},
+            )
+            logger.info(
+                "_match_expense_to_bills linked expense_id=%s bill_id=%s",
+                expense_id,
+                bill_id,
+            )
+
+            # Variance alert if amount differs >10%
+            expected = bill.get("expected_amount", 0)
+            if expected and expected > 0:
+                variance_pct = abs(amount - expected) / expected
+                if variance_pct > 0.10:
+                    bill_name = bill.get("name", "Bill")
+                    await send_push(
+                        user_id=user_id,
+                        title="Bill Amount Change",
+                        body=(
+                            f"{bill_name} charged ${amount:,.2f} "
+                            f"(expected ${expected:,.2f}, "
+                            f"{variance_pct * 100:.0f}% variance)"
+                        ),
+                        data={"link": "/bills", "bill_id": bill_id},
+                        notif_type="bill_variance",
+                        link="/bills",
+                    )
+    except Exception:
+        logger.exception(
+            "_match_expense_to_bills failed user_id=%s expense_id=%s", user_id, expense_id
+        )
 
 
 async def _ensure_owned(
@@ -43,10 +229,12 @@ async def get_expenses(
     current_user: dict = Depends(get_current_user),
 ):
     """Get expenses with optional filters and pagination"""
-    query = {"user_id": current_user["user_id"]}
-
     if profile_id:
-        query["profile_id"] = profile_id
+        # Verify caller has access (owner or accepted member)
+        await get_accessible_profile(profile_id, current_user)
+        query: dict = {"profile_id": profile_id}
+    else:
+        query = {"user_id": current_user["user_id"]}
 
     if start_date:
         try:
@@ -110,13 +298,7 @@ async def get_expense(expense_id: str, current_user: dict = Depends(get_current_
 @router.post("/expenses", response_model=Expense)
 async def create_expense(data: ExpenseCreate, current_user: dict = Depends(get_current_user)):
     """Create a new expense"""
-    await _ensure_owned(
-        db.profiles,
-        "profile_id",
-        data.profile_id,
-        current_user["user_id"],
-        "Profile not found",
-    )
+    await get_accessible_profile(data.profile_id, current_user)
     if data.category_id:
         await _ensure_owned(
             db.categories,
@@ -162,6 +344,36 @@ async def create_expense(data: ExpenseCreate, current_user: dict = Depends(get_c
         recurring_end_date=data.recurring_end_date,
     )
     await db.expenses.insert_one(expense.model_dump())
+
+    # Fire-and-forget background alerts (expense type only)
+    if expense.type == "expense":
+        if expense.category_id:
+            asyncio.create_task(
+                _budget_alert(
+                    expense.user_id,
+                    expense.profile_id,
+                    expense.category_id,
+                    expense.amount,
+                )
+            )
+        asyncio.create_task(
+            _large_transaction_alert(
+                expense.user_id,
+                expense.profile_id,
+                expense.amount,
+                expense.description or "",
+            )
+        )
+        asyncio.create_task(
+            _match_expense_to_bills(
+                expense.user_id,
+                expense.expense_id,
+                expense.description or "",
+                expense.merchant or "",
+                expense.amount,
+            )
+        )
+
     return expense.model_dump()
 
 
@@ -185,13 +397,7 @@ async def update_expense(
 
     merged_expense = {**existing_expense, **update_data}
 
-    await _ensure_owned(
-        db.profiles,
-        "profile_id",
-        merged_expense["profile_id"],
-        current_user["user_id"],
-        "Profile not found",
-    )
+    await get_accessible_profile(merged_expense["profile_id"], current_user)
     if merged_expense.get("category_id"):
         await _ensure_owned(
             db.categories,
@@ -273,6 +479,136 @@ async def delete_expense(expense_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=404, detail="Expense not found")
 
     return {"message": "Expense deleted"}
+
+
+# ===================== ATTACHMENT ENDPOINTS =====================
+
+@router.post("/expenses/{expense_id}/attachments", response_model=Expense)
+async def upload_attachment(
+    expense_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Upload a file attachment to an expense.
+    Allowed: image/jpeg, image/png, image/heic, application/pdf — max 10 MB — max 3 per expense.
+    """
+    # Auth + fetch
+    expense_doc = await db.expenses.find_one(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
+    )
+    if not expense_doc:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    # Attachment limit
+    existing = expense_doc.get("attachments") or []
+    if len(existing) >= MAX_ATTACHMENTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {MAX_ATTACHMENTS} attachments per expense",
+        )
+
+    # Content-type validation
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{content_type}' not allowed. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
+        )
+
+    # Read + size validation
+    file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_BYTES:
+        raise HTTPException(status_code=400, detail="File exceeds 10 MB limit")
+
+    # Upload to R2
+    from services.r2_service import upload_file as r2_upload
+
+    safe_original = (file.filename or "file").replace("/", "_").replace("\\", "_")
+    filename = f"{uuid.uuid4().hex}_{safe_original}"
+    folder = f"expenses/{expense_id}"
+
+    try:
+        public_url = await r2_upload(file_bytes, filename, content_type, folder)
+    except Exception as exc:
+        logger.exception("R2 upload failed expense_id=%s", expense_id)
+        raise HTTPException(status_code=502, detail="File upload failed") from exc
+
+    # Append URL to expense
+    updated = await db.expenses.find_one_and_update(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]},
+        {
+            "$push": {"attachments": public_url},
+            "$set": {"updated_at": datetime.now(timezone.utc)},
+        },
+        projection={"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    logger.info("attachment uploaded expense_id=%s url=%s", expense_id, public_url)
+    return updated
+
+
+@router.delete("/expenses/{expense_id}/attachments/{filename:path}", response_model=MessageResponse)
+async def delete_attachment(
+    expense_id: str,
+    filename: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Remove an attachment from an expense and delete it from R2.
+    ``filename`` is the URL-encoded object key relative to the bucket (e.g.
+    ``expenses/exp_xxx/uuid_original.jpg``).
+    """
+    # URL-decode the path param (FastAPI already decodes once; handle double-encoding)
+    key = urllib.parse.unquote(filename)
+
+    # Auth + fetch
+    expense_doc = await db.expenses.find_one(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
+    )
+    if not expense_doc:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    # Find the matching URL in the attachments array
+    from services.r2_service import delete_file as r2_delete, key_from_url
+
+    attachments: list = expense_doc.get("attachments") or []
+    target_url: str | None = None
+
+    for url in attachments:
+        url_key = key_from_url(url)
+        if url_key == key or url == key:
+            target_url = url
+            break
+
+    if not target_url:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    # Delete from R2 (best-effort — don't fail the request if R2 errors)
+    try:
+        # key is already the full object key (folder/filename)
+        # r2_delete expects (filename, folder) where key = folder/filename
+        # Pass key directly: folder="" and filename=key won't work cleanly.
+        # Instead call the internal delete directly.
+        import asyncio
+        from functools import partial
+        from services.r2_service import _delete_sync
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, partial(_delete_sync, key))
+        logger.info("attachment deleted expense_id=%s key=%s", expense_id, key)
+    except Exception:
+        logger.exception("R2 delete failed for key=%s — removing from DB anyway", key)
+
+    # Remove URL from MongoDB
+    await db.expenses.update_one(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]},
+        {
+            "$pull": {"attachments": target_url},
+            "$set": {"updated_at": datetime.now(timezone.utc)},
+        },
+    )
+
+    return {"message": "Attachment removed"}
 
 
 # ===================== STATS ENDPOINTS =====================

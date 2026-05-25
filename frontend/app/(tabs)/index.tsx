@@ -1,28 +1,33 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { NeumorphicCard, lightTheme } from '../../src/components/NeumorphicUI';
-import { useAppStore } from '../../src/store/appStore';
-import api from '../../src/services/api';
-import { buildNetBalanceSummary } from '../../src/utils/netBalance';
-import { NetBalanceCard } from '../../src/components/dashboard/NetBalanceCard';
-import { MetricValueCard } from '../../src/components/dashboard/MetricValueCard';
-import { MoMChangeCard } from '../../src/components/dashboard/MoMChangeCard';
-import { buildMonthSpendSummary } from '../../src/utils/monthSpend';
-import { getGoalProjectionText, SavingsGoal, selectTopPriorityGoal } from '../../src/utils/goals';
-import { TopSavingsGoalCard } from '../../src/components/dashboard/TopSavingsGoalCard';
-import { mapDashboardSmartMetricCards } from '../../src/utils/smartMetricsCards';
-import { deriveSmartMetricsViewState } from '../../src/utils/smartMetricsSectionState';
-import { SmartMetricInsightCard } from '../../src/components/dashboard/SmartMetricInsightCard';
-import { SmartInsightsWidget } from '../../src/components/dashboard/SmartInsightsWidget';
-import { ForecastWidget } from '../../src/components/dashboard/ForecastWidget';
-import { WeeklyDigestWidget } from '../../src/components/dashboard/WeeklyDigestWidget';
-import { SubscriptionDetectionWidget } from '../../src/components/dashboard/SubscriptionDetectionWidget';
-import { AIInsightsChatModal } from '../../src/components/dashboard/AIInsightsChatModal';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { isCurrentDashboardRequest, shouldResetDashboardIntelligence } from '../../src/utils/dashboardScreenState';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { NeumorphicCard, lightTheme } from "../../src/components/NeumorphicUI";
+import { useAppStore } from "../../src/store/appStore";
+import api from "../../src/services/api";
+import { buildNetBalanceSummary } from "../../src/utils/netBalance";
+import { NetBalanceCard } from "../../src/components/dashboard/NetBalanceCard";
+import { MetricValueCard } from "../../src/components/dashboard/MetricValueCard";
+import { MoMChangeCard } from "../../src/components/dashboard/MoMChangeCard";
+import { buildMonthSpendSummary } from "../../src/utils/monthSpend";
+import { getGoalProjectionText, SavingsGoal, selectTopPriorityGoal } from "../../src/utils/goals";
+import { TopSavingsGoalCard } from "../../src/components/dashboard/TopSavingsGoalCard";
+import { mapDashboardSmartMetricCards } from "../../src/utils/smartMetricsCards";
+import { deriveSmartMetricsViewState } from "../../src/utils/smartMetricsSectionState";
+import { SmartMetricInsightCard } from "../../src/components/dashboard/SmartMetricInsightCard";
+import { SmartInsightsWidget } from "../../src/components/dashboard/SmartInsightsWidget";
+import { ForecastWidget } from "../../src/components/dashboard/ForecastWidget";
+import { WeeklyDigestWidget } from "../../src/components/dashboard/WeeklyDigestWidget";
+import { SubscriptionDetectionWidget } from "../../src/components/dashboard/SubscriptionDetectionWidget";
+import { AIInsightsChatModal } from "../../src/components/dashboard/AIInsightsChatModal";
+import { NetWorthSummaryCard } from "../../src/components/dashboard/NetWorthSummaryCard";
+import { UpcomingBillsCard } from "../../src/components/dashboard/UpcomingBillsCard";
+import { useTheme } from "../../src/contexts/ThemeContext";
+import {
+  isCurrentDashboardRequest,
+  shouldResetDashboardIntelligence,
+} from "../../src/utils/dashboardScreenState";
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
@@ -38,19 +43,19 @@ export default function DashboardScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
-  const [goalsError, setGoalsError] = useState('');
+  const [goalsError, setGoalsError] = useState("");
   const [smartMetricsPayload, setSmartMetricsPayload] = useState<any>(null);
-  const [smartMetricsError, setSmartMetricsError] = useState('');
+  const [smartMetricsError, setSmartMetricsError] = useState("");
   const [smartInsights, setSmartInsights] = useState<any[]>([]);
-  const [smartInsightsError, setSmartInsightsError] = useState('');
+  const [smartInsightsError, setSmartInsightsError] = useState("");
   const [forecastPayload, setForecastPayload] = useState<any>(null);
-  const [forecastError, setForecastError] = useState('');
+  const [forecastError, setForecastError] = useState("");
   const [weeklyDigestPayload, setWeeklyDigestPayload] = useState<any>(null);
-  const [weeklyDigestError, setWeeklyDigestError] = useState('');
+  const [weeklyDigestError, setWeeklyDigestError] = useState("");
   const [subscriptionsPayload, setSubscriptionsPayload] = useState<any>(null);
-  const [subscriptionsError, setSubscriptionsError] = useState('');
+  const [subscriptionsError, setSubscriptionsError] = useState("");
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const dashboardRequestIdRef = useRef(0);
   const previousProfileIdRef = useRef<string | null>(null);
@@ -58,19 +63,19 @@ export default function DashboardScreen() {
   useEffect(() => {
     const currentProfileId = activeProfile?.profile_id ?? null;
     if (shouldResetDashboardIntelligence(previousProfileIdRef.current, currentProfileId)) {
-      setError('');
+      setError("");
       setGoals([]);
-      setGoalsError('');
+      setGoalsError("");
       setSmartMetricsPayload(null);
-      setSmartMetricsError('');
+      setSmartMetricsError("");
       setSmartInsights([]);
-      setSmartInsightsError('');
+      setSmartInsightsError("");
       setForecastPayload(null);
-      setForecastError('');
+      setForecastError("");
       setWeeklyDigestPayload(null);
-      setWeeklyDigestError('');
+      setWeeklyDigestError("");
       setSubscriptionsPayload(null);
-      setSubscriptionsError('');
+      setSubscriptionsError("");
       setIsAIChatOpen(false);
       previousProfileIdRef.current = currentProfileId;
     }
@@ -81,19 +86,19 @@ export default function DashboardScreen() {
       const requestId = ++dashboardRequestIdRef.current;
 
       if (!activeProfile?.profile_id) {
-        setError('');
+        setError("");
         setGoals([]);
-        setGoalsError('');
+        setGoalsError("");
         setSmartMetricsPayload(null);
-        setSmartMetricsError('');
+        setSmartMetricsError("");
         setSmartInsights([]);
-        setSmartInsightsError('');
+        setSmartInsightsError("");
         setForecastPayload(null);
-        setForecastError('');
+        setForecastError("");
         setWeeklyDigestPayload(null);
-        setWeeklyDigestError('');
+        setWeeklyDigestError("");
         setSubscriptionsPayload(null);
-        setSubscriptionsError('');
+        setSubscriptionsError("");
         setIsLoading(false);
         setIsRefreshing(false);
         return;
@@ -110,116 +115,118 @@ export default function DashboardScreen() {
           setWeeklyDigestPayload(null);
           setSubscriptionsPayload(null);
         }
-        setError('');
-        setGoalsError('');
-        setSmartMetricsError('');
-        setSmartInsightsError('');
-        setForecastError('');
-        setWeeklyDigestError('');
-        setSubscriptionsError('');
+        setError("");
+        setGoalsError("");
+        setSmartMetricsError("");
+        setSmartInsightsError("");
+        setForecastError("");
+        setWeeklyDigestError("");
+        setSubscriptionsError("");
 
         await Promise.all([
           fetchExpenses(activeProfile.profile_id),
           fetchPaymentMethods(),
-          fetchSummary(activeProfile.profile_id, 'month'),
+          fetchSummary(activeProfile.profile_id, "month"),
         ]);
 
         try {
-          const goalsResponse = await api.get('/savings-goals', {
+          const goalsResponse = await api.get("/savings-goals", {
             params: { profile_id: activeProfile.profile_id },
           });
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setGoals(Array.isArray(goalsResponse.data) ? goalsResponse.data : []);
-            setGoalsError('');
+            setGoalsError("");
           }
         } catch {
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setGoals([]);
-            setGoalsError('Could not load top goal right now.');
+            setGoalsError("Could not load top goal right now.");
           }
         }
 
         try {
-          const smartMetricsResponse = await api.get('/dashboard/metrics', {
+          const smartMetricsResponse = await api.get("/dashboard/metrics", {
             params: { profile_id: activeProfile.profile_id },
           });
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             const payload = smartMetricsResponse?.data;
-            setSmartMetricsPayload(payload && typeof payload === 'object' ? payload : null);
-            setSmartMetricsError('');
+            setSmartMetricsPayload(payload && typeof payload === "object" ? payload : null);
+            setSmartMetricsError("");
           }
         } catch {
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setSmartMetricsPayload(null);
-            setSmartMetricsError('Could not load smart metrics right now.');
+            setSmartMetricsError("Could not load smart metrics right now.");
           }
         }
 
         try {
-          const insightsResponse = await api.get('/insights/overview', {
+          const insightsResponse = await api.get("/insights/overview", {
             params: { profile_id: activeProfile.profile_id },
           });
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            setSmartInsights(Array.isArray(insightsResponse?.data?.insights) ? insightsResponse.data.insights : []);
-            setSmartInsightsError('');
+            setSmartInsights(
+              Array.isArray(insightsResponse?.data?.insights) ? insightsResponse.data.insights : [],
+            );
+            setSmartInsightsError("");
           }
         } catch {
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setSmartInsights([]);
-            setSmartInsightsError('Could not load smart insights right now.');
+            setSmartInsightsError("Could not load smart insights right now.");
           }
         }
 
         try {
-          const forecastResponse = await api.get('/forecast', {
+          const forecastResponse = await api.get("/forecast", {
             params: { profile_id: activeProfile.profile_id, recent_days: 30 },
           });
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             const payload = forecastResponse?.data;
-            setForecastPayload(payload && typeof payload === 'object' ? payload : null);
-            setForecastError('');
+            setForecastPayload(payload && typeof payload === "object" ? payload : null);
+            setForecastError("");
           }
         } catch {
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setForecastPayload(null);
-            setForecastError('Could not load forecast right now.');
+            setForecastError("Could not load forecast right now.");
           }
         }
 
         try {
-          const digestResponse = await api.get('/weekly-digest/latest', {
+          const digestResponse = await api.get("/weekly-digest/latest", {
             params: { profile_id: activeProfile.profile_id },
           });
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             const payload = digestResponse?.data?.digest;
-            setWeeklyDigestPayload(payload && typeof payload === 'object' ? payload : null);
-            setWeeklyDigestError('');
+            setWeeklyDigestPayload(payload && typeof payload === "object" ? payload : null);
+            setWeeklyDigestError("");
           }
         } catch {
           if (requestId === dashboardRequestIdRef.current) {
             setWeeklyDigestPayload(null);
-            setWeeklyDigestError('Could not load weekly digest right now.');
+            setWeeklyDigestError("Could not load weekly digest right now.");
           }
         }
 
         try {
-          const subscriptionsResponse = await api.get('/subscriptions/summary', {
+          const subscriptionsResponse = await api.get("/subscriptions/summary", {
             params: { profile_id: activeProfile.profile_id },
           });
           if (requestId === dashboardRequestIdRef.current) {
             const payload = subscriptionsResponse?.data;
-            setSubscriptionsPayload(payload && typeof payload === 'object' ? payload : null);
-            setSubscriptionsError('');
+            setSubscriptionsPayload(payload && typeof payload === "object" ? payload : null);
+            setSubscriptionsError("");
           }
         } catch {
           if (requestId === dashboardRequestIdRef.current) {
             setSubscriptionsPayload(null);
-            setSubscriptionsError('Could not load subscription detection right now.');
+            setSubscriptionsError("Could not load subscription detection right now.");
           }
         }
       } catch (e) {
         if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-          setError('Could not load dashboard cards right now.');
+          setError("Could not load dashboard cards right now.");
           setGoals([]);
           setSmartMetricsPayload(null);
           setSmartInsights([]);
@@ -234,7 +241,7 @@ export default function DashboardScreen() {
         }
       }
     },
-    [activeProfile?.profile_id, fetchExpenses, fetchPaymentMethods, fetchSummary]
+    [activeProfile?.profile_id, fetchExpenses, fetchPaymentMethods, fetchSummary],
   );
 
   useEffect(() => {
@@ -243,7 +250,7 @@ export default function DashboardScreen() {
 
   const netBalance = useMemo(
     () => buildNetBalanceSummary(paymentMethods, expenses),
-    [paymentMethods, expenses]
+    [paymentMethods, expenses],
   );
 
   const hasNetBalanceData = netBalance.accountData.length > 0 || expenses.length > 0;
@@ -255,30 +262,43 @@ export default function DashboardScreen() {
 
   const topGoal = useMemo(() => selectTopPriorityGoal(goals), [goals]);
   const topGoalProjection = useMemo(() => getGoalProjectionText(topGoal), [topGoal]);
-  const smartMetricCards = useMemo(() => mapDashboardSmartMetricCards(smartMetricsPayload), [smartMetricsPayload]);
+  const smartMetricCards = useMemo(
+    () => mapDashboardSmartMetricCards(smartMetricsPayload),
+    [smartMetricsPayload],
+  );
   const smartMetricsViewState = useMemo(
-    () => deriveSmartMetricsViewState({ isLoading, isRefreshing, error: smartMetricsError, cards: smartMetricCards }),
-    [isLoading, isRefreshing, smartMetricsError, smartMetricCards]
+    () =>
+      deriveSmartMetricsViewState({
+        isLoading,
+        error: smartMetricsError,
+        cards: smartMetricCards,
+      }),
+    [isLoading, isRefreshing, smartMetricsError, smartMetricCards],
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadDashboardData(true)} />}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={() => loadDashboardData(true)} />
+          }
         >
           <View style={styles.headerRow}>
             <View>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Dashboard</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                {activeProfile ? activeProfile.name : 'No profile selected'}
+                {activeProfile ? activeProfile.name : "No profile selected"}
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/more')}
-              style={[styles.profileBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+              onPress={() => router.push("/(tabs)/more")}
+              style={[
+                styles.profileBtn,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
               activeOpacity={0.8}
             >
               <Ionicons name="swap-horizontal-outline" size={16} color={colors.primary} />
@@ -289,7 +309,9 @@ export default function DashboardScreen() {
           {!activeProfile ? (
             <NeumorphicCard>
               <Text style={styles.emptyTitle}>No active profile</Text>
-              <Text style={styles.emptyBody}>Dashboard is waiting for an active profile. Select or create one in More.</Text>
+              <Text style={styles.emptyBody}>
+                Dashboard is waiting for an active profile. Select or create one in More.
+              </Text>
             </NeumorphicCard>
           ) : (
             <>
@@ -300,9 +322,8 @@ export default function DashboardScreen() {
                 totalBalance={netBalance.totalBalance}
                 totalIncome={netBalance.totalIncome}
                 totalExpense={netBalance.totalExpense}
-                onPressAccounts={() => router.push('/(tabs)/accounts')}
+                onPressAccounts={() => router.push("/(tabs)/accounts")}
               />
-
 
               <MetricValueCard
                 title="Income"
@@ -314,6 +335,7 @@ export default function DashboardScreen() {
                 value={netBalance.totalIncome}
                 loadingLabel="Loading income..."
                 emptyLabel="No income recorded yet."
+                entryDelay={80}
               />
 
               <MetricValueCard
@@ -326,6 +348,7 @@ export default function DashboardScreen() {
                 value={netBalance.totalExpense}
                 loadingLabel="Loading spend..."
                 emptyLabel="No spending recorded yet."
+                entryDelay={160}
               />
 
               <MetricValueCard
@@ -338,6 +361,7 @@ export default function DashboardScreen() {
                 value={monthSpendSummary.currentMonthSpend}
                 loadingLabel="Loading current month..."
                 emptyLabel="No spending yet this month."
+                entryDelay={240}
               />
 
               <MoMChangeCard
@@ -351,73 +375,79 @@ export default function DashboardScreen() {
                 error={goalsError || error}
                 goal={topGoal}
                 projectionText={topGoalProjection}
-                onPressGoals={() => router.push('/(tabs)/goals')}
+                onPressGoals={() => router.push("/(tabs)/goals")}
               />
 
               <SmartMetricInsightCard
                 title="Savings Score"
                 icon="trophy-outline"
                 accentColor={colors.primary}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.savingsScore}
                 loadingLabel="Loading savings score..."
                 emptyLabel="Savings score is waiting for data."
+                entryDelay={320}
               />
 
               <SmartMetricInsightCard
                 title="Spend Velocity"
                 icon="speedometer-outline"
                 accentColor={colors.warning}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.spendVelocity}
                 loadingLabel="Loading spend velocity..."
                 emptyLabel="Spend velocity is waiting for data."
+                entryDelay={400}
               />
 
               <SmartMetricInsightCard
                 title="Financial Health"
                 icon="pulse-outline"
                 accentColor={colors.income}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.financialHealth}
                 loadingLabel="Loading financial health..."
                 emptyLabel="Financial health is waiting for data."
+                entryDelay={480}
               />
 
               <SmartMetricInsightCard
                 title="Top Category"
                 icon="pie-chart-outline"
                 accentColor={colors.textPrimary}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.topCategorySummary}
                 loadingLabel="Loading top category..."
                 emptyLabel="Top category is waiting for data."
+                entryDelay={560}
               />
 
               <SmartMetricInsightCard
                 title="Budget Confidence"
                 icon="shield-checkmark-outline"
                 accentColor={colors.primary}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.budgetConfidence}
                 loadingLabel="Loading budget confidence..."
                 emptyLabel="Budget confidence is waiting for data."
+                entryDelay={640}
               />
 
               <SmartMetricInsightCard
                 title="Projected Savings"
                 icon="trending-up-outline"
                 accentColor={colors.income}
-                isLoading={smartMetricsViewState === 'loading'}
-                error={smartMetricsViewState === 'error' ? smartMetricsError : ''}
+                isLoading={smartMetricsViewState === "loading"}
+                error={smartMetricsViewState === "error" ? smartMetricsError : ""}
                 metric={smartMetricCards.projectedSavingsSummary}
                 loadingLabel="Loading projected savings..."
                 emptyLabel="Projected savings is waiting for data."
+                entryDelay={720}
               />
 
               <SmartInsightsWidget
@@ -444,14 +474,40 @@ export default function DashboardScreen() {
                 error={subscriptionsError || error}
                 summary={subscriptionsPayload}
               />
+
+              <NetWorthSummaryCard
+                profileId={activeProfile?.profile_id}
+                onPress={() => router.push("/(tabs)/net-worth" as any)}
+              />
+
+              <UpcomingBillsCard
+                profileId={activeProfile?.profile_id}
+                onPress={() => router.push("/(tabs)/bills" as any)}
+              />
             </>
           )}
 
           <View style={styles.quickActions}>
-            <ActionButton label="Transactions" icon="document-text-outline" onPress={() => router.push('/(tabs)/transactions')} />
-            <ActionButton label="Budgets" icon="wallet-outline" onPress={() => router.push('/(tabs)/budgets')} />
-            <ActionButton label="Goals" icon="flag-outline" onPress={() => router.push('/(tabs)/goals')} />
-            <ActionButton label="Analytics" icon="bar-chart-outline" onPress={() => router.push('/(tabs)/stats')} />
+            <ActionButton
+              label="Transactions"
+              icon="document-text-outline"
+              onPress={() => router.push("/(tabs)/transactions")}
+            />
+            <ActionButton
+              label="Budgets"
+              icon="wallet-outline"
+              onPress={() => router.push("/(tabs)/budgets")}
+            />
+            <ActionButton
+              label="Goals"
+              icon="flag-outline"
+              onPress={() => router.push("/(tabs)/goals")}
+            />
+            <ActionButton
+              label="Analytics"
+              icon="bar-chart-outline"
+              onPress={() => router.push("/(tabs)/stats")}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -487,12 +543,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: lightTheme.colors.background },
   safeArea: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 120 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: lightTheme.colors.text },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  title: { fontSize: 28, fontWeight: "800", color: lightTheme.colors.text },
   subtitle: { fontSize: 13, color: lightTheme.colors.textSecondary, marginTop: 2 },
   profileBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -501,13 +557,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: lightTheme.colors.cardBackground,
   },
-  profileBtnText: { fontSize: 12, color: lightTheme.colors.primary, fontWeight: '600' },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: lightTheme.colors.text },
+  profileBtnText: { fontSize: 12, color: lightTheme.colors.primary, fontWeight: "600" },
+  emptyTitle: { fontSize: 16, fontWeight: "700", color: lightTheme.colors.text },
   emptyBody: { marginTop: 6, fontSize: 14, lineHeight: 20, color: lightTheme.colors.textSecondary },
   quickActions: { gap: 10, marginTop: 8 },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     backgroundColor: lightTheme.colors.cardBackground,
     paddingHorizontal: 14,
@@ -516,5 +572,5 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: lightTheme.colors.border,
   },
-  actionLabel: { fontSize: 15, fontWeight: '600', color: lightTheme.colors.text },
+  actionLabel: { fontSize: 15, fontWeight: "600", color: lightTheme.colors.text },
 });

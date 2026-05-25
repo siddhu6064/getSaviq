@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,12 +10,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { lightTheme } from '../NeumorphicUI';
-import { aiAPI } from '../../services/api';
-import { useAppStore } from '../../store/appStore';
-import { useTheme } from '../../contexts/ThemeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { lightTheme } from "../NeumorphicUI";
+import { aiAPI } from "../../services/api";
+import { useAppStore } from "../../store/appStore";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
   AI_CHAT_PROMPT_SUGGESTIONS,
   DEFAULT_AI_CHAT_PROMPT,
@@ -23,7 +23,7 @@ import {
   resolveAssistantFailure,
   resolveAssistantSuccess,
   upsertPendingAssistant,
-} from '../../utils/aiChatSessionState';
+} from "../../utils/aiChatSessionState";
 import {
   applyChatSuggestion,
   buildChatSendQuestionParams,
@@ -31,7 +31,7 @@ import {
   deriveCanRetryFailedMessage,
   deriveChatSessionOnModalClose,
   deriveIsChatSubmitDisabled,
-} from '../../utils/aiChatModalState';
+} from "../../utils/aiChatModalState";
 
 interface AIInsightsChatModalProps {
   visible: boolean;
@@ -42,23 +42,30 @@ interface AIInsightsChatModalProps {
 
 type ChatMessage = {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   text: string;
   generatedAt?: string;
-  status?: 'pending' | 'failed' | 'sent';
+  status?: "pending" | "failed" | "sent";
   retryQuestion?: string;
 };
 
 function buildAssistantText(responseData: any) {
   const recommendation = responseData?.recommendation || {};
-  const title = recommendation?.title ? String(recommendation.title) : 'SAVIQ Insight';
-  const summary = recommendation?.summary ? String(recommendation.summary) : 'No summary available right now.';
+  const title = recommendation?.title ? String(recommendation.title) : "SAVIQ Insight";
+  const summary = recommendation?.summary
+    ? String(recommendation.summary)
+    : "No summary available right now.";
   const actions = Array.isArray(recommendation?.actions) ? recommendation.actions.slice(0, 3) : [];
   const actionLines = actions.map((action: string) => `• ${action}`);
-  return [title, summary, ...actionLines].join('\n');
+  return [title, summary, ...actionLines].join("\n");
 }
 
-export function AIInsightsChatModal({ visible, profileId, profileName, onClose }: AIInsightsChatModalProps) {
+export function AIInsightsChatModal({
+  visible,
+  profileId,
+  profileName,
+  onClose,
+}: AIInsightsChatModalProps) {
   const { colors, darkMode } = useTheme();
   const setAIChatSession = useAppStore((state) => state.setAIChatSession);
   const session = useAppStore((state) => (profileId ? state.aiChatSessions[profileId] : undefined));
@@ -66,14 +73,21 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
   const prompt = session?.prompt || DEFAULT_AI_CHAT_PROMPT;
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const lastSubmittedQuestionRef = useRef('');
+  const lastSubmittedQuestionRef = useRef("");
 
-  const updateSession = (updater: (current: { messages: ChatMessage[]; prompt: string }) => { messages: ChatMessage[]; prompt: string }) => {
+  const updateSession = (
+    updater: (current: { messages: ChatMessage[]; prompt: string }) => {
+      messages: ChatMessage[];
+      prompt: string;
+    },
+  ) => {
     if (!profileId) return;
     const liveSession = useAppStore.getState().aiChatSessions[profileId];
     const current = liveSession
       ? {
-          messages: Array.isArray(liveSession.messages) ? (liveSession.messages as ChatMessage[]) : [],
+          messages: Array.isArray(liveSession.messages)
+            ? (liveSession.messages as ChatMessage[])
+            : [],
           prompt: liveSession.prompt || DEFAULT_AI_CHAT_PROMPT,
         }
       : { messages: [], prompt: DEFAULT_AI_CHAT_PROMPT };
@@ -83,11 +97,13 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
   useEffect(() => {
     if (!visible) {
       if (isLoading) {
-        updateSession((current) => deriveChatSessionOnModalClose({
-          isLoading,
-          session: current,
-          lastSubmittedQuestion: lastSubmittedQuestionRef.current,
-        }));
+        updateSession((current) =>
+          deriveChatSessionOnModalClose({
+            isLoading,
+            session: current,
+            lastSubmittedQuestion: lastSubmittedQuestionRef.current,
+          }),
+        );
       }
       setIsLoading(false);
     }
@@ -103,7 +119,7 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
 
   const isSubmitDisabled = useMemo(
     () => deriveIsChatSubmitDisabled({ profileId, isLoading, prompt }),
-    [profileId, isLoading, prompt]
+    [profileId, isLoading, prompt],
   );
 
   const sendQuestion = async ({
@@ -135,12 +151,12 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
         pendingId,
         appendUserMessage: sendParams.appendUserMessage,
         userMessageId,
-      })
+      }),
     );
 
     try {
       const response = await aiAPI.chatInsights({
-        profile_id: profileId,
+        profile_id: profileId as string,
         question,
         recent_days: 30,
       });
@@ -150,7 +166,7 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
           pendingId,
           assistantText: buildAssistantText(response?.data),
           generatedAt: response?.data?.generated_at,
-        })
+        }),
       );
     } catch {
       updateSession((current) =>
@@ -158,7 +174,7 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
           session: current,
           pendingId,
           question,
-        })
+        }),
       );
     } finally {
       setIsLoading(false);
@@ -166,12 +182,12 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
   };
 
   const handleSubmit = async () => {
-    const question = String(prompt || '').trim();
+    const question = String(prompt || "").trim();
     await sendQuestion({ question, appendUserMessage: true });
   };
 
   const handleRetry = async (question?: string, pendingMessageId?: string) => {
-    const safeQuestion = String(question || '').trim();
+    const safeQuestion = String(question || "").trim();
     if (!safeQuestion) return;
     await sendQuestion({
       question: safeQuestion,
@@ -181,25 +197,53 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View
+          style={[
+            styles.header,
+            { borderBottomColor: colors.border, backgroundColor: colors.surface },
+          ]}
+        >
           <View style={styles.titleWrap}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>AI Insights Chat</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              {profileName ? `Profile: ${profileName}` : 'Ask about this profile'}
+              {profileName ? `Profile: ${profileName}` : "Ask about this profile"}
             </Text>
           </View>
-          <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.surfaceHover }]} onPress={onClose} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={[styles.closeButton, { backgroundColor: colors.surfaceHover }]}
+            onPress={onClose}
+            activeOpacity={0.8}
+          >
             <Ionicons name="close-outline" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.threadContent} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.threadContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {messages.length === 0 ? (
-            <View style={[styles.emptyState, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+            <View
+              style={[
+                styles.emptyState,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
+            >
               <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Start a money conversation</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                Start a money conversation
+              </Text>
               <Text style={styles.emptyBody}>
                 Ask a focused question for a fast, profile-aware answer.
               </Text>
@@ -215,13 +259,18 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
                       styles.suggestionChip,
                       {
                         borderColor: colors.border,
-                        backgroundColor: darkMode ? colors.surfaceHover : '#F6F2FF',
+                        backgroundColor: darkMode ? colors.surfaceHover : "#F6F2FF",
                       },
                     ]}
                     disabled={!deriveCanApplyChatSuggestion({ isLoading, suggestion })}
                     activeOpacity={0.85}
                   >
-                    <Text style={[styles.suggestionChipText, { color: darkMode ? colors.primary : lightTheme.colors.primaryDark }]}>
+                    <Text
+                      style={[
+                        styles.suggestionChipText,
+                        { color: darkMode ? colors.primary : lightTheme.colors.primaryDark },
+                      ]}
+                    >
                       {suggestion}
                     </Text>
                   </TouchableOpacity>
@@ -234,50 +283,66 @@ export function AIInsightsChatModal({ visible, profileId, profileName, onClose }
                 key={message.id}
                 style={[
                   styles.messageBubble,
-                  message.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                  message.role === "user" ? styles.userBubble : styles.assistantBubble,
                 ]}
               >
-                  <Text
-                    style={[
-                      message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
-                      message.role === 'assistant' ? { color: colors.textPrimary } : null,
-                    ]}
-                  >
-                    {message.status === 'pending' ? 'SAVIQ is typing…' : message.text}
-                  </Text>
-                  {message.status === 'pending' ? (
-                    <View style={styles.inlinePendingRow}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={[styles.pendingMetaText, { color: colors.textSecondary }]}>Analyzing your activity…</Text>
-                    </View>
-                  ) : null}
-                  {message.role === 'assistant' && message.generatedAt ? (
-                    <Text style={[styles.generatedAtText, { color: colors.textSecondary }]}>
-                      Generated {new Date(message.generatedAt).toLocaleTimeString()}
+                <Text
+                  style={[
+                    message.role === "user" ? styles.userMessageText : styles.assistantMessageText,
+                    message.role === "assistant" ? { color: colors.textPrimary } : null,
+                  ]}
+                >
+                  {message.status === "pending" ? "SAVIQ is typing…" : message.text}
+                </Text>
+                {message.status === "pending" ? (
+                  <View style={styles.inlinePendingRow}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.pendingMetaText, { color: colors.textSecondary }]}>
+                      Analyzing your activity…
                     </Text>
-                  ) : null}
-                  {message.status === 'failed' ? (
-                    <TouchableOpacity
-                      style={[styles.retryButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
-                      onPress={() => handleRetry(message.retryQuestion, message.id)}
-                      disabled={!deriveCanRetryFailedMessage({ message, isLoading })}
-                      disabled={!deriveCanApplyChatSuggestion({ isLoading, suggestion })}
+                  </View>
+                ) : null}
+                {message.role === "assistant" && message.generatedAt ? (
+                  <Text style={[styles.generatedAtText, { color: colors.textSecondary }]}>
+                    Generated {new Date(message.generatedAt).toLocaleTimeString()}
+                  </Text>
+                ) : null}
+                {message.status === "failed" ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.retryButton,
+                      { borderColor: colors.border, backgroundColor: colors.surface },
+                    ]}
+                    onPress={() => handleRetry(message.retryQuestion, message.id)}
+                    disabled={!deriveCanRetryFailedMessage({ message, isLoading })}
                     activeOpacity={0.85}
-                    >
-                      <Ionicons name="refresh-outline" size={14} color={colors.primary} />
-                      <Text style={[styles.retryButtonText, { color: colors.primary }]}>Retry</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
+                  >
+                    <Ionicons name="refresh-outline" size={14} color={colors.primary} />
+                    <Text style={[styles.retryButtonText, { color: colors.primary }]}>Retry</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             ))
           )}
         </ScrollView>
 
-        <View style={[styles.composer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.composer,
+            { borderTopColor: colors.border, backgroundColor: colors.surface },
+          ]}
+        >
           <TextInput
             value={prompt}
             onChangeText={(value) => updateSession((current) => ({ ...current, prompt: value }))}
-            style={[styles.input, { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.background }]}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.border,
+                color: colors.textPrimary,
+                backgroundColor: colors.background,
+              },
+            ]}
             placeholder="Why did I spend more this month?"
             placeholderTextColor={colors.textSecondary}
             multiline
@@ -316,20 +381,20 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: lightTheme.colors.border,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: lightTheme.colors.cardBackground,
   },
   titleWrap: { flex: 1, paddingRight: 8 },
-  title: { fontSize: 18, fontWeight: '800', color: lightTheme.colors.text },
+  title: { fontSize: 18, fontWeight: "800", color: lightTheme.colors.text },
   subtitle: { marginTop: 2, fontSize: 12, color: lightTheme.colors.textSecondary },
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: lightTheme.colors.primaryLight,
   },
   threadContent: {
@@ -347,7 +412,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   emptyBody: {
@@ -357,43 +422,43 @@ const styles = StyleSheet.create({
   },
   suggestionsWrap: {
     marginTop: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   suggestionChip: {
     borderWidth: 0.5,
     borderColor: lightTheme.colors.border,
-    backgroundColor: '#F6F2FF',
+    backgroundColor: "#F6F2FF",
     borderRadius: 999,
     minHeight: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   suggestionChipText: {
     fontSize: 12,
     color: lightTheme.colors.primaryDark,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   messageBubble: {
-    maxWidth: '88%',
+    maxWidth: "88%",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
   },
   userBubble: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     backgroundColor: lightTheme.colors.primary,
   },
   assistantBubble: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: lightTheme.colors.cardBackground,
     borderWidth: 0.5,
     borderColor: lightTheme.colors.border,
   },
   userMessageText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 13,
     lineHeight: 18,
   },
@@ -409,8 +474,8 @@ const styles = StyleSheet.create({
   },
   inlinePendingRow: {
     marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   pendingMetaText: {
@@ -419,9 +484,9 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     marginTop: 8,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
     minHeight: 36,
     gap: 4,
     borderWidth: 0.5,
@@ -433,7 +498,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: lightTheme.colors.primary,
   },
   composer: {
@@ -442,8 +507,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderTopWidth: 0.5,
     borderTopColor: lightTheme.colors.border,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 8,
     backgroundColor: lightTheme.colors.cardBackground,
   },
@@ -464,8 +529,8 @@ const styles = StyleSheet.create({
     height: 44,
     width: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: lightTheme.colors.primary,
   },
   sendButtonDisabled: {

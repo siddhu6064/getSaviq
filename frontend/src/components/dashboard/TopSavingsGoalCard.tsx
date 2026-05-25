@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NeumorphicCard, lightTheme } from '../NeumorphicUI';
-import { SavingsGoal } from '../../utils/goals';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { SavingsGoal } from "../../utils/goals";
 
 interface TopSavingsGoalCardProps {
   isLoading: boolean;
@@ -44,14 +44,18 @@ export function TopSavingsGoalCard({
           <Text style={styles.helper}>No actionable goals yet.</Text>
         ) : (
           <>
-            <Text style={styles.goalTitle} numberOfLines={1}>{goal.title}</Text>
+            <Text style={styles.goalTitle} numberOfLines={1}>
+              {goal.title}
+            </Text>
             <Text style={styles.goalMeta}>{progress.toFixed(0)}% complete</Text>
 
             <View style={styles.progressBg}>
               <View style={[styles.progressBar, { width: `${progress}%` }]} />
             </View>
 
-            <Text style={styles.amounts}>$ {currentAmount.toFixed(2)} of $ {targetAmount.toFixed(2)}</Text>
+            <Text style={styles.amounts}>
+              $ {currentAmount.toFixed(2)} of $ {targetAmount.toFixed(2)}
+            </Text>
             <Text style={styles.projection}>{projectionText}</Text>
           </>
         )}
@@ -65,25 +69,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   link: {
     fontSize: 13,
     color: lightTheme.colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   helper: {
     fontSize: 14,
@@ -91,7 +95,7 @@ const styles = StyleSheet.create({
   },
   goalTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: lightTheme.colors.text,
   },
   goalMeta: {
@@ -103,17 +107,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     height: 8,
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: lightTheme.colors.border,
   },
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: lightTheme.colors.primary,
   },
   amounts: {
     marginTop: 8,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: lightTheme.colors.text,
   },
   projection: {
@@ -123,6 +127,6 @@ const styles = StyleSheet.create({
   },
   content: {
     minHeight: 72,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

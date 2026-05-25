@@ -6,6 +6,7 @@ Scope: Audit/planning only (no feature implementation)
 ## 1) Mobile architecture audit
 
 ### App type and routing model
+
 - **Type:** Hybrid, but primarily **Expo Router** file-based routing with a tab shell.
 - Entry/root composition:
   - `app/_layout.tsx` wraps app with `SafeAreaProvider`, `ThemeProvider`, `AuthProvider`, and auth/deep-link/notification routing guards.
@@ -15,6 +16,7 @@ Scope: Audit/planning only (no feature implementation)
   - Hidden routes inside tabs group: `add`, `accounts` (navigated programmatically).
 
 ### Navigation tree (current)
+
 - `/` → `app/index.tsx` (login/auth entry)
 - `/(tabs)` → `app/(tabs)/index.tsx` (dashboard/home)
 - `/(tabs)/transactions` → transactions screen
@@ -27,6 +29,7 @@ Scope: Audit/planning only (no feature implementation)
   - `/(tabs)/accounts` → account/payment methods view
 
 ### Auth flow
+
 - `AuthContext` is the orchestrator for:
   - session restore (`session_token`) and current-user fetch (`/auth/me`)
   - Google/Apple sign-in handlers
@@ -38,6 +41,7 @@ Scope: Audit/planning only (no feature implementation)
   - delayed deep-link replay after auth.
 
 ### Shared state architecture
+
 - Global state via **Zustand**: `src/store/appStore.ts`
 - `AuthContext` coordinates auth/session + store hydration.
 - Store responsibility split:
@@ -47,6 +51,7 @@ Scope: Audit/planning only (no feature implementation)
   - guest-mode dual data path via `guestStorage`.
 
 ### API/service architecture
+
 - Axios singleton in `src/services/api.ts`.
 - Request auth token injection via SecureStore/AsyncStorage abstraction.
 - 401 interceptor removes token.
@@ -55,6 +60,7 @@ Scope: Audit/planning only (no feature implementation)
 - Notification/deep-link helper services and route-state helper utilities exist.
 
 ### Reusable UI/system components
+
 - Base UI: `NeumorphicUI` cards/buttons/theming.
 - Reusable domain widgets exist for dashboard intelligence:
   - smart metrics cards
@@ -66,6 +72,7 @@ Scope: Audit/planning only (no feature implementation)
 - Profile switch integration exists via `ProfileToggle` (profile_type-aware icons already in place).
 
 ### Existing profile-switch integration
+
 - `activeProfile` controls profile-scoped fetches across dashboard + transactions/budgets/goals flows.
 - Dashboard fetch orchestration guards stale responses and resets some intelligence payloads on profile change.
 - Guest + authenticated profile collections both supported.
@@ -75,37 +82,39 @@ Scope: Audit/planning only (no feature implementation)
 ## 2) Web vs mobile parity matrix
 
 Legend:
+
 - **F** = Fully implemented on mobile
 - **P** = Partially implemented
 - **M** = Missing on mobile
 - **BR** = Backend-ready but no mobile UI
 - **WO** = Web-only implementation
 
-| Feature Area | Web Status | Mobile Status | Classification | Notes / Gaps |
-|---|---|---|---|---|
-| Auth/session handling | Complete email/OAuth/session | Google/Apple/session restore/401 handling present | F | Mobile auth + guest mode are implemented; keep parity checks around callback and token expiry edge cases. |
-| Profile switching | Implemented | Implemented with `activeProfile` + toggle | F | profile_type-aware icon mapping already active. |
-| Dashboard core cards (net/income/spend/MoM/top goal) | Complete | Implemented in dashboard screen + cards | F | Verify visual parity details only (not architecture). |
-| Smart metrics section | Complete | Implemented (`/dashboard/metrics` mapping) | F | Loading/error states exist; continue parity QA for data formatting parity. |
-| Smart insights | Complete | Implemented (`/insights/overview` widget) | F | Needs parity validation for edge-state copy and ordering only. |
-| Forecast widget | Complete | Implemented (`/forecast`) | F | Check payload edge handling parity with web. |
-| Weekly digest | Complete | Implemented (`/weekly-digest/latest`) | F | Dismiss/interaction parity should be validated in M2. |
-| Subscriptions detection | Complete | Implemented (`/subscriptions/summary`) | F | State handling exists; ensure copy + thresholds parity. |
-| Savings goals | Complete CRUD | Implemented route + logic + projection helpers | F | Verify all modal/form parity scenarios. |
-| Transactions list/create/edit/delete | Complete | Implemented with retry helpers and add route | F | Validate advanced filters/search parity depth vs web. |
-| Analytics | Complete | Implemented stats tab + state sanitizer helpers | P | Verify full chart/segment parity with web endpoints and controls. |
-| Budgets | Complete | Implemented budgets tab + progress calls | F | Period/category interactions need parity check. |
-| Exports (CSV/PDF/JSON UX) | Implemented UI and download flows | API helpers exist | BR | Mobile export UI/download/share UX likely incomplete vs web. |
-| AI chat insights | Complete | Implemented modal + per-profile sessions | F | Check exact prompt suggestions + retry UX parity. |
-| Settings/account flows | Complete settings page | More tab exists; account/settings surface present | P | Need explicit parity check for all settings subsections and destructive flows. |
-| Onboarding | Basic login/entry | Login + guest path | P | If web has additional onboarding hints, mobile parity unclear. |
-| Notifications/reminders | Partial web support | Notification routing service + deep links present | P | Scheduling/preference UI parity may be incomplete. |
-| Loading/error/empty states | Complete | Broad helper-state coverage in utils tests | F | High coverage for deterministic UI-state helpers. |
-| Environment/config handling | Web env template exists | EXPO_PUBLIC backend + oauth vars in use | P | Mobile env template/documented setup can be tightened for operator clarity. |
-| Test coverage (integration/e2e) | Playwright + node tests | Heavy state/helper tests, limited device UI e2e | P | Mobile full UI e2e intentionally limited; needs runtime validation pass. |
-| Accounts/payment methods dedicated UX | Present in web settings flows | Hidden route exists (`/(tabs)/accounts`) | P | Validate discoverability and full CRUD parity path from More tab. |
+| Feature Area                                         | Web Status                        | Mobile Status                                     | Classification | Notes / Gaps                                                                                              |
+| ---------------------------------------------------- | --------------------------------- | ------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
+| Auth/session handling                                | Complete email/OAuth/session      | Google/Apple/session restore/401 handling present | F              | Mobile auth + guest mode are implemented; keep parity checks around callback and token expiry edge cases. |
+| Profile switching                                    | Implemented                       | Implemented with `activeProfile` + toggle         | F              | profile_type-aware icon mapping already active.                                                           |
+| Dashboard core cards (net/income/spend/MoM/top goal) | Complete                          | Implemented in dashboard screen + cards           | F              | Verify visual parity details only (not architecture).                                                     |
+| Smart metrics section                                | Complete                          | Implemented (`/dashboard/metrics` mapping)        | F              | Loading/error states exist; continue parity QA for data formatting parity.                                |
+| Smart insights                                       | Complete                          | Implemented (`/insights/overview` widget)         | F              | Needs parity validation for edge-state copy and ordering only.                                            |
+| Forecast widget                                      | Complete                          | Implemented (`/forecast`)                         | F              | Check payload edge handling parity with web.                                                              |
+| Weekly digest                                        | Complete                          | Implemented (`/weekly-digest/latest`)             | F              | Dismiss/interaction parity should be validated in M2.                                                     |
+| Subscriptions detection                              | Complete                          | Implemented (`/subscriptions/summary`)            | F              | State handling exists; ensure copy + thresholds parity.                                                   |
+| Savings goals                                        | Complete CRUD                     | Implemented route + logic + projection helpers    | F              | Verify all modal/form parity scenarios.                                                                   |
+| Transactions list/create/edit/delete                 | Complete                          | Implemented with retry helpers and add route      | F              | Validate advanced filters/search parity depth vs web.                                                     |
+| Analytics                                            | Complete                          | Implemented stats tab + state sanitizer helpers   | P              | Verify full chart/segment parity with web endpoints and controls.                                         |
+| Budgets                                              | Complete                          | Implemented budgets tab + progress calls          | F              | Period/category interactions need parity check.                                                           |
+| Exports (CSV/PDF/JSON UX)                            | Implemented UI and download flows | API helpers exist                                 | BR             | Mobile export UI/download/share UX likely incomplete vs web.                                              |
+| AI chat insights                                     | Complete                          | Implemented modal + per-profile sessions          | F              | Check exact prompt suggestions + retry UX parity.                                                         |
+| Settings/account flows                               | Complete settings page            | More tab exists; account/settings surface present | P              | Need explicit parity check for all settings subsections and destructive flows.                            |
+| Onboarding                                           | Basic login/entry                 | Login + guest path                                | P              | If web has additional onboarding hints, mobile parity unclear.                                            |
+| Notifications/reminders                              | Partial web support               | Notification routing service + deep links present | P              | Scheduling/preference UI parity may be incomplete.                                                        |
+| Loading/error/empty states                           | Complete                          | Broad helper-state coverage in utils tests        | F              | High coverage for deterministic UI-state helpers.                                                         |
+| Environment/config handling                          | Web env template exists           | EXPO_PUBLIC backend + oauth vars in use           | P              | Mobile env template/documented setup can be tightened for operator clarity.                               |
+| Test coverage (integration/e2e)                      | Playwright + node tests           | Heavy state/helper tests, limited device UI e2e   | P              | Mobile full UI e2e intentionally limited; needs runtime validation pass.                                  |
+| Accounts/payment methods dedicated UX                | Present in web settings flows     | Hidden route exists (`/(tabs)/accounts`)          | P              | Validate discoverability and full CRUD parity path from More tab.                                         |
 
 ### Bottom-line parity readout
+
 - **Strongly implemented:** profile switching, dashboard intelligence stack, goals, budgets, core transactions, AI chat state.
 - **Partial parity risk areas:** analytics depth, settings/account breadth, exports UX, notifications/reminders UX/preferences, onboarding nuances.
 - **Likely backend-ready/mobile-gap areas:** export experience and some settings/reminders surfaces.
@@ -118,6 +127,7 @@ Checklist style: phased, actionable, dependency-aware.
 Priority order: backend-ready/high-impact → critical flows → dashboard parity → AI parity → polish/testing/perf.
 
 ## Phase M1 — Contract & Baseline Lock (audit-close)
+
 - Note: phase checkbox rows below are the original execution plan baseline; deterministic closure status is tracked in the factual progress sections later in this document.
 - [ ] Freeze mobile parity baseline doc and acceptance criteria in repo docs.
 - [ ] Confirm endpoint contract map for all mobile-tab features against current backend routes.
@@ -127,6 +137,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] Document explicit non-goals (no org/team ACL) in mobile parity tracker.
 
 ## Phase M2 — Critical Flow Parity (high impact)
+
 - [ ] Transactions: parity-check filter behavior (type/category/payment/date/search).
 - [ ] Transactions: verify edit/delete optimistic consistency with web behavior.
 - [ ] Transactions: validate retry/offline UX copy and recovery path parity.
@@ -137,6 +148,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] Accounts: ensure payment method CRUD is discoverable from mobile nav.
 
 ## Phase M3 — Dashboard Intelligence Parity
+
 - [ ] Net balance card: align formatting/totals with web calculation rules.
 - [ ] Income/spend cards: align empty-state thresholds and copy.
 - [ ] MoM card: verify direction/flat/none semantics against web.
@@ -148,6 +160,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] Subscription widget: align candidate thresholds and total labels.
 
 ## Phase M4 — AI Parity Slice
+
 - [ ] AI chat modal: parity-check suggestion set and disabled-state logic.
 - [ ] AI chat retry flow: match web retry messaging and failover behavior.
 - [ ] AI session persistence: verify restart restore + interrupted-send semantics.
@@ -155,6 +168,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] AI telemetry hooks: align event payload shape with web where applicable.
 
 ## Phase M5 — Settings, Account, and Utility Parity
+
 - [ ] Settings: map web sections to mobile equivalents and identify missing controls.
 - [ ] Account deletion/logout/session handling parity validation.
 - [ ] Currency/theme settings parity checks (if backend-backed options differ).
@@ -162,6 +176,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] Deep-link handling for add/stats routes parity with web route intents.
 
 ## Phase M6 — Exports & Shareability
+
 - [ ] Define mobile export UX path (share sheet/download/storage abstraction).
 - [ ] Implement/validate CSV export consume/share flow.
 - [ ] Implement/validate JSON export consume/share flow.
@@ -169,12 +184,14 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 - [ ] Add error handling parity for export failures/timeouts.
 
 ## Phase M7 — Onboarding/Activation Parity
+
 - [ ] Verify first-run empty states across tabs (no profile/no data scenarios).
 - [ ] Guest-to-authenticated migration behavior parity checks.
 - [ ] OAuth callback and post-auth redirect parity checks on web-mobile bridge.
 - [ ] Add activation checklists for first transaction, first budget, first goal.
 
 ## Phase M8 — Validation & Hardening
+
 - [ ] Expand mobile state-helper tests for parity-sensitive regressions.
 - [ ] Add focused integration tests for profile-scoped dashboard requests.
 - [ ] Add smoke coverage for hidden routes (`add`, `accounts`) navigation.
@@ -185,19 +202,22 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 ## Workstream separation
 
 ### Mobile-only work
+
 - Screen-level UX parity, hidden-route discoverability, export/share UX, tab-specific loading/empty/error behavior, AI modal UX parity.
 
 ### Shared/backend work
+
 - Endpoint contract assertions, response-shape guarantees, export endpoint usage constraints, optional telemetry payload alignment.
 
 ### Parity validation/testing work
+
 - Regression tests for profile-scoped requests, helper-state coverage growth, smoke checks for critical tabs, device runtime validation matrix.
 
 ## High-level dependencies/blockers
+
 - Export UX parity depends on final mobile file/share handling decisions.
 - Notification/reminder parity depends on product decisions for preferences UI and scheduling ownership.
 - Some parity items depend on agreed canonical copy/formatting source between web and mobile.
-
 
 ## Transactions parity close-out (completed slice)
 
@@ -214,6 +234,7 @@ Priority order: backend-ready/high-impact → critical flows → dashboard parit
 **Chosen next area: Dashboard intelligence parity (Smart Metrics + related intelligence widgets).**
 
 Why this is next in order:
+
 - Transactions critical-flow hardening is now complete for this slice.
 - In the checklist, dashboard intelligence parity is the next high-impact, backend-ready area with strong user visibility.
 - Existing mobile dashboard already calls backend contracts (`/dashboard/metrics`, `/insights/overview`, `/forecast`, `/weekly-digest/latest`, `/subscriptions/summary`), so parity work can remain frontend-focused and incremental.
@@ -231,7 +252,6 @@ Why this is next in order:
    - `node --test frontend/src/utils/smartMetricsCards.test.mjs`
    - `node --test frontend/src/utils/smartMetricsSectionState.test.mjs`
    - (only if shared/web code touched) `npm --prefix web run build`
-
 
 ## Dashboard Intelligence parity completion notes (factual updates)
 

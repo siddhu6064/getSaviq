@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useAppData } from '../contexts/AppDataContext';
-import { Card, Button, Input, Modal, Spinner, Avatar } from '../components/ui';
+import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useAppData } from "../contexts/AppDataContext";
+import { Card, Button, Input, Modal, Spinner, Avatar } from "../components/ui";
 import {
   User,
   CreditCard,
@@ -14,20 +14,31 @@ import {
   Edit2,
   Banknote,
   Building2,
-} from 'lucide-react';
-import { categoriesAPI, paymentMethodsAPI, profilesAPI } from '../services/api';
-import { getUserFriendlyError } from '../lib/errorMessages';
+  UserPlus,
+  X,
+  CheckCircle2,
+} from "lucide-react";
+import { categoriesAPI, invitesAPI, paymentMethodsAPI, profilesAPI } from "../services/api";
+import { getUserFriendlyError } from "../lib/errorMessages";
 
 const paymentTypeOptions = [
-  { value: 'cash',          label: 'Cash',          icon: Banknote   },
-  { value: 'credit_card',   label: 'Credit Card',   icon: CreditCard },
-  { value: 'debit_card',    label: 'Debit Card',    icon: CreditCard },
-  { value: 'bank_transfer', label: 'Bank Transfer', icon: Building2  },
+  { value: "cash", label: "Cash", icon: Banknote },
+  { value: "credit_card", label: "Credit Card", icon: CreditCard },
+  { value: "debit_card", label: "Debit Card", icon: CreditCard },
+  { value: "bank_transfer", label: "Bank Transfer", icon: Building2 },
 ];
 
 const categoryColors = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
-  '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#4A6D5C',
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#06b6d4",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#6b7280",
+  "#4A6D5C",
 ];
 
 export default function SettingsPage() {
@@ -35,7 +46,7 @@ export default function SettingsPage() {
   const { profiles, categories, paymentMethods, loading, refresh } = useAppData();
   const navigate = useNavigate();
 
-  const [activeSection, setActiveSection] = useState('account');
+  const [activeSection, setActiveSection] = useState("account");
 
   // Modal states
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -44,33 +55,51 @@ export default function SettingsPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-  const [deleteAccountInput, setDeleteAccountInput] = useState('');
-  const [deleteAccountError, setDeleteAccountError] = useState('');
+  const [deleteAccountInput, setDeleteAccountInput] = useState("");
+  const [deleteAccountError, setDeleteAccountError] = useState("");
+
+  // Invite member state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [invitingProfile, setInvitingProfile] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteStatus, setInviteStatus] = useState(null); // null | "success"
+  const [inviteError, setInviteError] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+
+  // Remove member state
+  const [removeMemberConfirm, setRemoveMemberConfirm] = useState(null); // { profile, member }
 
   // Form states
-  const [categoryForm, setCategoryForm] = useState({ name: '', icon: 'tag', color: '#4A6D5C' });
-  const [paymentForm, setPaymentForm] = useState({ name: '', type: 'cash', last_four: '', is_default: false });
-  const [profileForm, setProfileForm] = useState({ name: '' });
+  const [categoryForm, setCategoryForm] = useState({ name: "", icon: "tag", color: "#4A6D5C" });
+  const [paymentForm, setPaymentForm] = useState({
+    name: "",
+    type: "cash",
+    last_four: "",
+    is_default: false,
+  });
+  const [profileForm, setProfileForm] = useState({ name: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogout = useCallback(async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   }, [logout, navigate]);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (deleteAccountInput.trim() !== 'DELETE') {
-      setDeleteAccountError('Please type DELETE to confirm.');
+    if (deleteAccountInput.trim() !== "DELETE") {
+      setDeleteAccountError("Please type DELETE to confirm.");
       return;
     }
     try {
       setIsSubmitting(true);
-      setDeleteAccountError('');
+      setDeleteAccountError("");
       await deleteAccount();
       setShowDeleteAccountModal(false);
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      setDeleteAccountError(getUserFriendlyError(error, 'Failed to delete account. Please try again.'));
+      setDeleteAccountError(
+        getUserFriendlyError(error, "Failed to delete account. Please try again."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,23 +117,26 @@ export default function SettingsPage() {
       await refresh();
       setShowCategoryModal(false);
       setEditingItem(null);
-      setCategoryForm({ name: '', icon: 'tag', color: '#4A6D5C' });
+      setCategoryForm({ name: "", icon: "tag", color: "#4A6D5C" });
     } catch (error) {
-      console.error('Failed to save category:', error);
+      console.error("Failed to save category:", error);
     } finally {
       setIsSubmitting(false);
     }
   }, [editingItem, categoryForm, refresh]);
 
-  const handleDeleteCategory = useCallback(async (categoryId) => {
-    try {
-      await categoriesAPI.delete(categoryId);
-      await refresh();
-      setDeleteConfirm(null);
-    } catch (error) {
-      console.error('Failed to delete category:', error);
-    }
-  }, [refresh]);
+  const handleDeleteCategory = useCallback(
+    async (categoryId) => {
+      try {
+        await categoriesAPI.delete(categoryId);
+        await refresh();
+        setDeleteConfirm(null);
+      } catch (error) {
+        console.error("Failed to delete category:", error);
+      }
+    },
+    [refresh],
+  );
 
   // Payment method handlers
   const handleSavePayment = useCallback(async () => {
@@ -118,23 +150,26 @@ export default function SettingsPage() {
       await refresh();
       setShowPaymentModal(false);
       setEditingItem(null);
-      setPaymentForm({ name: '', type: 'cash', last_four: '', is_default: false });
+      setPaymentForm({ name: "", type: "cash", last_four: "", is_default: false });
     } catch (error) {
-      console.error('Failed to save payment method:', error);
+      console.error("Failed to save payment method:", error);
     } finally {
       setIsSubmitting(false);
     }
   }, [editingItem, paymentForm, refresh]);
 
-  const handleDeletePayment = useCallback(async (paymentId) => {
-    try {
-      await paymentMethodsAPI.delete(paymentId);
-      await refresh();
-      setDeleteConfirm(null);
-    } catch (error) {
-      console.error('Failed to delete payment method:', error);
-    }
-  }, [refresh]);
+  const handleDeletePayment = useCallback(
+    async (paymentId) => {
+      try {
+        await paymentMethodsAPI.delete(paymentId);
+        await refresh();
+        setDeleteConfirm(null);
+      } catch (error) {
+        console.error("Failed to delete payment method:", error);
+      }
+    },
+    [refresh],
+  );
 
   // Profile handlers
   const handleSaveProfile = useCallback(async () => {
@@ -148,29 +183,70 @@ export default function SettingsPage() {
       await refresh();
       setShowProfileModal(false);
       setEditingItem(null);
-      setProfileForm({ name: '' });
+      setProfileForm({ name: "" });
     } catch (error) {
-      console.error('Failed to save profile:', error);
+      console.error("Failed to save profile:", error);
     } finally {
       setIsSubmitting(false);
     }
   }, [editingItem, profileForm, refresh]);
 
-  const handleDeleteProfile = useCallback(async (profileId) => {
+  const handleDeleteProfile = useCallback(
+    async (profileId) => {
+      try {
+        await profilesAPI.delete(profileId);
+        await refresh();
+        setDeleteConfirm(null);
+      } catch (error) {
+        console.error("Failed to delete profile:", error);
+      }
+    },
+    [refresh],
+  );
+
+  const handleSendInvite = useCallback(async () => {
+    if (!invitingProfile || !inviteEmail) return;
     try {
-      await profilesAPI.delete(profileId);
+      setIsInviting(true);
+      setInviteError("");
+      await invitesAPI.invite(invitingProfile.profile_id, inviteEmail);
+      setInviteStatus("success");
       await refresh();
-      setDeleteConfirm(null);
     } catch (error) {
-      console.error('Failed to delete profile:', error);
+      setInviteError(getUserFriendlyError(error, "Failed to send invite. Please try again."));
+    } finally {
+      setIsInviting(false);
     }
-  }, [refresh]);
+  }, [invitingProfile, inviteEmail, refresh]);
+
+  const closeInviteModal = useCallback(() => {
+    setShowInviteModal(false);
+    setInvitingProfile(null);
+    setInviteEmail("");
+    setInviteStatus(null);
+    setInviteError("");
+  }, []);
+
+  const handleRemoveMember = useCallback(async () => {
+    if (!removeMemberConfirm) return;
+    try {
+      await profilesAPI.removeMember(
+        removeMemberConfirm.profile.profile_id,
+        removeMemberConfirm.member.member_id,
+      );
+      await refresh();
+      setRemoveMemberConfirm(null);
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      setRemoveMemberConfirm(null);
+    }
+  }, [removeMemberConfirm, refresh]);
 
   const sections = [
-    { id: 'account',  label: 'Account',         icon: User      },
-    { id: 'profiles', label: 'Profiles',         icon: Shield    },
-    { id: 'categories', label: 'Categories',     icon: Tag       },
-    { id: 'payments', label: 'Payment Methods',  icon: CreditCard },
+    { id: "account", label: "Account", icon: User },
+    { id: "profiles", label: "Profiles", icon: Shield },
+    { id: "categories", label: "Categories", icon: Tag },
+    { id: "payments", label: "Payment Methods", icon: CreditCard },
   ];
 
   if (loading) {
@@ -199,8 +275,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     activeSection === section.id
-                      ? 'bg-brand-primary text-white'
-                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+                      ? "bg-brand-primary text-white"
+                      : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                   }`}
                   data-testid={`settings-nav-${section.id}`}
                 >
@@ -215,7 +291,7 @@ export default function SettingsPage() {
         {/* Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* Account Section */}
-          {activeSection === 'account' && (
+          {activeSection === "account" && (
             <Card>
               <h2 className="text-lg font-bold font-heading text-text-primary mb-6">
                 Account Information
@@ -249,14 +325,14 @@ export default function SettingsPage() {
                     data-testid="settings-logout"
                   >
                     <LogOut className="w-5 h-5 mr-2" />
-                    {isGuest ? 'Exit Guest Mode' : 'Sign Out'}
+                    {isGuest ? "Exit Guest Mode" : "Sign Out"}
                   </Button>
                   {!isGuest && (
                     <Button
                       variant="danger"
                       onClick={() => {
-                        setDeleteAccountInput('');
-                        setDeleteAccountError('');
+                        setDeleteAccountInput("");
+                        setDeleteAccountError("");
                         setShowDeleteAccountModal(true);
                       }}
                       className="w-full sm:w-auto"
@@ -277,16 +353,14 @@ export default function SettingsPage() {
           )}
 
           {/* Profiles Section */}
-          {activeSection === 'profiles' && (
+          {activeSection === "profiles" && (
             <Card>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold font-heading text-text-primary">
-                  Profiles
-                </h2>
+                <h2 className="text-lg font-bold font-heading text-text-primary">Profiles</h2>
                 <Button
                   onClick={() => {
                     setEditingItem(null);
-                    setProfileForm({ name: '' });
+                    setProfileForm({ name: "" });
                     setShowProfileModal(true);
                   }}
                   size="sm"
@@ -297,63 +371,166 @@ export default function SettingsPage() {
                 </Button>
               </div>
 
-              <div className="space-y-2">
-                {profiles.map((profile) => (
-                  <div
-                    key={profile.profile_id}
-                    className="flex items-center justify-between p-4 bg-surface-hover rounded-xl"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-brand-primary/10 rounded-lg">
-                        <Shield className="w-5 h-5 text-brand-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-text-primary">{profile.name}</p>
-                        {profile.is_default && (
-                          <span className="text-xs text-brand-primary">Default</span>
-                        )}
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                {profiles.map((profile) => {
+                  const isShared = profile.profile_type === "shared";
+                  const isOwner = profile.caller_role === "owner" || !profile.caller_role;
+                  const isEditable =
+                    isOwner &&
+                    !["personal", "business"].includes((profile.profile_type || "").toLowerCase());
+                  const acceptedMembers = (profile.members || []).filter(
+                    (m) => m.status === "accepted",
+                  );
+                  const pendingMembers = (profile.members || []).filter(
+                    (m) => m.status === "pending",
+                  );
 
-                    {!['personal', 'business'].includes((profile.profile_type || '').toLowerCase()) && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          aria-label="Edit profile"
-                          onClick={() => {
-                            setEditingItem(profile);
-                            setProfileForm({ name: profile.name });
-                            setShowProfileModal(true);
-                          }}
-                          className="p-2 hover:bg-white rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4 text-text-secondary" />
-                        </button>
-                        <button
-                          aria-label="Delete profile"
-                          onClick={() => setDeleteConfirm({ type: 'profile', item: profile })}
-                          className="p-2 hover:bg-expense-bg rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4 text-expense" />
-                        </button>
+                  return (
+                    <div
+                      key={profile.profile_id}
+                      className="bg-surface-hover rounded-xl overflow-hidden"
+                    >
+                      {/* Main row */}
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-brand-primary/10 rounded-lg">
+                            <Shield className="w-5 h-5 text-brand-primary" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-text-primary">{profile.name}</p>
+                              {isShared && (
+                                <span className="px-2 py-0.5 text-xs bg-brand-primary/10 text-brand-primary rounded-full capitalize">
+                                  {profile.caller_role || "shared"}
+                                </span>
+                              )}
+                            </div>
+                            {profile.is_default && (
+                              <span className="text-xs text-brand-primary">Default</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isShared && isOwner && (
+                            <button
+                              onClick={() => {
+                                setInvitingProfile(profile);
+                                setInviteEmail("");
+                                setInviteStatus(null);
+                                setInviteError("");
+                                setShowInviteModal(true);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 rounded-lg transition-colors"
+                              data-testid="invite-member-button"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              Invite
+                            </button>
+                          )}
+                          {isEditable && (
+                            <>
+                              <button
+                                aria-label="Edit profile"
+                                onClick={() => {
+                                  setEditingItem(profile);
+                                  setProfileForm({ name: profile.name });
+                                  setShowProfileModal(true);
+                                }}
+                                className="p-2 hover:bg-white rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4 text-text-secondary" />
+                              </button>
+                              <button
+                                aria-label="Delete profile"
+                                onClick={() => setDeleteConfirm({ type: "profile", item: profile })}
+                                className="p-2 hover:bg-expense-bg rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 text-expense" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Members list for shared profiles */}
+                      {isShared && (profile.members || []).length > 0 && (
+                        <div className="px-4 pb-4 border-t border-border-color/30 pt-3">
+                          <p className="text-xs font-medium text-text-secondary uppercase tracking-wide mb-2">
+                            Members{" "}
+                            {pendingMembers.length > 0 && (
+                              <span className="text-warning normal-case">
+                                ({pendingMembers.length} pending)
+                              </span>
+                            )}
+                          </p>
+                          <div className="space-y-2">
+                            {profile.members.map((member) => (
+                              <div
+                                key={member.member_id}
+                                className="flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-semibold text-brand-primary">
+                                      {(member.invited_email || "?")[0].toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm text-text-primary truncate max-w-[150px]">
+                                    {member.invited_email}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 text-xs rounded-full flex-shrink-0 ${
+                                      member.status === "accepted"
+                                        ? "bg-income-bg text-income"
+                                        : member.status === "declined"
+                                          ? "bg-expense-bg text-expense"
+                                          : "bg-warning/10 text-warning"
+                                    }`}
+                                  >
+                                    {member.status}
+                                  </span>
+                                </div>
+                                {isOwner && (
+                                  <button
+                                    onClick={() => setRemoveMemberConfirm({ profile, member })}
+                                    className="p-1.5 hover:bg-expense-bg rounded-lg transition-colors flex-shrink-0 ml-2"
+                                    aria-label="Remove member"
+                                    data-testid="remove-member-button"
+                                  >
+                                    <X className="w-3.5 h-3.5 text-expense" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Empty members hint for owners */}
+                      {isShared && isOwner && (profile.members || []).length === 0 && (
+                        <div className="px-4 pb-3 border-t border-border-color/30 pt-3">
+                          <p className="text-xs text-text-secondary">
+                            No members yet. Click Invite to add collaborators.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </Card>
           )}
 
           {/* Categories Section */}
-          {activeSection === 'categories' && (
+          {activeSection === "categories" && (
             <Card>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold font-heading text-text-primary">
-                  Categories
-                </h2>
+                <h2 className="text-lg font-bold font-heading text-text-primary">Categories</h2>
                 <Button
                   onClick={() => {
                     setEditingItem(null);
-                    setCategoryForm({ name: '', icon: 'tag', color: '#4A6D5C' });
+                    setCategoryForm({ name: "", icon: "tag", color: "#4A6D5C" });
                     setShowCategoryModal(true);
                   }}
                   size="sm"
@@ -373,7 +550,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <div
                         className="p-2 rounded-lg"
-                        style={{ backgroundColor: category.color + '20' }}
+                        style={{ backgroundColor: category.color + "20" }}
                       >
                         <Tag className="w-5 h-5" style={{ color: category.color }} />
                       </div>
@@ -386,7 +563,11 @@ export default function SettingsPage() {
                           aria-label="Edit category"
                           onClick={() => {
                             setEditingItem(category);
-                            setCategoryForm({ name: category.name, icon: category.icon, color: category.color });
+                            setCategoryForm({
+                              name: category.name,
+                              icon: category.icon,
+                              color: category.color,
+                            });
                             setShowCategoryModal(true);
                           }}
                           className="p-2 hover:bg-white rounded-lg transition-colors"
@@ -395,7 +576,7 @@ export default function SettingsPage() {
                         </button>
                         <button
                           aria-label="Delete category"
-                          onClick={() => setDeleteConfirm({ type: 'category', item: category })}
+                          onClick={() => setDeleteConfirm({ type: "category", item: category })}
                           className="p-2 hover:bg-expense-bg rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4 text-expense" />
@@ -409,7 +590,7 @@ export default function SettingsPage() {
           )}
 
           {/* Payment Methods Section */}
-          {activeSection === 'payments' && (
+          {activeSection === "payments" && (
             <Card>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold font-heading text-text-primary">
@@ -418,7 +599,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={() => {
                     setEditingItem(null);
-                    setPaymentForm({ name: '', type: 'cash', last_four: '', is_default: false });
+                    setPaymentForm({ name: "", type: "cash", last_four: "", is_default: false });
                     setShowPaymentModal(true);
                   }}
                   size="sm"
@@ -431,7 +612,8 @@ export default function SettingsPage() {
 
               <div className="space-y-3">
                 {paymentMethods.map((payment) => {
-                  const TypeIcon = paymentTypeOptions.find(t => t.value === payment.type)?.icon || CreditCard;
+                  const TypeIcon =
+                    paymentTypeOptions.find((t) => t.value === payment.type)?.icon || CreditCard;
                   return (
                     <div
                       key={payment.payment_id}
@@ -444,7 +626,7 @@ export default function SettingsPage() {
                         <div>
                           <p className="font-medium text-text-primary">{payment.name}</p>
                           <p className="text-sm text-text-secondary">
-                            {paymentTypeOptions.find(t => t.value === payment.type)?.label}
+                            {paymentTypeOptions.find((t) => t.value === payment.type)?.label}
                             {payment.last_four && ` •••• ${payment.last_four}`}
                           </p>
                         </div>
@@ -463,7 +645,7 @@ export default function SettingsPage() {
                             setPaymentForm({
                               name: payment.name,
                               type: payment.type,
-                              last_four: payment.last_four || '',
+                              last_four: payment.last_four || "",
                               is_default: payment.is_default,
                             });
                             setShowPaymentModal(true);
@@ -474,7 +656,7 @@ export default function SettingsPage() {
                         </button>
                         <button
                           aria-label="Delete payment method"
-                          onClick={() => setDeleteConfirm({ type: 'payment', item: payment })}
+                          onClick={() => setDeleteConfirm({ type: "payment", item: payment })}
                           className="p-2 hover:bg-expense-bg rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4 text-expense" />
@@ -492,8 +674,11 @@ export default function SettingsPage() {
       {/* Category Modal */}
       <Modal
         isOpen={showCategoryModal}
-        onClose={() => { setShowCategoryModal(false); setEditingItem(null); }}
-        title={editingItem ? 'Edit Category' : 'Add Category'}
+        onClose={() => {
+          setShowCategoryModal(false);
+          setEditingItem(null);
+        }}
+        title={editingItem ? "Edit Category" : "Add Category"}
         size="sm"
       >
         <div className="space-y-4">
@@ -513,7 +698,9 @@ export default function SettingsPage() {
                   key={color}
                   onClick={() => setCategoryForm({ ...categoryForm, color })}
                   className={`w-8 h-8 rounded-lg transition-transform ${
-                    categoryForm.color === color ? 'ring-2 ring-offset-2 ring-brand-primary scale-110' : ''
+                    categoryForm.color === color
+                      ? "ring-2 ring-offset-2 ring-brand-primary scale-110"
+                      : ""
                   }`}
                   style={{ backgroundColor: color }}
                 />
@@ -524,7 +711,10 @@ export default function SettingsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
-              onClick={() => { setShowCategoryModal(false); setEditingItem(null); }}
+              onClick={() => {
+                setShowCategoryModal(false);
+                setEditingItem(null);
+              }}
               className="flex-1"
             >
               Cancel
@@ -535,7 +725,7 @@ export default function SettingsPage() {
               className="flex-1"
               data-testid="save-category-button"
             >
-              {isSubmitting ? <Spinner size="sm" className="text-white" /> : 'Save'}
+              {isSubmitting ? <Spinner size="sm" className="text-white" /> : "Save"}
             </Button>
           </div>
         </div>
@@ -544,8 +734,11 @@ export default function SettingsPage() {
       {/* Payment Method Modal */}
       <Modal
         isOpen={showPaymentModal}
-        onClose={() => { setShowPaymentModal(false); setEditingItem(null); }}
-        title={editingItem ? 'Edit Payment Method' : 'Add Payment Method'}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setEditingItem(null);
+        }}
+        title={editingItem ? "Edit Payment Method" : "Add Payment Method"}
         size="sm"
       >
         <div className="space-y-4">
@@ -568,16 +761,22 @@ export default function SettingsPage() {
                     onClick={() => setPaymentForm({ ...paymentForm, type: type.value })}
                     className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
                       paymentForm.type === type.value
-                        ? 'border-brand-primary bg-brand-primary/5'
-                        : 'border-border-color hover:border-brand-primary/50'
+                        ? "border-brand-primary bg-brand-primary/5"
+                        : "border-border-color hover:border-brand-primary/50"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${
-                      paymentForm.type === type.value ? 'text-brand-primary' : 'text-text-secondary'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      paymentForm.type === type.value ? 'text-brand-primary' : 'text-text-primary'
-                    }`}>
+                    <Icon
+                      className={`w-5 h-5 ${
+                        paymentForm.type === type.value
+                          ? "text-brand-primary"
+                          : "text-text-secondary"
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        paymentForm.type === type.value ? "text-brand-primary" : "text-text-primary"
+                      }`}
+                    >
                       {type.label}
                     </span>
                   </button>
@@ -586,7 +785,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {(paymentForm.type === 'credit_card' || paymentForm.type === 'debit_card') && (
+          {(paymentForm.type === "credit_card" || paymentForm.type === "debit_card") && (
             <Input
               label="Last 4 Digits (optional)"
               value={paymentForm.last_four}
@@ -609,7 +808,10 @@ export default function SettingsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
-              onClick={() => { setShowPaymentModal(false); setEditingItem(null); }}
+              onClick={() => {
+                setShowPaymentModal(false);
+                setEditingItem(null);
+              }}
               className="flex-1"
             >
               Cancel
@@ -620,7 +822,7 @@ export default function SettingsPage() {
               className="flex-1"
               data-testid="save-payment-button"
             >
-              {isSubmitting ? <Spinner size="sm" className="text-white" /> : 'Save'}
+              {isSubmitting ? <Spinner size="sm" className="text-white" /> : "Save"}
             </Button>
           </div>
         </div>
@@ -629,8 +831,11 @@ export default function SettingsPage() {
       {/* Profile Modal */}
       <Modal
         isOpen={showProfileModal}
-        onClose={() => { setShowProfileModal(false); setEditingItem(null); }}
-        title={editingItem ? 'Edit Profile' : 'Add Profile'}
+        onClose={() => {
+          setShowProfileModal(false);
+          setEditingItem(null);
+        }}
+        title={editingItem ? "Edit Profile" : "Add Profile"}
         size="sm"
       >
         <div className="space-y-4">
@@ -645,7 +850,10 @@ export default function SettingsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
-              onClick={() => { setShowProfileModal(false); setEditingItem(null); }}
+              onClick={() => {
+                setShowProfileModal(false);
+                setEditingItem(null);
+              }}
               className="flex-1"
             >
               Cancel
@@ -656,7 +864,7 @@ export default function SettingsPage() {
               className="flex-1"
               data-testid="save-profile-button"
             >
-              {isSubmitting ? <Spinner size="sm" className="text-white" /> : 'Save'}
+              {isSubmitting ? <Spinner size="sm" className="text-white" /> : "Save"}
             </Button>
           </div>
         </div>
@@ -670,24 +878,21 @@ export default function SettingsPage() {
         size="sm"
       >
         <p className="text-text-secondary mb-6">
-          Are you sure you want to delete "{deleteConfirm?.item?.name}"? This action cannot be undone.
+          Are you sure you want to delete "{deleteConfirm?.item?.name}"? This action cannot be
+          undone.
         </p>
         <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setDeleteConfirm(null)}
-            className="flex-1"
-          >
+          <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">
             Cancel
           </Button>
           <Button
             variant="danger"
             onClick={() => {
-              if (deleteConfirm?.type === 'category') {
+              if (deleteConfirm?.type === "category") {
                 handleDeleteCategory(deleteConfirm.item.category_id);
-              } else if (deleteConfirm?.type === 'payment') {
+              } else if (deleteConfirm?.type === "payment") {
                 handleDeletePayment(deleteConfirm.item.payment_id);
-              } else if (deleteConfirm?.type === 'profile') {
+              } else if (deleteConfirm?.type === "profile") {
                 handleDeleteProfile(deleteConfirm.item.profile_id);
               }
             }}
@@ -695,6 +900,90 @@ export default function SettingsPage() {
             data-testid="confirm-delete"
           >
             Delete
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Invite Member Modal */}
+      <Modal
+        isOpen={showInviteModal}
+        onClose={closeInviteModal}
+        title={inviteStatus === "success" ? "Invite sent!" : `Invite to "${invitingProfile?.name}"`}
+        size="sm"
+      >
+        {inviteStatus === "success" ? (
+          <div className="text-center py-4">
+            <div className="w-14 h-14 bg-income-bg rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-income" />
+            </div>
+            <p className="text-sm font-medium text-text-primary mb-1">Invite sent!</p>
+            <p className="text-sm text-text-secondary">
+              An invite email has been sent to <strong>{inviteEmail}</strong>.
+            </p>
+            <Button className="mt-5" onClick={closeInviteModal} data-testid="invite-done-button">
+              Done
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              Enter their email address to invite them to collaborate on this shared profile.
+            </p>
+            <Input
+              label="Email address"
+              value={inviteEmail}
+              onChange={(e) => {
+                setInviteEmail(e.target.value);
+                setInviteError("");
+              }}
+              placeholder="friend@example.com"
+              type="email"
+              error={inviteError || undefined}
+              data-testid="invite-email-input"
+            />
+            <div className="flex gap-3 pt-2">
+              <Button variant="secondary" onClick={closeInviteModal} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendInvite}
+                disabled={!inviteEmail.trim() || isInviting}
+                className="flex-1"
+                data-testid="send-invite-button"
+              >
+                {isInviting ? <Spinner size="sm" className="text-white" /> : "Send Invite"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Remove Member Confirmation Modal */}
+      <Modal
+        isOpen={!!removeMemberConfirm}
+        onClose={() => setRemoveMemberConfirm(null)}
+        title="Remove member"
+        size="sm"
+      >
+        <p className="text-text-secondary mb-6">
+          Remove <strong>{removeMemberConfirm?.member?.invited_email}</strong> from "
+          {removeMemberConfirm?.profile?.name}"? They will lose access to this profile.
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => setRemoveMemberConfirm(null)}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleRemoveMember}
+            className="flex-1"
+            data-testid="confirm-remove-member"
+          >
+            Remove
           </Button>
         </div>
       </Modal>
@@ -735,7 +1024,7 @@ export default function SettingsPage() {
               disabled={isSubmitting}
               data-testid="confirm-delete-account"
             >
-              {isSubmitting ? <Spinner size="sm" className="text-white" /> : 'Delete Account'}
+              {isSubmitting ? <Spinner size="sm" className="text-white" /> : "Delete Account"}
             </Button>
           </div>
         </div>

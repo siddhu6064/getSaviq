@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pymongo import ReturnDocument
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from models import Budget, BudgetCreate, BudgetProgressResponse, BudgetUpdate, MessageResponse
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
@@ -63,9 +63,11 @@ async def get_budgets(
     current_user: dict = Depends(get_current_user),
 ):
     """Get all budgets for user"""
-    query = {"user_id": current_user["user_id"]}
     if profile_id:
-        query["profile_id"] = profile_id
+        await get_accessible_profile(profile_id, current_user)
+        query: dict = {"profile_id": profile_id}
+    else:
+        query = {"user_id": current_user["user_id"]}
 
     budgets = await db.budgets.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return budgets
@@ -77,13 +79,7 @@ async def create_budget(
     current_user: dict = Depends(get_current_user),
 ):
     """Create a new budget (inserts if profile/category combo does not exist)"""
-    await _ensure_owned(
-        db.profiles,
-        "profile_id",
-        budget_data.profile_id,
-        current_user["user_id"],
-        "Profile not found",
-    )
+    await get_accessible_profile(budget_data.profile_id, current_user)
     if budget_data.category_id:
         await _ensure_owned(
             db.categories,
@@ -126,13 +122,7 @@ async def update_budget(
     if existing_budget is None:
         raise HTTPException(status_code=404, detail="Budget not found")
 
-    await _ensure_owned(
-        db.profiles,
-        "profile_id",
-        existing_budget["profile_id"],
-        current_user["user_id"],
-        "Profile not found",
-    )
+    await get_accessible_profile(existing_budget["profile_id"], current_user)
     if existing_budget.get("category_id"):
         await _ensure_owned(
             db.categories,
@@ -184,8 +174,9 @@ async def get_budget_progress(
     one $group aggregation per distinct period (weekly / monthly / yearly) and
     execute those aggregations in parallel with asyncio.gather.
     """
+    await get_accessible_profile(profile_id, current_user)
     budgets = await db.budgets.find(
-        {"user_id": current_user["user_id"], "profile_id": profile_id},
+        {"profile_id": profile_id},
         {"_id": 0},
     ).to_list(100)
 

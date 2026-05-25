@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import React from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -12,12 +12,12 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('ui.error_boundary', {
+    console.error("ui.error_boundary", {
       message: error?.message,
       name: error?.name,
       stack: error?.stack,
       componentStack: info?.componentStack,
-      path: typeof window !== 'undefined' ? window.location.pathname : '',
+      path: typeof window !== "undefined" ? window.location.pathname : "",
       timestamp: new Date().toISOString(),
     });
   }
