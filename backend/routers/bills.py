@@ -4,6 +4,7 @@ Recurring Bill Management — CRUD + APScheduler reminder job.
 import asyncio
 import calendar
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -223,7 +224,7 @@ async def check_bill_due_reminders() -> None:
                     "user_id": user_id,
                     "type": "bill_reminder",
                     "created_at": {"$gte": day_start},
-                    "body": {"$regex": bill_id},
+                    "body": {"$regex": re.escape(bill_id)},
                 }
             )
             if existing:

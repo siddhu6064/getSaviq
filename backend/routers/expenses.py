@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import urllib.parse
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -67,7 +68,7 @@ async def _budget_alert(user_id: str, profile_id: str, category_id: str, amount:
                 "user_id": user_id,
                 "type": "budget_alert",
                 "created_at": {"$gte": day_start},
-                "body": {"$regex": category_id},
+                "body": {"$regex": re.escape(category_id)},
             }
         )
         if existing:
