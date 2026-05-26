@@ -18,6 +18,7 @@ from models import (
     BillCreate,
     BillFromSubscriptionCreate,
     BillResponse,
+    BillStatus,
     BillUpdate,
     MessageResponse,
 )
@@ -64,7 +65,7 @@ async def create_bill(
 @router.get("/bills", response_model=list[BillResponse])
 async def list_bills(
     profile_id: Optional[str] = None,
-    status: Optional[str] = None,
+    status: Optional[BillStatus] = None,
     current_user: dict = Depends(get_current_user),
 ):
     """List bills for current user, optionally filtered by profile and/or status."""
@@ -72,7 +73,7 @@ async def list_bills(
     if profile_id:
         query["profile_id"] = profile_id
     if status:
-        query["status"] = status
+        query["status"] = status.value
     bills = await db.bills.find(query, {"_id": 0}).sort("due_day", 1).to_list(500)
     return bills
 
