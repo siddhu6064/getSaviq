@@ -176,7 +176,7 @@ async def get_budget_progress(
     """
     await get_accessible_profile(profile_id, current_user)
     budgets = await db.budgets.find(
-        {"profile_id": profile_id},
+        {"profile_id": profile_id, "user_id": current_user["user_id"]},
         {"_id": 0},
     ).to_list(100)
 
