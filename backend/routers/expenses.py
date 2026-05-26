@@ -3,6 +3,8 @@ import logging
 import re
 import urllib.parse
 import uuid
+
+import magic
 from datetime import datetime, timezone, timedelta
 from typing import Literal, Optional
 
@@ -509,18 +511,20 @@ async def upload_attachment(
             detail=f"Maximum {MAX_ATTACHMENTS} attachments per expense",
         )
 
-    # Content-type validation
-    content_type = file.content_type or ""
-    if content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File type '{content_type}' not allowed. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
-        )
-
-    # Read + size validation
+    # Read bytes first (needed for both MIME detection and upload)
     file_bytes = await file.read()
+
+    # Size validation
     if len(file_bytes) > MAX_FILE_BYTES:
         raise HTTPException(status_code=400, detail="File exceeds 10 MB limit")
+
+    # MIME type validation from actual file bytes — Content-Type header is untrusted
+    detected_mime = magic.from_buffer(file_bytes, mime=True)
+    if detected_mime not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{detected_mime}' not allowed. Allowed: {', '.join(sorted(ALLOWED_CONTENT_TYPES))}",
+        )
 
     # Upload to R2
     from services.r2_service import upload_file as r2_upload
@@ -530,7 +534,7 @@ async def upload_attachment(
     folder = f"expenses/{expense_id}"
 
     try:
-        object_key = await r2_upload(file_bytes, filename, content_type, folder)
+        object_key = await r2_upload(file_bytes, filename, detected_mime, folder)
     except Exception as exc:
         logger.exception("R2 upload failed expense_id=%s", expense_id)
         raise HTTPException(status_code=502, detail="File upload failed") from exc
