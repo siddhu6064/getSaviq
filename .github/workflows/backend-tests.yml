@@ -17,6 +17,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y libmagic1
+
       - name: Install backend test dependencies
         run: pip install -r backend/requirements-dev.txt
 
