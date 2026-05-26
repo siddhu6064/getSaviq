@@ -57,37 +57,44 @@ SAVIQ exists to help users make confident financial decisions, not just log tran
 ## Feature Highlights
 
 ### 1) Financial Dashboard & Smart Metrics
+
 - Net balance, income, spend, month-over-month movement, top goal summary.
 - Smart metrics including savings score, spend velocity, financial health, budget confidence, and projected savings.
 - **Net worth card** showing total assets minus liabilities with MoM trend.
 - Loading/empty/error state handling across dashboard cards and widgets.
 
 ### 2) Goals, Budgets, and Planning
+
 - Savings goals CRUD with progress, milestones, projected completion dates, and monthly recommendation support.
 - Budget tracking with risk-oriented visibility and profile-aware filtering.
 - Priority goal surfacing from dashboard context.
 
 ### 3) Forecasting & Risk Intelligence
+
 - 7-day and 30-day projection windows.
 - Month-end spend forecasting and velocity modeling.
 - Budget exceed risk and confidence scoring with plain-language explanation layers.
 
 ### 4) AI-Powered Intelligence
+
 - Smart insights and recommendations on dashboard surfaces powered by Gemini 2.5 Flash.
 - AI receipt scanning endpoint support (vision-capable model).
 - AI chat insights (`/ai/chat-insights`) with prompt suggestions, retry/failure handling, and profile-isolated conversation context.
 
 ### 5) Weekly Digest & Recurring Spend Detection
+
 - Weekly financial digest with narrative summary, income/expense delta, and profile switching support.
 - Recurring spend detection with subscription candidates and monthly recurring totals.
 - **Recurring bill management** — bills collection with due date alerts, bill vs actual matching, and calendar view.
 
 ### 6) Net Worth Tracking
+
 - Manual assets and liabilities collections with CRUD.
 - Daily snapshot cronjob for 6-month trend chart.
 - Full web page + mobile screen with profile switcher.
 
 ### 7) Push Notifications
+
 - Budget alerts, goal milestone triggers, large transaction warnings.
 - Weekly digest push on Monday 9am via APScheduler.
 - Deep links on notification tap to relevant screen.
@@ -95,6 +102,7 @@ SAVIQ exists to help users make confident financial decisions, not just log tran
 - In-app notification bell on web with unread count badge.
 
 ### 8) Shared Profile Invite Access
+
 - Invite partner by email to a Shared profile.
 - Secure token-based accept/decline flow with 7-day expiry.
 - Profile access middleware — members see same data as owner.
@@ -102,15 +110,18 @@ SAVIQ exists to help users make confident financial decisions, not just log tran
 - Mobile deep link handling for invite acceptance.
 
 ### 9) Transaction Notes + Attachments
+
 - Optional notes field (max 500 chars) on any expense.
 - File attachments (jpg/png/pdf/heic) stored in Cloudflare R2.
 - Camera + photo library upload on mobile via expo-image-picker.
 - Notes and attachment indicators in transaction list rows.
 
 ### 10) Exports
+
 - Data export endpoints for CSV and JSON scoped by profile/date windows.
 
 ### 11) Mobile Coverage
+
 - Route-level coverage across dashboard, transactions, budgets, goals, analytics, net worth, bills, and AI chat flows.
 - Mobile-first interaction patterns, dark mode support for primary flows, and profile switching restore behavior.
 - Push notification deep linking to relevant screens.
@@ -135,36 +146,39 @@ Shared profiles now support **invite-based multi-user access** — a profile own
 
 ## Architecture Overview
 
-| Layer | Stack | Notes |
-|---|---|---|
-| Backend API | Python, FastAPI, Pydantic, Motor/PyMongo | Session/auth flows, profile-scoped data model, analytics/forecast/AI endpoints |
-| Database | MongoDB Atlas (cloud-hosted) | 15+ collections + startup index initialization (including TTL on sessions). All indexes auto-created on startup. |
-| Web App | React + Vite, Tailwind, Recharts | Runs on port 3000 in dev. Product UI, dashboards, goals, analytics, net worth, bills, exports, AI chat |
-| Mobile App | React Native (Expo) | Cross-platform mobile experience with backend auth integration |
-| Shared Logic | `shared/` TypeScript package | Shared constants/types/utils across app surfaces |
-| AI | Google Gemini 2.5 Flash (receipts) + Flash-Lite (insights/chat) | Via `google-genai` SDK + `litellm` routing |
-| Email | Resend | Transactional emails — 3,000/month free tier |
-| Analytics | PostHog | Product analytics + error tracking — 1M events/month free tier |
-| Storage | Cloudflare R2 | Receipt + attachment image storage — 10GB free, zero egress fees |
-| Cache | Upstash Redis | Rate limiting persistence — 500K commands/month free tier |
-| Push | Expo Push API | Free, unlimited push notifications for mobile |
-| Testing | `pytest`, `node:test`, Playwright | Backend coverage + web logic/E2E + mobile helper/orchestration tests |
+| Layer        | Stack                                                           | Notes                                                                                                            |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Backend API  | Python, FastAPI, Pydantic, Motor/PyMongo                        | Session/auth flows, profile-scoped data model, analytics/forecast/AI endpoints                                   |
+| Database     | MongoDB Atlas (cloud-hosted)                                    | 15+ collections + startup index initialization (including TTL on sessions). All indexes auto-created on startup. |
+| Web App      | React + Vite, Tailwind, Recharts                                | Runs on port 3000 in dev. Product UI, dashboards, goals, analytics, net worth, bills, exports, AI chat           |
+| Mobile App   | React Native (Expo)                                             | Cross-platform mobile experience with backend auth integration                                                   |
+| Shared Logic | `shared/` TypeScript package                                    | Shared constants/types/utils across app surfaces                                                                 |
+| AI           | Google Gemini 2.5 Flash (receipts) + Flash-Lite (insights/chat) | Via `google-genai` SDK + `litellm` routing                                                                       |
+| Email        | Resend                                                          | Transactional emails — 3,000/month free tier                                                                     |
+| Analytics    | PostHog                                                         | Product analytics + error tracking — 1M events/month free tier                                                   |
+| Storage      | Cloudflare R2                                                   | Receipt + attachment image storage — 10GB free, zero egress fees                                                 |
+| Cache        | Upstash Redis                                                   | Rate limiting persistence — 500K commands/month free tier                                                        |
+| Push         | Expo Push API                                                   | Free, unlimited push notifications for mobile                                                                    |
+| Testing      | `pytest`, `node:test`, Playwright                               | Backend coverage + web logic/E2E + mobile helper/orchestration tests                                             |
 
 ---
 
 ## AI Stack and Degradation Behavior
 
 ### Primary provider
+
 - **Google Gemini** via `google-genai` SDK (replaces OpenAI for all AI features).
 - Receipt scanning: `gemini-2.5-flash` (vision-capable, $0.30/$2.50 per 1M tokens).
 - Insights + chat: `gemini-2.5-flash-lite` (text-only, $0.10/$0.40 per 1M tokens).
 - Free dev tier: 1,500 requests/day via Google AI Studio — covers full beta traffic at $0.
 
 ### Optionality
+
 - AI-specific configuration is optional for core CRUD and analytics flows.
 - If AI is unavailable or disabled, core expense tracking, budgets, goals, net worth, bills, and non-AI analytics remain fully available.
 
 ### Feature control
+
 - `ENABLE_AI_FEATURES` can be used to gate AI behavior by environment.
 - Model values are configured via `OPENAI_RECEIPT_MODEL` and `OPENAI_INSIGHTS_MODEL` env vars (these var names are preserved for backward compatibility — just point them at Gemini model strings).
 
@@ -178,7 +192,7 @@ Shared profiles now support **invite-based multi-user access** — a profile own
 
 ```env
 # Database (MongoDB Atlas)
-MONGO_URL=mongodb+srv://saviq:PASSWORD@saviq.v9ypdo7.mongodb.net/?retryWrites=true&w=majority&appName=Saviq
+MONGO_URL=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/saviq
 DB_NAME=saviq
 
 # Auth
@@ -219,12 +233,14 @@ REDIS_URL=rediss://...
 ### Frontend env files
 
 **`web/.env`:**
+
 ```env
 VITE_BACKEND_URL=http://localhost:8001
 VITE_GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 ```
 
 **`frontend/.env`:**
+
 ```env
 EXPO_PUBLIC_BACKEND_URL=http://localhost:8001
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
@@ -274,21 +290,25 @@ Set `EXPO_PUBLIC_BACKEND_URL` to a backend URL reachable from your emulator or p
 ## Testing
 
 ### Backend
+
 ```bash
 pytest
 ```
 
 ### Web logic tests
+
 ```bash
 node --test web/src/lib/*.test.mjs
 ```
 
 ### Web E2E (smoke/core flows)
+
 ```bash
 npx playwright test
 ```
 
 ### Build checks
+
 ```bash
 cd web && npm run build
 ```
@@ -311,23 +331,23 @@ This is the primary remaining validation gap between internal beta and wider rol
 
 ## Release Readiness
 
-| Area | Status |
-|---|---|
-| Feature scope (core features) | ✅ Complete |
-| Competitive gap features | ✅ Complete |
-| Web + mobile route parity | ✅ Complete |
-| Backend/API implementation | ✅ Complete for all flows |
-| Automated tests | ✅ Strong (backend + web + targeted mobile logic) |
-| Environment & API keys | ✅ All services configured (MongoDB Atlas, Gemini, Resend, PostHog, Cloudflare R2, Upstash) |
-| Analytics & error tracking | ✅ PostHog connected (free tier) |
-| Push notifications | ✅ Expo Push configured (iOS + Android) |
-| Net worth tracking | ✅ Complete (web + mobile) |
-| Shared profile invite | ✅ Complete (web + mobile deep link) |
-| Transaction notes + attachments | ✅ Complete (web + mobile camera) |
-| Recurring bill management | ✅ Complete (web + mobile) |
-| Bank sync (Teller) | ⏸ Parked — add after first paying subscriber |
-| Device/runtime validation | ⛔ Pending final pass |
-| Observability hardening | ⚠️ PostHog connected — instrumentation in progress |
+| Area                            | Status                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Feature scope (core features)   | ✅ Complete                                                                                 |
+| Competitive gap features        | ✅ Complete                                                                                 |
+| Web + mobile route parity       | ✅ Complete                                                                                 |
+| Backend/API implementation      | ✅ Complete for all flows                                                                   |
+| Automated tests                 | ✅ Strong (backend + web + targeted mobile logic)                                           |
+| Environment & API keys          | ✅ All services configured (MongoDB Atlas, Gemini, Resend, PostHog, Cloudflare R2, Upstash) |
+| Analytics & error tracking      | ✅ PostHog connected (free tier)                                                            |
+| Push notifications              | ✅ Expo Push configured (iOS + Android)                                                     |
+| Net worth tracking              | ✅ Complete (web + mobile)                                                                  |
+| Shared profile invite           | ✅ Complete (web + mobile deep link)                                                        |
+| Transaction notes + attachments | ✅ Complete (web + mobile camera)                                                           |
+| Recurring bill management       | ✅ Complete (web + mobile)                                                                  |
+| Bank sync (Teller)              | ⏸ Parked — add after first paying subscriber                                                |
+| Device/runtime validation       | ⛔ Pending final pass                                                                       |
+| Observability hardening         | ⚠️ PostHog connected — instrumentation in progress                                          |
 
 **Current release posture:** ready for **public beta**. All features shipped. Bank sync deferred until paid subscribers request it.
 
@@ -347,7 +367,7 @@ This is the primary remaining validation gap between internal beta and wider rol
    - Install Java (`brew install --cask zulu@17`), generate SHA-1, add Android OAuth client in Google Cloud Console.
 6. **Device/runtime confidence**
    - Broader on-device validation across lifecycle, deep-link, and notification scenarios.
-7. **Bank sync via Teller** *(after first paying subscriber)*
+7. **Bank sync via Teller** _(after first paying subscriber)_
    - Teller preferred over Plaid — no monthly minimum, pay-as-you-go.
 8. **Export expansion**
    - PDF export support to complement CSV/JSON.
