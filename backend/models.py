@@ -233,29 +233,29 @@ class InsightListResponse(BaseModel):
 
 
 class EmailRegisterRequest(BaseModel):
-    email: str
-    password: str
-    name: str
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=72)
+    name: str = Field(max_length=100)
 
 
 class EmailLoginRequest(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=72)
 
 
 class ProfileCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=100)
     profile_type: Literal["personal", "business", "shared"] = "personal"
 
 
 class ProfileUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
     profile_type: Optional[Literal["personal", "business", "shared"]] = None
     is_default: Optional[bool] = None
 
 
 class ProfileMemberCreate(BaseModel):
-    email: str
+    email: str = Field(max_length=254)
 
     @field_validator("email")
     @classmethod
@@ -292,7 +292,7 @@ class ProfileWithMembers(Profile):
 
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=100)
     icon: str = "tag"
     color: str = "#6366f1"
     profile_id: Optional[str] = None
@@ -306,7 +306,7 @@ class CategoryCreate(BaseModel):
 
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
     icon: Optional[str] = None
     color: Optional[str] = None
 
@@ -321,7 +321,7 @@ class CategoryUpdate(BaseModel):
 
 
 class PaymentMethodCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=100)
     type: str
     last_four: Optional[str] = None
     is_default: bool = False
@@ -337,7 +337,7 @@ class PaymentMethodCreate(BaseModel):
 
 
 class PaymentMethodUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
     type: Optional[str] = None
     last_four: Optional[str] = None
     is_default: Optional[bool] = None
@@ -359,12 +359,12 @@ class ExpenseCreate(BaseModel):
     category_id: Optional[str] = None
     payment_method_id: str
     to_payment_method_id: Optional[str] = None
-    description: str
-    merchant: Optional[str] = None
+    description: str = Field(max_length=500)
+    merchant: Optional[str] = Field(None, max_length=200)
     date: datetime
     time: Optional[str] = None
     receipt_image: Optional[str] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=500)
     attachments: List[str] = Field(default_factory=list)
     is_pending: bool = False
     # Recurring transaction fields
@@ -419,12 +419,12 @@ class ExpenseUpdate(BaseModel):
     category_id: Optional[str] = None
     payment_method_id: Optional[str] = None
     to_payment_method_id: Optional[str] = None
-    description: Optional[str] = None
-    merchant: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=500)
+    merchant: Optional[str] = Field(None, max_length=200)
     date: Optional[datetime] = None
     time: Optional[str] = None
     receipt_image: Optional[str] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=500)
     attachments: Optional[List[str]] = None
     is_pending: Optional[bool] = None
     # Recurring transaction fields
@@ -503,7 +503,7 @@ class BudgetUpdate(BaseModel):
 
 class SavingsGoalCreate(BaseModel):
     profile_id: str
-    title: str
+    title: str = Field(max_length=100)
     target_amount: float = Field(gt=0)
     current_amount: float = Field(ge=0)
     deadline: datetime
@@ -528,7 +528,7 @@ class SavingsGoalCreate(BaseModel):
 
 class SavingsGoalUpdate(BaseModel):
     profile_id: Optional[str] = None
-    title: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=100)
     target_amount: Optional[float] = None
     current_amount: Optional[float] = None
     deadline: Optional[datetime] = None
@@ -584,7 +584,7 @@ class SavingsGoalResponse(SavingsGoal):
 
 class UserSettingsUpdate(BaseModel):
     dark_mode: Optional[bool] = None
-    currency: Optional[str] = None
+    currency: Optional[str] = Field(None, max_length=10)
     push_budget_alerts: Optional[bool] = None
     push_goal_milestones: Optional[bool] = None
     push_large_transactions: Optional[bool] = None
@@ -592,7 +592,7 @@ class UserSettingsUpdate(BaseModel):
 
 
 class ScanReceiptRequest(BaseModel):
-    image: str  # Base64 encoded image
+    image: str = Field(max_length=5_000_000)  # Base64 encoded image
 
 
 class ChatInsightsRequest(BaseModel):
@@ -639,10 +639,10 @@ class Asset(BaseModel):
 
 class AssetCreate(BaseModel):
     profile_id: str
-    name: str
+    name: str = Field(max_length=100)
     type: AssetType
     value: float = Field(ge=0)
-    currency: str = "USD"
+    currency: str = Field(default="USD", max_length=10)
 
     @field_validator("name")
     @classmethod
@@ -653,10 +653,10 @@ class AssetCreate(BaseModel):
 
 
 class AssetUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
     type: Optional[AssetType] = None
     value: Optional[float] = None
-    currency: Optional[str] = None
+    currency: Optional[str] = Field(None, max_length=10)
 
     @field_validator("name")
     @classmethod
@@ -694,7 +694,7 @@ class Liability(BaseModel):
 
 class LiabilityCreate(BaseModel):
     profile_id: str
-    name: str
+    name: str = Field(max_length=100)
     type: LiabilityType
     balance: float = Field(ge=0)
     interest_rate: Optional[float] = None
@@ -709,7 +709,7 @@ class LiabilityCreate(BaseModel):
 
 
 class LiabilityUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
     type: Optional[LiabilityType] = None
     balance: Optional[float] = None
     interest_rate: Optional[float] = None
@@ -778,7 +778,7 @@ class PushToken(BaseModel):
 
 
 class PushTokenCreate(BaseModel):
-    expo_push_token: str
+    expo_push_token: str = Field(max_length=100)
     device_type: DeviceType
 
     @field_validator("expo_push_token")
@@ -835,8 +835,8 @@ class Bill(BaseModel):
 
 class BillCreate(BaseModel):
     profile_id: str
-    name: str
-    merchant: Optional[str] = None
+    name: str = Field(max_length=100)
+    merchant: Optional[str] = Field(None, max_length=200)
     expected_amount: float = Field(gt=0)
     frequency: BillFrequency
     due_day: int
@@ -860,8 +860,8 @@ class BillCreate(BaseModel):
 
 
 class BillUpdate(BaseModel):
-    name: Optional[str] = None
-    merchant: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
+    merchant: Optional[str] = Field(None, max_length=200)
     expected_amount: Optional[float] = None
     frequency: Optional[BillFrequency] = None
     due_day: Optional[int] = None
@@ -898,8 +898,8 @@ class BillResponse(Bill):
 class BillFromSubscriptionCreate(BaseModel):
     """Lightweight create for promoting a detected subscription to a bill."""
     profile_id: str
-    name: str
-    merchant: str
+    name: str = Field(max_length=100)
+    merchant: str = Field(max_length=200)
     expected_amount: float = Field(gt=0)
     frequency: BillFrequency
     due_day: int
