@@ -15,11 +15,14 @@ def _register(client, email=None, password="secret123", name="Tester"):
         json={"email": email, "password": password, "name": name},
     )
     assert response.status_code == 200
-    return response.json()
+    data = response.json()
+    token = response.cookies.get("session_token")
+    data["session_token"] = token
+    return data
 
 
 def _auth_headers(token):
-    return {"Authorization": f"Bearer {token}"}
+    return {"session_token": token}
 
 
 def test_get_api_root(client):
@@ -65,7 +68,7 @@ def test_delete_account_unauthorized_rejected(client):
 
 def test_delete_account_removes_user_data_and_invalidates_session(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
 
     # Seed user-scoped docs to ensure account deletion wipes all owned data.
@@ -73,12 +76,12 @@ def test_delete_account_removes_user_data_and_invalidates_session(client, fake_d
     fake_db.budgets.docs.append({"user_id": user_id, "budget_id": "b1", "profile_id": "p1", "amount": 100})
     fake_db.expenses.docs.append({"user_id": user_id, "expense_id": "e1", "profile_id": "p1", "amount": 10})
 
-    delete_resp = client.request("DELETE", "/api/auth/account", headers=headers, json={"confirmation": "DELETE"})
+    delete_resp = client.request("DELETE", "/api/auth/account", cookies=cookies, json={"confirmation": "DELETE"})
     assert delete_resp.status_code == 200
     assert delete_resp.json()["message"] == "Account deleted successfully"
 
     # Session is invalid after deletion.
-    me_resp = client.get("/api/auth/me", headers=headers)
+    me_resp = client.get("/api/auth/me", cookies=cookies)
     assert me_resp.status_code == 401
     assert me_resp.json()["error"]["code"] == "UNAUTHORIZED"
 
@@ -98,9 +101,9 @@ def test_delete_account_removes_user_data_and_invalidates_session(client, fake_d
 
 def test_expenses_negative_pagination_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.get("/api/expenses?limit=-1", headers=headers)
+    response = client.get("/api/expenses?limit=-1", cookies=cookies)
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
@@ -108,9 +111,9 @@ def test_expenses_negative_pagination_rejected(client):
 
 def test_expenses_invalid_date_filter_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.get("/api/expenses?start_date=not-a-date", headers=headers)
+    response = client.get("/api/expenses?start_date=not-a-date", cookies=cookies)
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "BAD_REQUEST"
@@ -118,11 +121,11 @@ def test_expenses_invalid_date_filter_rejected(client):
 
 def test_expenses_invalid_date_range_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     response = client.get(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         params={
             "start_date": "2026-03-10T00:00:00+00:00",
             "end_date": "2026-03-01T00:00:00+00:00",
@@ -134,12 +137,12 @@ def test_expenses_invalid_date_range_rejected(client):
 
 def test_expenses_search_type_and_payment_filters(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     alt_payment = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Alt PM", "type": "debit_card", "last_four": "2222", "is_default": False},
     )
     assert alt_payment.status_code == 200
@@ -153,7 +156,7 @@ def test_expenses_search_type_and_payment_filters(client, fake_db):
     for payload in cases:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "amount": 50.0,
@@ -166,7 +169,7 @@ def test_expenses_search_type_and_payment_filters(client, fake_db):
 
     filtered = client.get(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         params={
             "q": "coffee",
             "type": "expense",
@@ -181,12 +184,12 @@ def test_expenses_search_type_and_payment_filters(client, fake_db):
 
 def test_expenses_list_order_is_deterministic_desc_by_date(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     older = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 10.0,
@@ -198,7 +201,7 @@ def test_expenses_list_order_is_deterministic_desc_by_date(client, fake_db):
     )
     newer = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 20.0,
@@ -211,7 +214,7 @@ def test_expenses_list_order_is_deterministic_desc_by_date(client, fake_db):
     assert older.status_code == 200
     assert newer.status_code == 200
 
-    list_response = client.get(f"/api/expenses?profile_id={profile_id}", headers=headers)
+    list_response = client.get(f"/api/expenses?profile_id={profile_id}", cookies=cookies)
     assert list_response.status_code == 200
     items = list_response.json()
 
@@ -221,7 +224,7 @@ def test_expenses_list_order_is_deterministic_desc_by_date(client, fake_db):
 
 def test_analytics_summary_values(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     now = datetime.now(timezone.utc)
@@ -257,10 +260,10 @@ def test_analytics_summary_values(client, fake_db):
             "date": this_month.isoformat(),
         },
     ]:
-        resp = client.post("/api/expenses", headers=headers, json=payload)
+        resp = client.post("/api/expenses", cookies=cookies, json=payload)
         assert resp.status_code == 200
 
-    summary = client.get("/api/analytics/summary", headers=headers)
+    summary = client.get("/api/analytics/summary", cookies=cookies)
     assert summary.status_code == 200
     body = summary.json()
     assert body["total_spend"] == 300.0
@@ -273,12 +276,12 @@ def test_analytics_summary_values(client, fake_db):
 
 def test_analytics_category_breakdown_sorted(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, default_category_id, payment_id = _first_ids_for_user(fake_db, user_id)
     second_category = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Analytics Cat", "color": "#22c55e", "icon": "flash"},
     )
     assert second_category.status_code == 200
@@ -290,7 +293,7 @@ def test_analytics_category_breakdown_sorted(client, fake_db):
     ]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -303,7 +306,7 @@ def test_analytics_category_breakdown_sorted(client, fake_db):
         )
         assert resp.status_code == 200
 
-    breakdown = client.get("/api/analytics/category-breakdown", headers=headers)
+    breakdown = client.get("/api/analytics/category-breakdown", cookies=cookies)
     assert breakdown.status_code == 200
     items = breakdown.json()["items"]
     assert items[0]["amount"] == 120.0
@@ -314,7 +317,7 @@ def test_analytics_category_breakdown_sorted(client, fake_db):
 
 def test_analytics_monthly_trend_ordering(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
     now = datetime.now(timezone.utc).replace(day=10)
 
@@ -325,7 +328,7 @@ def test_analytics_monthly_trend_ordering(client, fake_db):
             target_month = (target_month - timedelta(days=1)).replace(day=1)
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -338,7 +341,7 @@ def test_analytics_monthly_trend_ordering(client, fake_db):
         )
         assert resp.status_code == 200
 
-    trend = client.get("/api/analytics/monthly-trend", headers=headers)
+    trend = client.get("/api/analytics/monthly-trend", cookies=cookies)
     assert trend.status_code == 200
     months = [item["month"] for item in trend.json()["items"]]
     assert months == sorted(months)
@@ -347,12 +350,12 @@ def test_analytics_monthly_trend_ordering(client, fake_db):
 
 def test_analytics_empty_data_safe_response(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    summary = client.get("/api/analytics/summary", headers=headers)
-    category = client.get("/api/analytics/category-breakdown", headers=headers)
-    payment = client.get("/api/analytics/payment-method-breakdown", headers=headers)
-    trend = client.get("/api/analytics/monthly-trend", headers=headers)
+    summary = client.get("/api/analytics/summary", cookies=cookies)
+    category = client.get("/api/analytics/category-breakdown", cookies=cookies)
+    payment = client.get("/api/analytics/payment-method-breakdown", cookies=cookies)
+    trend = client.get("/api/analytics/monthly-trend", cookies=cookies)
 
     assert summary.status_code == 200
     assert summary.json()["total_spend"] == 0.0
@@ -366,11 +369,11 @@ def test_analytics_empty_data_safe_response(client):
 
 def test_analytics_invalid_date_range_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     response = client.get(
         "/api/analytics/summary",
-        headers=headers,
+        cookies=cookies,
         params={
             "start_date": "2026-03-10T00:00:00+00:00",
             "end_date": "2026-03-01T00:00:00+00:00",
@@ -382,7 +385,7 @@ def test_analytics_invalid_date_range_rejected(client):
 
 def test_analytics_summary_respects_date_range(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     inside = datetime.now(timezone.utc) - timedelta(days=10)
@@ -391,7 +394,7 @@ def test_analytics_summary_respects_date_range(client, fake_db):
     for amount, date_val in [(50.0, inside), (200.0, outside)]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -406,14 +409,14 @@ def test_analytics_summary_respects_date_range(client, fake_db):
 
     start = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     end = datetime.now(timezone.utc).isoformat()
-    summary = client.get("/api/analytics/summary", headers=headers, params={"start_date": start, "end_date": end})
+    summary = client.get("/api/analytics/summary", cookies=cookies, params={"start_date": start, "end_date": end})
     assert summary.status_code == 200
     assert summary.json()["total_spend"] == 50.0
 
 
 def test_insights_overview_respects_date_range(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     now = datetime.now(timezone.utc)
@@ -423,7 +426,7 @@ def test_insights_overview_respects_date_range(client, fake_db):
     for amount, date_val in [(120.0, recent), (400.0, old)]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -438,7 +441,7 @@ def test_insights_overview_respects_date_range(client, fake_db):
 
     start = (now - timedelta(days=30)).isoformat()
     end = now.isoformat()
-    response = client.get("/api/insights/overview", headers=headers, params={"start_date": start, "end_date": end})
+    response = client.get("/api/insights/overview", cookies=cookies, params={"start_date": start, "end_date": end})
     assert response.status_code == 200
     top_category = next((i for i in response.json()["insights"] if i["type"] == "top_category"), None)
     assert top_category is not None
@@ -447,7 +450,7 @@ def test_insights_overview_respects_date_range(client, fake_db):
 
 def test_insights_overview_rising_spend(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     now = datetime.now(timezone.utc)
@@ -457,7 +460,7 @@ def test_insights_overview_rising_spend(client, fake_db):
     for amount, date_val in [(100.0, prev_month), (250.0, this_month)]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -470,19 +473,19 @@ def test_insights_overview_rising_spend(client, fake_db):
         )
         assert resp.status_code == 200
 
-    response = client.get("/api/insights/overview", headers=headers)
+    response = client.get("/api/insights/overview", cookies=cookies)
     assert response.status_code == 200
     assert any(i["type"] == "trend" and i["severity"] == "warning" for i in response.json()["insights"])
 
 
 def test_insights_overview_top_category_concentration(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, primary_cat, payment_id = _first_ids_for_user(fake_db, user_id)
     second_category = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Low Share Cat", "color": "#22c55e", "icon": "flash"},
     )
     assert second_category.status_code == 200
@@ -491,7 +494,7 @@ def test_insights_overview_top_category_concentration(client, fake_db):
     for cid, amount in [(primary_cat, 180.0), (second_cat, 20.0)]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "type": "expense",
@@ -504,17 +507,17 @@ def test_insights_overview_top_category_concentration(client, fake_db):
         )
         assert resp.status_code == 200
 
-    response = client.get("/api/insights/overview", headers=headers)
+    response = client.get("/api/insights/overview", cookies=cookies)
     assert response.status_code == 200
     assert any(i["type"] == "concentration" for i in response.json()["insights"])
 
 
 def test_insights_empty_state_safe_behavior(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    overview = client.get("/api/insights/overview", headers=headers)
-    recommendations = client.get("/api/insights/recommendations", headers=headers)
+    overview = client.get("/api/insights/overview", cookies=cookies)
+    recommendations = client.get("/api/insights/recommendations", cookies=cookies)
 
     assert overview.status_code == 200
     assert recommendations.status_code == 200
@@ -524,21 +527,21 @@ def test_insights_empty_state_safe_behavior(client):
 
 def test_insights_recommendations_are_deterministic(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, user_id)
 
     # Add an entertainment category and corresponding budget to trigger deterministic recommendations.
     ent = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Entertainment Plus", "color": "#22c55e", "icon": "flash"},
     )
     assert ent.status_code == 200
     ent_id = ent.json()["category_id"]
     budget = client.post(
         "/api/budgets",
-        headers=headers,
+        cookies=cookies,
         json={"profile_id": profile_id, "category_id": ent_id, "amount": 100.0, "period": "monthly"},
     )
     assert budget.status_code == 200
@@ -550,7 +553,7 @@ def test_insights_recommendations_are_deterministic(client, fake_db):
     ]:
         resp = client.post(
             "/api/expenses",
-            headers=headers,
+            cookies=cookies,
             json={
                 "profile_id": profile_id,
                 "date": datetime.now(timezone.utc).isoformat(),
@@ -559,8 +562,8 @@ def test_insights_recommendations_are_deterministic(client, fake_db):
         )
         assert resp.status_code == 200
 
-    first = client.get("/api/insights/recommendations", headers=headers)
-    second = client.get("/api/insights/recommendations", headers=headers)
+    first = client.get("/api/insights/recommendations", cookies=cookies)
+    second = client.get("/api/insights/recommendations", cookies=cookies)
     assert first.status_code == 200
     assert second.status_code == 200
     assert first.json() == second.json()
@@ -568,13 +571,13 @@ def test_insights_recommendations_are_deterministic(client, fake_db):
 
 def test_insights_v2_profile_scoped_success(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, user_id)
 
     create = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 125.0,
@@ -587,7 +590,7 @@ def test_insights_v2_profile_scoped_success(client, fake_db):
     )
     assert create.status_code == 200
 
-    response = client.get("/api/insights/v2", headers=headers, params={"profile_id": profile_id})
+    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
 
     assert response.status_code == 200
     payload = response.json()
@@ -600,23 +603,23 @@ def test_insights_v2_profile_scoped_success(client, fake_db):
 
 def test_insights_v2_invalid_or_unauthorized_profile_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    missing_param = client.get("/api/insights/v2", headers=headers)
+    missing_param = client.get("/api/insights/v2", cookies=cookies)
     assert missing_param.status_code == 400
     assert missing_param.json()["error"]["code"] == "BAD_REQUEST"
 
-    missing = client.get("/api/insights/v2", headers=headers, params={"profile_id": "profile_missing"})
+    missing = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": "profile_missing"})
     assert missing.status_code == 404
     assert missing.json()["error"]["code"] == "NOT_FOUND"
 
 
 def test_insights_v2_stable_response_shape(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
-    response = client.get("/api/insights/v2", headers=headers, params={"profile_id": profile_id})
+    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
     assert response.status_code == 200
 
     payload = response.json()
@@ -628,10 +631,10 @@ def test_insights_v2_stable_response_shape(client, fake_db):
 
 def test_insights_v2_no_data_response_shape(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
-    response = client.get("/api/insights/v2", headers=headers, params={"profile_id": profile_id})
+    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
     assert response.status_code == 200
     payload = response.json()
 
@@ -659,15 +662,15 @@ def test_auth_login_success(client):
     assert response.status_code == 200
     payload = response.json()
     assert payload["user"]["email"].endswith("@example.com")
-    assert payload["session_token"]
+    assert response.cookies.get("session_token")
 
 
 def test_profile_duplicate_create_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    first = client.post("/api/profiles", headers=headers, json={"name": "Work"})
-    second = client.post("/api/profiles", headers=headers, json={"name": " work "})
+    first = client.post("/api/profiles", cookies=cookies, json={"name": "Work"})
+    second = client.post("/api/profiles", cookies=cookies, json={"name": " work "})
 
     assert first.status_code == 200
     assert second.status_code == 409
@@ -676,9 +679,9 @@ def test_profile_duplicate_create_rejected(client):
 
 def test_profile_response_model_hides_internal_fields(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.post("/api/profiles", headers=headers, json={"name": "Typed Model Profile"})
+    response = client.post("/api/profiles", cookies=cookies, json={"name": "Typed Model Profile"})
 
     assert response.status_code == 200
     payload = response.json()
@@ -688,9 +691,9 @@ def test_profile_response_model_hides_internal_fields(client):
 
 def test_profile_create_accepts_explicit_profile_type(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.post("/api/profiles", headers=headers, json={"name": "Roommates", "profile_type": "shared"})
+    response = client.post("/api/profiles", cookies=cookies, json={"name": "Roommates", "profile_type": "shared"})
 
     assert response.status_code == 200
     assert response.json()["profile_type"] == "shared"
@@ -698,18 +701,18 @@ def test_profile_create_accepts_explicit_profile_type(client):
 
 def test_profile_create_rejects_invalid_profile_type(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.post("/api/profiles", headers=headers, json={"name": "Invalid", "profile_type": "enterprise"})
+    response = client.post("/api/profiles", cookies=cookies, json={"name": "Invalid", "profile_type": "enterprise"})
 
     assert response.status_code == 422
 
 
 def test_seeded_profiles_have_explicit_profile_types(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.get("/api/profiles", headers=headers)
+    response = client.get("/api/profiles", cookies=cookies)
 
     assert response.status_code == 200
     by_name = {p["name"]: p for p in response.json()}
@@ -719,9 +722,9 @@ def test_seeded_profiles_have_explicit_profile_types(client):
 
 def test_profiles_response_always_includes_profile_type(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.get("/api/profiles", headers=headers)
+    response = client.get("/api/profiles", cookies=cookies)
 
     assert response.status_code == 200
     profiles = response.json()
@@ -731,29 +734,29 @@ def test_profiles_response_always_includes_profile_type(client):
 
 def test_profile_type_contract_stability_for_seed_and_shared_create(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    seeded = client.get("/api/profiles", headers=headers)
+    seeded = client.get("/api/profiles", cookies=cookies)
     assert seeded.status_code == 200
     seeded_by_name = {p["name"]: p for p in seeded.json()}
     assert seeded_by_name["Personal"]["profile_type"] == "personal"
     assert seeded_by_name["Business"]["profile_type"] == "business"
 
-    created = client.post("/api/profiles", headers=headers, json={"name": "Roommates Shared", "profile_type": "shared"})
+    created = client.post("/api/profiles", cookies=cookies, json={"name": "Roommates Shared", "profile_type": "shared"})
     assert created.status_code == 200
     assert created.json()["profile_type"] == "shared"
 
 
 def test_profile_update_refreshes_name_normalized_field(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
 
-    created = client.post("/api/profiles", headers=headers, json={"name": "Original Name"})
+    created = client.post("/api/profiles", cookies=cookies, json={"name": "Original Name"})
     assert created.status_code == 200
     profile_id = created.json()["profile_id"]
 
-    update = client.put(f"/api/profiles/{profile_id}", headers=headers, json={"name": "  Renamed Profile  "})
+    update = client.put(f"/api/profiles/{profile_id}", cookies=cookies, json={"name": "  Renamed Profile  "})
     assert update.status_code == 200
     assert "name_normalized" not in update.json()
 
@@ -831,16 +834,16 @@ def test_integrity_check_reports_reference_and_normalization_issues(fake_db):
 
 def test_category_duplicate_create_rejected_same_scope(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     first = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Utilities", "color": "#22c55e", "icon": "flash", "profile_id": None},
     )
     second = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": " utilities ", "color": "#22c55e", "icon": "flash", "profile_id": None},
     )
 
@@ -851,16 +854,16 @@ def test_category_duplicate_create_rejected_same_scope(client):
 
 def test_payment_method_exact_duplicate_rejected(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     first = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Travel Card", "type": "credit_card", "last_four": "1234", "is_default": False},
     )
     second = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": " travel card ", "type": "credit_card", "last_four": "1234", "is_default": False},
     )
 
@@ -871,14 +874,14 @@ def test_payment_method_exact_duplicate_rejected(client):
 
 def test_profile_duplicate_key_error_translated_to_conflict(client, fake_db, monkeypatch):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     async def _raise_duplicate(_doc):
         raise DuplicateKeyError("E11000 duplicate key")
 
     monkeypatch.setattr(fake_db.profiles, "insert_one", _raise_duplicate)
 
-    response = client.post("/api/profiles", headers=headers, json={"name": "Race Duplicate"})
+    response = client.post("/api/profiles", cookies=cookies, json={"name": "Race Duplicate"})
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "CONFLICT"
@@ -886,7 +889,7 @@ def test_profile_duplicate_key_error_translated_to_conflict(client, fake_db, mon
 
 def test_category_duplicate_key_error_translated_to_conflict(client, fake_db, monkeypatch):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     async def _raise_duplicate(_doc):
         raise DuplicateKeyError("E11000 duplicate key")
@@ -895,7 +898,7 @@ def test_category_duplicate_key_error_translated_to_conflict(client, fake_db, mo
 
     response = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Race Category", "color": "#22c55e", "icon": "flash", "profile_id": None},
     )
 
@@ -905,7 +908,7 @@ def test_category_duplicate_key_error_translated_to_conflict(client, fake_db, mo
 
 def test_payment_method_duplicate_key_error_translated_to_conflict(client, fake_db, monkeypatch):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     async def _raise_duplicate(_doc):
         raise DuplicateKeyError("E11000 duplicate key")
@@ -914,7 +917,7 @@ def test_payment_method_duplicate_key_error_translated_to_conflict(client, fake_
 
     response = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Race PM", "type": "credit_card", "last_four": "1234", "is_default": False},
     )
 
@@ -924,17 +927,17 @@ def test_payment_method_duplicate_key_error_translated_to_conflict(client, fake_
 
 def test_delete_referenced_profile_blocked(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     _, category_id, payment_id = _first_ids_for_user(fake_db, user_id)
 
-    profile_create = client.post("/api/profiles", headers=headers, json={"name": "Delete Blocked Profile"})
+    profile_create = client.post("/api/profiles", cookies=cookies, json={"name": "Delete Blocked Profile"})
     assert profile_create.status_code == 200
     profile_id = profile_create.json()["profile_id"]
 
     expense_create = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 15.0,
@@ -946,20 +949,20 @@ def test_delete_referenced_profile_blocked(client, fake_db):
     )
     assert expense_create.status_code == 200
 
-    delete_response = client.delete(f"/api/profiles/{profile_id}", headers=headers)
+    delete_response = client.delete(f"/api/profiles/{profile_id}", cookies=cookies)
     assert delete_response.status_code == 409
     assert delete_response.json()["error"]["code"] == "CONFLICT"
 
 
 def test_delete_referenced_category_blocked(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, _, payment_id = _first_ids_for_user(fake_db, user_id)
 
     category_create = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Delete Blocked Category", "color": "#22c55e", "icon": "flash"},
     )
     assert category_create.status_code == 200
@@ -967,7 +970,7 @@ def test_delete_referenced_category_blocked(client, fake_db):
 
     expense_create = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 25.0,
@@ -979,20 +982,20 @@ def test_delete_referenced_category_blocked(client, fake_db):
     )
     assert expense_create.status_code == 200
 
-    delete_response = client.delete(f"/api/categories/{category_id}", headers=headers)
+    delete_response = client.delete(f"/api/categories/{category_id}", cookies=cookies)
     assert delete_response.status_code == 409
     assert delete_response.json()["error"]["code"] == "CONFLICT"
 
 
 def test_delete_referenced_payment_method_blocked(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, category_id, _ = _first_ids_for_user(fake_db, user_id)
 
     payment_create = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Delete Blocked PM", "type": "credit_card", "last_four": "4444", "is_default": False},
     )
     assert payment_create.status_code == 200
@@ -1000,7 +1003,7 @@ def test_delete_referenced_payment_method_blocked(client, fake_db):
 
     expense_create = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 35.0,
@@ -1012,24 +1015,24 @@ def test_delete_referenced_payment_method_blocked(client, fake_db):
     )
     assert expense_create.status_code == 200
 
-    delete_response = client.delete(f"/api/payment-methods/{payment_id}", headers=headers)
+    delete_response = client.delete(f"/api/payment-methods/{payment_id}", cookies=cookies)
     assert delete_response.status_code == 409
     assert delete_response.json()["error"]["code"] == "CONFLICT"
 
 
 def test_delete_unreferenced_non_default_resources_succeeds(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    profile = client.post("/api/profiles", headers=headers, json={"name": "Disposable Profile"})
+    profile = client.post("/api/profiles", cookies=cookies, json={"name": "Disposable Profile"})
     category = client.post(
         "/api/categories",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Disposable Category", "color": "#3b82f6", "icon": "tag"},
     )
     payment = client.post(
         "/api/payment-methods",
-        headers=headers,
+        cookies=cookies,
         json={"name": "Disposable PM", "type": "debit_card", "last_four": "6789", "is_default": False},
     )
 
@@ -1037,15 +1040,15 @@ def test_delete_unreferenced_non_default_resources_succeeds(client):
     assert category.status_code == 200
     assert payment.status_code == 200
 
-    assert client.delete(f"/api/profiles/{profile.json()['profile_id']}", headers=headers).status_code == 200
-    assert client.delete(f"/api/categories/{category.json()['category_id']}", headers=headers).status_code == 200
-    assert client.delete(f"/api/payment-methods/{payment.json()['payment_id']}", headers=headers).status_code == 200
+    assert client.delete(f"/api/profiles/{profile.json()['profile_id']}", cookies=cookies).status_code == 200
+    assert client.delete(f"/api/categories/{category.json()['category_id']}", cookies=cookies).status_code == 200
+    assert client.delete(f"/api/payment-methods/{payment.json()['payment_id']}", cookies=cookies).status_code == 200
 
 
 def test_auth_me_success(client):
     auth = _register(client)
 
-    response = client.get("/api/auth/me", headers=_auth_headers(auth["session_token"]))
+    response = client.get("/api/auth/me", cookies=_auth_headers(auth["session_token"]))
 
     assert response.status_code == 200
     assert response.json()["email"] == auth["user"]["email"]
@@ -1053,19 +1056,19 @@ def test_auth_me_success(client):
 
 def test_auth_logout_success(client):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
-    response = client.post("/api/auth/logout", headers=headers)
+    response = client.post("/api/auth/logout", cookies=cookies)
     assert response.status_code == 200
 
-    me_after_logout = client.get("/api/auth/me", headers=headers)
+    me_after_logout = client.get("/api/auth/me", cookies=cookies)
     assert me_after_logout.status_code == 401
 
 
 def test_expense_crud(client, fake_db):
     auth = _register(client)
     user_id = auth["user"]["user_id"]
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     profile_id = fake_db.profiles.docs[0]["profile_id"]
     category_id = fake_db.categories.docs[0]["category_id"]
@@ -1073,7 +1076,7 @@ def test_expense_crud(client, fake_db):
 
     create_response = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "type": "expense",
@@ -1090,35 +1093,35 @@ def test_expense_crud(client, fake_db):
     created = create_response.json()
     expense_id = created["expense_id"]
 
-    list_response = client.get(f"/api/expenses?profile_id={profile_id}", headers=headers)
+    list_response = client.get(f"/api/expenses?profile_id={profile_id}", cookies=cookies)
     assert list_response.status_code == 200
     expenses = list_response.json()
     assert any(item["expense_id"] == expense_id for item in expenses)
     assert all(item["user_id"] == user_id for item in expenses)
 
-    get_response = client.get(f"/api/expenses/{expense_id}", headers=headers)
+    get_response = client.get(f"/api/expenses/{expense_id}", cookies=cookies)
     assert get_response.status_code == 200
     assert get_response.json()["description"] == "Lunch"
 
     update_response = client.put(
         f"/api/expenses/{expense_id}",
-        headers=headers,
+        cookies=cookies,
         json={"description": "Lunch Updated", "amount": 40.0},
     )
     assert update_response.status_code == 200
     assert update_response.json()["description"] == "Lunch Updated"
     assert update_response.json()["amount"] == 40.0
 
-    delete_response = client.delete(f"/api/expenses/{expense_id}", headers=headers)
+    delete_response = client.delete(f"/api/expenses/{expense_id}", cookies=cookies)
     assert delete_response.status_code == 200
 
-    missing_after_delete = client.get(f"/api/expenses/{expense_id}", headers=headers)
+    missing_after_delete = client.get(f"/api/expenses/{expense_id}", cookies=cookies)
     assert missing_after_delete.status_code == 404
 
 
 def test_budget_progress_success(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     profile_id = fake_db.profiles.docs[0]["profile_id"]
     category_id = fake_db.categories.docs[0]["category_id"]
@@ -1126,7 +1129,7 @@ def test_budget_progress_success(client, fake_db):
 
     expense_response = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "type": "expense",
@@ -1141,7 +1144,7 @@ def test_budget_progress_success(client, fake_db):
 
     budget_response = client.post(
         "/api/budgets",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "category_id": category_id,
@@ -1151,7 +1154,7 @@ def test_budget_progress_success(client, fake_db):
     )
     assert budget_response.status_code == 200
 
-    progress_response = client.get(f"/api/budgets/progress?profile_id={profile_id}", headers=headers)
+    progress_response = client.get(f"/api/budgets/progress?profile_id={profile_id}", cookies=cookies)
 
     assert progress_response.status_code == 200
     progress = progress_response.json()
@@ -1188,7 +1191,7 @@ def test_auth_me_missing_token_returns_401(client):
 
 
 def test_auth_me_invalid_session_returns_401(client):
-    response = client.get("/api/auth/me", headers=_auth_headers("not-a-real-session"))
+    response = client.get("/api/auth/me", cookies=_auth_headers("not-a-real-session"))
 
     assert response.status_code == 401
 
@@ -1197,14 +1200,14 @@ def test_expense_ownership_enforced(client, fake_db):
     user1 = _register(client)
     user2 = _register(client)
 
-    user1_headers = _auth_headers(user1["session_token"])
-    user2_headers = _auth_headers(user2["session_token"])
+    user1_cookies = _auth_headers(user1["session_token"])
+    user2_cookies = _auth_headers(user2["session_token"])
 
     p1, c1, pm1 = _first_ids_for_user(fake_db, user1["user"]["user_id"])
 
     created = client.post(
         "/api/expenses",
-        headers=user1_headers,
+        cookies=user1_cookies,
         json={
             "profile_id": p1,
             "type": "expense",
@@ -1218,63 +1221,63 @@ def test_expense_ownership_enforced(client, fake_db):
     assert created.status_code == 200
     expense_id = created.json()["expense_id"]
 
-    assert client.get(f"/api/expenses/{expense_id}", headers=user2_headers).status_code == 404
-    assert client.put(f"/api/expenses/{expense_id}", headers=user2_headers, json={"amount": 20}).status_code == 404
-    assert client.delete(f"/api/expenses/{expense_id}", headers=user2_headers).status_code == 404
+    assert client.get(f"/api/expenses/{expense_id}", cookies=user2_cookies).status_code == 404
+    assert client.put(f"/api/expenses/{expense_id}", cookies=user2_cookies, json={"amount": 20}).status_code == 404
+    assert client.delete(f"/api/expenses/{expense_id}", cookies=user2_cookies).status_code == 404
 
 
 def test_user_scoped_resources_for_profiles_categories_payment_methods_and_budgets(client, fake_db):
     user1 = _register(client)
     user2 = _register(client)
 
-    user1_headers = _auth_headers(user1["session_token"])
-    user2_headers = _auth_headers(user2["session_token"])
+    user1_cookies = _auth_headers(user1["session_token"])
+    user2_cookies = _auth_headers(user2["session_token"])
 
     user1_id = user1["user"]["user_id"]
     user2_id = user2["user"]["user_id"]
 
-    user1_profiles = client.get("/api/profiles", headers=user1_headers)
-    user2_profiles = client.get("/api/profiles", headers=user2_headers)
+    user1_profiles = client.get("/api/profiles", cookies=user1_cookies)
+    user2_profiles = client.get("/api/profiles", cookies=user2_cookies)
     assert user1_profiles.status_code == 200
     assert user2_profiles.status_code == 200
     assert all(p["user_id"] == user1_id for p in user1_profiles.json())
     assert all(p["user_id"] == user2_id for p in user2_profiles.json())
 
-    user1_categories = client.get("/api/categories", headers=user1_headers)
-    user2_categories = client.get("/api/categories", headers=user2_headers)
+    user1_categories = client.get("/api/categories", cookies=user1_cookies)
+    user2_categories = client.get("/api/categories", cookies=user2_cookies)
     assert all(c["user_id"] == user1_id for c in user1_categories.json())
     assert all(c["user_id"] == user2_id for c in user2_categories.json())
 
-    user1_methods = client.get("/api/payment-methods", headers=user1_headers)
-    user2_methods = client.get("/api/payment-methods", headers=user2_headers)
+    user1_methods = client.get("/api/payment-methods", cookies=user1_cookies)
+    user2_methods = client.get("/api/payment-methods", cookies=user2_cookies)
     assert all(pm["user_id"] == user1_id for pm in user1_methods.json())
     assert all(pm["user_id"] == user2_id for pm in user2_methods.json())
 
     p1, c1, _ = _first_ids_for_user(fake_db, user1_id)
     budget = client.post(
         "/api/budgets",
-        headers=user1_headers,
+        cookies=user1_cookies,
         json={"profile_id": p1, "category_id": c1, "amount": 77.0, "period": "monthly"},
     )
     assert budget.status_code == 200
     budget_id = budget.json()["budget_id"]
 
-    user1_budgets = client.get(f"/api/budgets?profile_id={p1}", headers=user1_headers)
-    user2_budgets = client.get("/api/budgets", headers=user2_headers)
+    user1_budgets = client.get(f"/api/budgets?profile_id={p1}", cookies=user1_cookies)
+    user2_budgets = client.get("/api/budgets", cookies=user2_cookies)
     assert len(user1_budgets.json()) == 1
     assert user2_budgets.json() == []
-    assert client.delete(f"/api/budgets/{budget_id}", headers=user2_headers).status_code == 404
+    assert client.delete(f"/api/budgets/{budget_id}", cookies=user2_cookies).status_code == 404
 
 
 def test_empty_update_payload_returns_400_for_expense_and_budget(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, user_id)
 
     expense = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 9.0,
@@ -1288,13 +1291,13 @@ def test_empty_update_payload_returns_400_for_expense_and_budget(client, fake_db
 
     budget = client.post(
         "/api/budgets",
-        headers=headers,
+        cookies=cookies,
         json={"profile_id": profile_id, "category_id": category_id, "amount": 30.0, "period": "monthly"},
     )
     assert budget.status_code == 200
 
-    assert client.put(f"/api/expenses/{expense.json()['expense_id']}", headers=headers, json={}).status_code == 400
-    assert client.put(f"/api/budgets/{budget.json()['budget_id']}", headers=headers, json={}).status_code == 400
+    assert client.put(f"/api/expenses/{expense.json()['expense_id']}", cookies=cookies, json={}).status_code == 400
+    assert client.put(f"/api/budgets/{budget.json()['budget_id']}", cookies=cookies, json={}).status_code == 400
 
 
 def test_invalid_inputs_return_expected_errors(client):
@@ -1304,10 +1307,10 @@ def test_invalid_inputs_return_expected_errors(client):
     ).status_code == 400
 
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
 
     # missing required fields (profile_id, payment_method_id, description, date)
-    response = client.post("/api/expenses", headers=headers, json={"amount": 10.0})
+    response = client.post("/api/expenses", cookies=cookies, json={"amount": 10.0})
     assert response.status_code == 422
 
 
@@ -1327,7 +1330,7 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
     # user1 expense in profile A
     assert client.post(
         "/api/expenses",
-        headers=h1,
+        cookies=h1,
         json={
             "profile_id": u1_profile_ids[0],
             "amount": 12.5,
@@ -1341,7 +1344,7 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
     # user1 expense in profile B
     assert client.post(
         "/api/expenses",
-        headers=h1,
+        cookies=h1,
         json={
             "profile_id": u1_profile_ids[1],
             "amount": 30.0,
@@ -1355,7 +1358,7 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
     # user2 expense (must not appear in user1 export)
     assert client.post(
         "/api/expenses",
-        headers=h2,
+        cookies=h2,
         json={
             "profile_id": u2_profile,
             "amount": 99.0,
@@ -1366,7 +1369,7 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
         },
     ).status_code == 200
 
-    csv_response = client.get(f"/api/export/csv?profile_id={u1_profile_ids[0]}", headers=h1)
+    csv_response = client.get(f"/api/export/csv?profile_id={u1_profile_ids[0]}", cookies=h1)
     assert csv_response.status_code == 200
     csv_body = csv_response.text
     assert "Date,Type,Description,Amount,Category,Payment Method,Merchant,Notes" in csv_body
@@ -1374,7 +1377,7 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
     assert "U1-B" not in csv_body
     assert "U2" not in csv_body
 
-    json_response = client.get(f"/api/export/json?profile_id={u1_profile_ids[0]}", headers=h1)
+    json_response = client.get(f"/api/export/json?profile_id={u1_profile_ids[0]}", cookies=h1)
     assert json_response.status_code == 200
     payload = json_response.json()
     assert len(payload["expenses"]) == 1
@@ -1385,12 +1388,12 @@ def test_export_csv_and_json_success_with_user_profile_filtering(client, fake_db
 
 def test_export_ordering_is_deterministic_desc_by_date(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     older = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 10.0,
@@ -1402,7 +1405,7 @@ def test_export_ordering_is_deterministic_desc_by_date(client, fake_db):
     )
     newer = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 20.0,
@@ -1415,7 +1418,7 @@ def test_export_ordering_is_deterministic_desc_by_date(client, fake_db):
     assert older.status_code == 200
     assert newer.status_code == 200
 
-    json_export = client.get(f"/api/export/json?profile_id={profile_id}", headers=headers)
+    json_export = client.get(f"/api/export/json?profile_id={profile_id}", cookies=cookies)
     assert json_export.status_code == 200
     assert json_export.json()["expenses"][0]["description"] == "Newer export item"
     assert json_export.json()["expenses"][1]["description"] == "Older export item"
@@ -1423,16 +1426,16 @@ def test_export_ordering_is_deterministic_desc_by_date(client, fake_db):
 
 def test_export_malformed_date_filter_rejected(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     csv_response = client.get(
         f"/api/export/csv?profile_id={profile_id}&start_date=not-a-date",
-        headers=headers,
+        cookies=cookies,
     )
     json_response = client.get(
         f"/api/export/json?profile_id={profile_id}&start_date=not-a-date",
-        headers=headers,
+        cookies=cookies,
     )
 
     assert csv_response.status_code == 400
@@ -1443,16 +1446,16 @@ def test_export_malformed_date_filter_rejected(client, fake_db):
 
 def test_export_invalid_date_range_rejected(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     csv_response = client.get(
         f"/api/export/csv?profile_id={profile_id}&start_date=2026-03-10T00:00:00+00:00&end_date=2026-03-01T00:00:00+00:00",
-        headers=headers,
+        cookies=cookies,
     )
     json_response = client.get(
         f"/api/export/json?profile_id={profile_id}&start_date=2026-03-10T00:00:00+00:00&end_date=2026-03-01T00:00:00+00:00",
-        headers=headers,
+        cookies=cookies,
     )
 
     assert csv_response.status_code == 400
@@ -1463,11 +1466,11 @@ def test_export_invalid_date_range_rejected(client, fake_db):
 
 def test_empty_export_succeeds_safely(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
-    csv_response = client.get(f"/api/export/csv?profile_id={profile_id}", headers=headers)
-    json_response = client.get(f"/api/export/json?profile_id={profile_id}", headers=headers)
+    csv_response = client.get(f"/api/export/csv?profile_id={profile_id}", cookies=cookies)
+    json_response = client.get(f"/api/export/json?profile_id={profile_id}", cookies=cookies)
 
     assert csv_response.status_code == 200
     lines = [line for line in csv_response.text.strip().splitlines() if line]
@@ -1482,12 +1485,12 @@ def test_empty_export_succeeds_safely(client, fake_db):
 
 def test_invalid_expense_amount_returns_422(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     response = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 0,
@@ -1503,12 +1506,12 @@ def test_invalid_expense_amount_returns_422(client, fake_db):
 
 def test_invalid_budget_period_returns_422(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     response = client.post(
         "/api/budgets",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "category_id": category_id,
@@ -1522,12 +1525,12 @@ def test_invalid_budget_period_returns_422(client, fake_db):
 
 def test_blank_expense_description_returns_422(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
     response = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "amount": 10.0,
@@ -1545,13 +1548,13 @@ def test_foreign_owned_category_or_payment_method_returns_404(client, fake_db):
     user1 = _register(client)
     user2 = _register(client)
 
-    user1_headers = _auth_headers(user1["session_token"])
+    user1_cookies = _auth_headers(user1["session_token"])
     user1_profile, _, _ = _first_ids_for_user(fake_db, user1["user"]["user_id"])
     _, user2_category, user2_payment_method = _first_ids_for_user(fake_db, user2["user"]["user_id"])
 
     with_foreign_category = client.post(
         "/api/expenses",
-        headers=user1_headers,
+        cookies=user1_cookies,
         json={
             "profile_id": user1_profile,
             "amount": 10.0,
@@ -1566,7 +1569,7 @@ def test_foreign_owned_category_or_payment_method_returns_404(client, fake_db):
     _, user1_category, user1_payment = _first_ids_for_user(fake_db, user1["user"]["user_id"])
     with_foreign_payment_method = client.post(
         "/api/expenses",
-        headers=user1_headers,
+        cookies=user1_cookies,
         json={
             "profile_id": user1_profile,
             "amount": 10.0,
@@ -1589,7 +1592,7 @@ def test_expired_session_returns_401_and_session_deleted(client, fake_db):
         if session["session_token"] == token:
             session["expires_at"] = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
-    response = client.get("/api/auth/me", headers=_auth_headers(token))
+    response = client.get("/api/auth/me", cookies=_auth_headers(token))
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "UNAUTHORIZED"
@@ -1609,10 +1612,10 @@ def test_password_hash_not_exposed_in_auth_responses(client):
         json={"email": email, "password": "secret123"},
     )
     assert login_response.status_code == 200
-    login_token = login_response.json()["session_token"]
+    login_token = login_response.cookies.get("session_token")
     assert "password_hash" not in login_response.json()["user"]
 
-    me_response = client.get("/api/auth/me", headers=_auth_headers(login_token))
+    me_response = client.get("/api/auth/me", cookies=_auth_headers(login_token))
     assert me_response.status_code == 200
     assert "password_hash" not in me_response.json()
 
@@ -1645,13 +1648,13 @@ def test_budget_update_rejects_budget_with_foreign_references(client, fake_db):
     owner = _register(client)
     other = _register(client)
 
-    owner_headers = _auth_headers(owner["session_token"])
+    owner_cookies = _auth_headers(owner["session_token"])
     owner_profile, owner_category, _ = _first_ids_for_user(fake_db, owner["user"]["user_id"])
     _, other_category, _ = _first_ids_for_user(fake_db, other["user"]["user_id"])
 
     created_budget = client.post(
         "/api/budgets",
-        headers=owner_headers,
+        cookies=owner_cookies,
         json={
             "profile_id": owner_profile,
             "category_id": owner_category,
@@ -1667,14 +1670,14 @@ def test_budget_update_rejects_budget_with_foreign_references(client, fake_db):
         if budget["budget_id"] == budget_id:
             budget["category_id"] = other_category
 
-    response = client.put(f"/api/budgets/{budget_id}", headers=owner_headers, json={"amount": 90.0})
+    response = client.put(f"/api/budgets/{budget_id}", cookies=owner_cookies, json={"amount": 90.0})
 
     assert response.status_code == 404
 
 
 def test_expense_partial_update_rejects_invalid_merged_transfer_state(client, fake_db):
     auth = _register(client)
-    headers = _auth_headers(auth["session_token"])
+    cookies = _auth_headers(auth["session_token"])
     user_id = auth["user"]["user_id"]
     profile_id, category_id, payment_id = _first_ids_for_user(fake_db, user_id)
     second_payment_id = next(
@@ -1685,7 +1688,7 @@ def test_expense_partial_update_rejects_invalid_merged_transfer_state(client, fa
 
     transfer = client.post(
         "/api/expenses",
-        headers=headers,
+        cookies=cookies,
         json={
             "profile_id": profile_id,
             "type": "transfer",
@@ -1703,7 +1706,7 @@ def test_expense_partial_update_rejects_invalid_merged_transfer_state(client, fa
     # Partial update would make source == destination for a transfer.
     response = client.put(
         f"/api/expenses/{expense_id}",
-        headers=headers,
+        cookies=cookies,
         json={"payment_method_id": second_payment_id},
     )
 

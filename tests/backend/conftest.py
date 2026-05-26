@@ -229,7 +229,7 @@ def fake_db(monkeypatch):
 @pytest.fixture
 def client(fake_db):
     import main
-    from routers import auth
+    from routers import auth, expenses, invites
 
     app_limiter = main.app.state.limiter
     app_limiter_previous = getattr(app_limiter, "enabled", True)
@@ -239,8 +239,18 @@ def client(fake_db):
     auth_limiter_previous = getattr(auth_limiter, "enabled", True)
     auth_limiter.enabled = False
 
+    expenses_limiter = expenses.limiter
+    expenses_limiter_previous = getattr(expenses_limiter, "enabled", True)
+    expenses_limiter.enabled = False
+
+    invites_limiter = invites.limiter
+    invites_limiter_previous = getattr(invites_limiter, "enabled", True)
+    invites_limiter.enabled = False
+
     with TestClient(main.app) as test_client:
         yield test_client
 
+    invites_limiter.enabled = invites_limiter_previous
+    expenses_limiter.enabled = expenses_limiter_previous
     auth_limiter.enabled = auth_limiter_previous
     app_limiter.enabled = app_limiter_previous
