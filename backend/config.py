@@ -41,6 +41,8 @@ class Settings:
     APP_URL: str | None
     WEB_URL: str | None
     MOBILE_APP_URL: str | None
+    # JWT_SECRET is required by config validation but the app uses opaque session tokens (not JWTs).
+    # This field is retained for potential future use. Do not use this value for signing tokens.
     JWT_SECRET: str | None
     ALLOWED_ORIGINS: list[str]
     LOG_LEVEL: str

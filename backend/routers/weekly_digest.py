@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,6 +14,7 @@ from services.weekly_digest_service import (
 )
 
 router = APIRouter(prefix="/weekly-digest", tags=["weekly-digest"])
+logger = logging.getLogger(__name__)
 
 
 async def _ensure_profile_owned(profile_id: str, user_id: str):
@@ -86,7 +88,8 @@ async def get_weekly_digest(
     try:
         start_dt, end_dt = normalize_week_window(week_start=week_start, week_end=week_end)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        logger.error(f"Weekly digest date range error: {exc}")
+        raise HTTPException(status_code=400, detail="Invalid date range.")
 
     digest = await build_weekly_financial_digest(
         user_id=current_user["user_id"],
