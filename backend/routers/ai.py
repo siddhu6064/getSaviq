@@ -68,8 +68,8 @@ async def scan_receipt(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error scanning receipt: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to scan receipt: {str(e)}")
+        logger.error(f"Receipt scan error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to scan receipt. Please try again.")
 
 
 @router.get("/insights")
