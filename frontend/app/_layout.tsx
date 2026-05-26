@@ -15,6 +15,7 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { lightTheme } from "../src/components/NeumorphicUI";
 import * as Linking from "expo-linking";
+import * as SecureStore from "expo-secure-store";
 import * as Notifications from "expo-notifications";
 import notificationService from "../src/services/notificationService";
 import { pushAPI } from "../src/services/api";
@@ -153,7 +154,10 @@ function RootLayoutNav() {
             if (isAuthenticated) {
               router.push(`/accept-invite?token=${encodeURIComponent(token)}` as any);
             } else {
-              AsyncStorage.setItem("pending_invite_token", token).catch(() => {});
+              (Platform.OS !== "web"
+                ? SecureStore.setItemAsync("pending_invite_token", token)
+                : AsyncStorage.setItem("pending_invite_token", token)
+              ).catch(() => {});
             }
           }
           return;
@@ -219,10 +223,16 @@ function RootLayoutNav() {
     if (routeAction === "enter_tabs") {
       router.replace("/(tabs)");
       // Check for pending invite token (survives app restart)
-      AsyncStorage.getItem("pending_invite_token")
+      (Platform.OS !== "web"
+        ? SecureStore.getItemAsync("pending_invite_token")
+        : AsyncStorage.getItem("pending_invite_token")
+      )
         .then((token) => {
           if (token) {
-            AsyncStorage.removeItem("pending_invite_token").catch(() => {});
+            (Platform.OS !== "web"
+              ? SecureStore.deleteItemAsync("pending_invite_token")
+              : AsyncStorage.removeItem("pending_invite_token")
+            ).catch(() => {});
             setTimeout(() => {
               router.push(`/accept-invite?token=${encodeURIComponent(token)}` as any);
             }, 600);
