@@ -14,7 +14,6 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("session_token");
       const guestMode = localStorage.getItem("guest_mode");
 
       if (guestMode === "true") {
@@ -24,12 +23,9 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      if (token) {
-        const response = await authAPI.getMe();
-        setUser(response.data);
-      }
+      const response = await authAPI.getMe();
+      setUser(response.data);
     } catch (error) {
-      localStorage.removeItem("session_token");
       localStorage.removeItem("user");
     } finally {
       setLoading(false);
@@ -38,8 +34,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
-    const { user, session_token } = response.data;
-    localStorage.setItem("session_token", session_token);
+    const { user } = response.data;
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.removeItem("guest_mode");
     setUser(user);
@@ -49,8 +44,7 @@ export function AuthProvider({ children }) {
 
   const register = async (email, password, name) => {
     const response = await authAPI.register(email, password, name);
-    const { user, session_token } = response.data;
-    localStorage.setItem("session_token", session_token);
+    const { user } = response.data;
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.removeItem("guest_mode");
     setUser(user);
@@ -60,8 +54,7 @@ export function AuthProvider({ children }) {
 
   const googleAuth = async (idToken) => {
     const response = await authAPI.googleAuth(idToken);
-    const { user, session_token } = response.data;
-    localStorage.setItem("session_token", session_token);
+    const { user } = response.data;
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.removeItem("guest_mode");
     setUser(user);
@@ -71,7 +64,6 @@ export function AuthProvider({ children }) {
 
   const continueAsGuest = () => {
     localStorage.setItem("guest_mode", "true");
-    localStorage.removeItem("session_token");
     setUser({ name: "Guest", email: "guest@local", user_id: "guest" });
     setIsGuest(true);
   };
@@ -84,7 +76,6 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem("session_token");
       localStorage.removeItem("user");
       localStorage.removeItem("guest_mode");
       setUser(null);
@@ -94,7 +85,6 @@ export function AuthProvider({ children }) {
 
   const deleteAccount = async () => {
     await authAPI.deleteAccount("DELETE");
-    localStorage.removeItem("session_token");
     localStorage.removeItem("user");
     localStorage.removeItem("guest_mode");
     setUser(null);

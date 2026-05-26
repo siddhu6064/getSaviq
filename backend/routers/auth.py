@@ -9,7 +9,7 @@ from typing import Optional
 
 import jwt as pyjwt
 from jwt.algorithms import RSAAlgorithm
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -62,6 +62,18 @@ class DeleteAccountRequest(BaseModel):
 
 
 # ===================== SHARED HELPER =====================
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=604800,
+        path="/",
+    )
+
 
 async def _make_session(user_id: str) -> tuple[str, UserSession]:
     session_token = secrets.token_urlsafe(32)
@@ -212,9 +224,9 @@ async def _verify_apple_identity_token(identity_token: str) -> dict:
 
 # ===================== ENDPOINTS =====================
 
-@router.post("/google", response_model=AuthResponse)
+@router.post("/google")
 @limiter.limit("20/minute")
-async def google_auth(request: Request, body: GoogleAuthRequest):
+async def google_auth(request: Request, body: GoogleAuthRequest, response: Response):
     """
     Accept a Google ID token from the client-side Google Sign-In flow,
     verify it, then create or return the matching user + session.
@@ -268,14 +280,15 @@ async def google_auth(request: Request, body: GoogleAuthRequest):
         await create_default_data_for_user(user_id)
 
     session_token = await _rotate_and_store_session(user_id)
+    _set_session_cookie(response, session_token)
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
-    return {"user": user, "session_token": session_token}
+    return {"user": user}
 
 
-@router.post("/apple/login", response_model=AuthResponse)
+@router.post("/apple/login")
 @limiter.limit("20/minute")
-async def apple_auth_login(request: Request, body: AppleAuthRequest):
+async def apple_auth_login(request: Request, body: AppleAuthRequest, response: Response):
     """
     Verify an Apple identity token and create or return the matching user + session.
     """
@@ -332,14 +345,15 @@ async def apple_auth_login(request: Request, body: AppleAuthRequest):
         await create_default_data_for_user(user_id)
 
     session_token = await _rotate_and_store_session(user_id)
+    _set_session_cookie(response, session_token)
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
-    return {"user": user, "session_token": session_token}
+    return {"user": user}
 
 
-@router.post("/register", response_model=AuthResponse)
+@router.post("/register")
 @limiter.limit("5/minute")
-async def register_with_email(request: Request, body: EmailRegisterRequest):
+async def register_with_email(request: Request, body: EmailRegisterRequest, response: Response):
     """Register a new user with email and password."""
     try:
         email = normalize_email(body.email)
@@ -377,6 +391,7 @@ async def register_with_email(request: Request, body: EmailRegisterRequest):
         await create_default_data_for_user(user_id)
 
         session_token = await _rotate_and_store_session(user_id)
+        _set_session_cookie(response, session_token)
 
         return {
             "user": {
@@ -387,7 +402,6 @@ async def register_with_email(request: Request, body: EmailRegisterRequest):
                 "auth_provider": "email",
                 "created_at":    created_at,
             },
-            "session_token": session_token,
         }
 
     except HTTPException:
@@ -397,9 +411,9 @@ async def register_with_email(request: Request, body: EmailRegisterRequest):
         raise HTTPException(status_code=500, detail="Registration failed")
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login")
 @limiter.limit("10/minute")
-async def login_with_email(request: Request, body: EmailLoginRequest):
+async def login_with_email(request: Request, body: EmailLoginRequest, response: Response):
     """Login with email and password."""
     try:
         email = normalize_email(body.email)
@@ -430,6 +444,7 @@ async def login_with_email(request: Request, body: EmailLoginRequest):
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         session_token = await _rotate_and_store_session(user["user_id"])
+        _set_session_cookie(response, session_token)
         logger.info(
             "login success",
             extra={"request_method": request.method, "request_path": request.url.path},
@@ -439,7 +454,7 @@ async def login_with_email(request: Request, body: EmailLoginRequest):
         if "created_at" in user_response and hasattr(user_response["created_at"], "isoformat"):
             user_response["created_at"] = user_response["created_at"].isoformat()
 
-        return {"user": user_response, "session_token": session_token}
+        return {"user": user_response}
 
     except HTTPException:
         raise
@@ -455,9 +470,10 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/logout", response_model=MessageResponse)
-async def logout(request: Request, current_user: dict = Depends(get_current_user)):
+async def logout(request: Request, response: Response, current_user: dict = Depends(get_current_user)):
     """Invalidate the current session."""
     await db.user_sessions.delete_many({"user_id": current_user["user_id"]})
+    response.delete_cookie(key="session_token", path="/")
     logger.info(
         "logout success",
         extra={"request_method": request.method, "request_path": request.url.path},
