@@ -104,4 +104,6 @@ mobile/.env.*
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
-.claude
+.claude/
+memory/
+*.local.json
