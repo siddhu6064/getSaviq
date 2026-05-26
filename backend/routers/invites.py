@@ -154,11 +154,13 @@ async def get_invite_info(token: str = Query(...)):
         {"user_id": member_doc["user_id"]}, {"_id": 0, "name": 1}
     )
 
+    def mask_email(email: str) -> str:
+        parts = email.split("@")
+        return parts[0][0] + "***@" + parts[1] if len(parts) == 2 else "***"
+
     return {
         "status": "pending",
-        "invite_token": token,
-        "invited_email": member_doc["invited_email"],
-        "profile_id": member_doc["profile_id"],
+        "invited_email": mask_email(member_doc["invited_email"]),
         "profile_name": (profile or {}).get("name", "Shared Profile"),
         "inviter_name": (inviter or {}).get("name", "Someone"),
     }
