@@ -269,7 +269,7 @@ async def google_auth(request: Request, body: GoogleAuthRequest):
 
     session_token = await _rotate_and_store_session(user_id)
 
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     return {"user": user, "session_token": session_token}
 
 
@@ -333,7 +333,7 @@ async def apple_auth_login(request: Request, body: AppleAuthRequest):
 
     session_token = await _rotate_and_store_session(user_id)
 
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     return {"user": user, "session_token": session_token}
 
 
