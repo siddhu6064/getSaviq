@@ -8,7 +8,9 @@ import magic
 from datetime import datetime, timezone, timedelta
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 
@@ -18,6 +20,7 @@ from models import Expense, ExpenseCreate, ExpenseUpdate, MessageResponse
 
 router = APIRouter(tags=["expenses"])
 logger = logging.getLogger(__name__)
+limiter = Limiter(key_func=get_remote_address)
 
 MAX_ATTACHMENTS = 3
 MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -487,7 +490,9 @@ async def delete_expense(expense_id: str, current_user: dict = Depends(get_curre
 # ===================== ATTACHMENT ENDPOINTS =====================
 
 @router.post("/expenses/{expense_id}/attachments", response_model=Expense)
+@limiter.limit("10/minute")
 async def upload_attachment(
+    request: Request,
     expense_id: str,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),

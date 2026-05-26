@@ -470,6 +470,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/logout", response_model=MessageResponse)
+@limiter.limit("30/minute")
 async def logout(request: Request, response: Response, current_user: dict = Depends(get_current_user)):
     """Invalidate the current session."""
     await db.user_sessions.delete_many({"user_id": current_user["user_id"]})
@@ -482,6 +483,7 @@ async def logout(request: Request, response: Response, current_user: dict = Depe
 
 
 @router.delete("/account", response_model=MessageResponse)
+@limiter.limit("5/minute")
 async def delete_account(
     payload: DeleteAccountRequest,
     request: Request,

@@ -8,7 +8,9 @@ POST /api/invite/decline                — invitee declines
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import BaseModel, Field
 
 from database import db
@@ -25,6 +27,7 @@ from services.email_service import send_profile_invite
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["invites"])
+limiter = Limiter(key_func=get_remote_address)
 
 INVITE_TTL_DAYS = 7
 
@@ -221,7 +224,8 @@ async def accept_invite_authenticated(
 # ── POST /invite/decline ──────────────────────────────────────────────────────
 
 @router.post("/invite/decline", response_model=MessageResponse)
-async def decline_invite(body: InviteTokenRequest):
+@limiter.limit("5/minute")
+async def decline_invite(request: Request, body: InviteTokenRequest):
     """
     Decline a profile invite.
     Body: {"token": "<invite_token>"}
