@@ -82,6 +82,8 @@ def _validate_settings(settings: Settings) -> None:
 
     if not settings.JWT_SECRET:
         errors.append("JWT_SECRET is required in staging/production environments")
+    elif settings.JWT_SECRET in ("replace_with_long_random_secret", "your-secret-here", "changeme"):
+        errors.append("JWT_SECRET must be set to a real secret, not the placeholder value")
 
     if env == "production":
         if settings.MONGO_URL.startswith("mongodb://localhost"):
