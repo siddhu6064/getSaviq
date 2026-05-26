@@ -797,6 +797,7 @@ export default function DashboardPage() {
           <div className="relative" ref={profileDropdownRef}>
             <button
               data-testid="profile-switch"
+              data-profile-id={activeProfile?.profile_id ?? ""}
               onClick={() => setProfileDropdownOpen((o) => !o)}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-border-color rounded-xl text-sm hover:bg-surface-hover transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
             >
@@ -849,6 +850,7 @@ export default function DashboardPage() {
                     return (
                       <button
                         key={profile.profile_id}
+                        data-testid={`profile-option-${profile.profile_id}`}
                         onClick={() => {
                           const p = profiles.find((x) => x.profile_id === profile.profile_id);
                           setActiveProfile(p);

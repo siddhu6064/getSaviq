@@ -19,6 +19,12 @@ type Tx = {
   updated_at: string;
 };
 
+async function selectProfile(page: Page, profileId: string) {
+  await page.getByTestId("profile-switch").click();
+  await page.getByTestId(`profile-option-${profileId}`).click();
+  await expect(page.getByTestId("profile-switch")).toHaveAttribute("data-profile-id", profileId);
+}
+
 async function installMockApi(page: Page) {
   const now = new Date().toISOString();
   const state = {
@@ -2341,9 +2347,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("smart-dashboard-net-balance-value")).toBeVisible();
     await expect(page.getByTestId("smart-dashboard-net-balance-value")).toHaveText(/45\.25/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_empty");
-    await expect(profileSwitch).toHaveValue("profile_empty");
+    await selectProfile(page, "profile_empty");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-net-balance-loading")
@@ -2397,9 +2401,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("smart-dashboard-net-balance-value")).toBeVisible();
     await expect(page.getByTestId("smart-dashboard-net-balance-value")).toHaveText(/45\.25/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-net-balance-loading")
@@ -2452,9 +2454,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-net-balance-error")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-net-balance-loading")
@@ -2511,9 +2511,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-net-balance-empty")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-net-balance-loading")
@@ -2746,9 +2744,7 @@ test.describe("e2e smoke", () => {
     const incomeValue = page.getByTestId("smart-dashboard-income-value");
     await expect(incomeValue).toHaveText(/111\.11/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-income-loading")
@@ -2805,9 +2801,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-income-value")).toHaveText(/333\.33/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-income-loading")
@@ -2857,9 +2851,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-income-value")).toHaveText(/444\.44/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-income-loading")
@@ -2909,9 +2901,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-income-error")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-income-loading")
@@ -2968,9 +2958,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-income-empty")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-income-loading")
@@ -3206,9 +3194,7 @@ test.describe("e2e smoke", () => {
     const totalSpendValue = page.getByTestId("smart-dashboard-total-spend-value");
     await expect(totalSpendValue).toHaveText(/777\.77/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-total-spend-loading")
@@ -3265,9 +3251,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-total-spend-value")).toHaveText(/999\.99/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-total-spend-loading")
@@ -3317,9 +3301,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-total-spend-value")).toHaveText(/654\.32/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-total-spend-loading")
@@ -3369,9 +3351,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-total-spend-error")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-total-spend-loading")
@@ -3428,9 +3408,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-total-spend-empty")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-total-spend-loading")
@@ -3674,9 +3652,7 @@ test.describe("e2e smoke", () => {
     const currentMonthSpendValue = page.getByTestId("smart-dashboard-current-month-spend-value");
     await expect(currentMonthSpendValue).toHaveText(/321\.09/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-current-month-spend-loading")
@@ -3735,9 +3711,7 @@ test.describe("e2e smoke", () => {
       /987\.65/,
     );
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-current-month-spend-loading")
@@ -3789,9 +3763,7 @@ test.describe("e2e smoke", () => {
       /543\.21/,
     );
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-current-month-spend-loading")
@@ -3841,9 +3813,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-current-month-spend-error")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-current-month-spend-loading")
@@ -3902,9 +3872,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-current-month-spend-empty")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-current-month-spend-loading")
@@ -4167,9 +4135,7 @@ test.describe("e2e smoke", () => {
     const momValue = page.getByTestId("smart-dashboard-mom-change-value");
     await expect(momValue).toHaveText(/12\.3%/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-mom-change-loading")
@@ -4226,9 +4192,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-mom-change-value")).toHaveText(/15\.6%/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-mom-change-loading")
@@ -4278,9 +4242,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-mom-change-value")).toHaveText(/-4\.4%/);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-mom-change-loading")
@@ -4330,9 +4292,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-mom-change-error")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-mom-change-loading")
@@ -4389,9 +4349,7 @@ test.describe("e2e smoke", () => {
 
     await expect(page.getByTestId("smart-dashboard-mom-change-empty")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-mom-change-loading")
@@ -4614,9 +4572,7 @@ test.describe("e2e smoke", () => {
 
     const goalTitle = page.getByTestId("smart-dashboard-top-savings-goal-title");
     await expect(goalTitle).toHaveText("Emergency Fund");
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-top-savings-goal-loading")
@@ -4671,9 +4627,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("smart-dashboard-top-savings-goal-title")).toHaveText(
       "Emergency Fund",
     );
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-top-savings-goal-loading")
@@ -4726,9 +4680,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("smart-dashboard-top-savings-goal-title")).toHaveText(
       "Emergency Fund",
     );
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-top-savings-goal-loading")
@@ -4779,9 +4731,7 @@ test.describe("e2e smoke", () => {
     await registerAndOpenDashboard(page);
 
     await expect(page.getByTestId("smart-dashboard-top-savings-goal-error")).toHaveCount(1);
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-top-savings-goal-loading")
@@ -4835,9 +4785,7 @@ test.describe("e2e smoke", () => {
     await registerAndOpenDashboard(page);
 
     await expect(page.getByTestId("smart-dashboard-top-savings-goal-empty")).toHaveCount(1);
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     const loadingStateAppeared = await page
       .getByTestId("smart-dashboard-top-savings-goal-loading")
@@ -4917,9 +4865,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$22.49");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
@@ -4937,9 +4883,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$22.49");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
@@ -4958,15 +4902,12 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$22.49");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("YouTube Premium");
 
-    await profileSwitch.selectOption("profile_personal");
-    await expect(profileSwitch).toHaveValue("profile_personal");
+    await selectProfile(page, "profile_personal");
 
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$22.49");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
@@ -4985,9 +4926,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
     await expect(page.getByTestId("smart-insights-card")).toBeVisible();
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
@@ -5006,9 +4945,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$22.49");
     await expect(page.getByTestId("subscriptions-item-0")).toContainText("Netflix");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_empty");
-    await expect(profileSwitch).toHaveValue("profile_empty");
+    await selectProfile(page, "profile_empty");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-empty-state")).toBeVisible();
@@ -5026,9 +4963,7 @@ test.describe("e2e smoke", () => {
     mockApi.setSubscriptionsMode("ready");
     await registerAndOpenDashboard(page);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_empty");
-    await expect(profileSwitch).toHaveValue("profile_empty");
+    await selectProfile(page, "profile_empty");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-empty-state")).toBeVisible();
@@ -5037,8 +4972,7 @@ test.describe("e2e smoke", () => {
     );
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$0.00");
 
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-card")).toBeVisible();
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
@@ -5237,9 +5171,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("weekly-digest-card")).toBeVisible();
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("weekly-digest-card")).toBeVisible();
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$510.00");
@@ -5259,9 +5191,7 @@ test.describe("e2e smoke", () => {
     await expect(page.getByTestId("weekly-digest-card")).toBeVisible();
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_empty");
-    await expect(profileSwitch).toHaveValue("profile_empty");
+    await selectProfile(page, "profile_empty");
 
     await expect(page.getByTestId("weekly-digest-card-empty")).toBeVisible();
     await expect(page.getByText("Income $500.00 • Expense $120.00")).toHaveCount(0);
@@ -5274,14 +5204,11 @@ test.describe("e2e smoke", () => {
     mockApi.setWeeklyDigestMode("success");
     await registerAndOpenDashboard(page);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_empty");
-    await expect(profileSwitch).toHaveValue("profile_empty");
+    await selectProfile(page, "profile_empty");
 
     await expect(page.getByTestId("weekly-digest-card-empty")).toBeVisible();
 
-    await profileSwitch.selectOption("profile_personal");
-    await expect(profileSwitch).toHaveValue("profile_personal");
+    await selectProfile(page, "profile_personal");
 
     await expect(page.getByTestId("weekly-digest-card")).toBeVisible();
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
@@ -5295,12 +5222,10 @@ test.describe("e2e smoke", () => {
     mockApi.setWeeklyDigestMode("success");
     await registerAndOpenDashboard(page);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await expect(profileSwitch).toHaveValue("profile_personal");
+    await expect(page.getByTestId("profile-switch")).toHaveAttribute("data-profile-id", "profile_personal");
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
 
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("weekly-digest-card-loading")).toHaveCount(0);
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$510.00");
@@ -5314,15 +5239,12 @@ test.describe("e2e smoke", () => {
     mockApi.setWeeklyDigestMode("success");
     await registerAndOpenDashboard(page);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await expect(profileSwitch).toHaveValue("profile_personal");
+    await expect(page.getByTestId("profile-switch")).toHaveAttribute("data-profile-id", "profile_personal");
 
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
     await expect(page.getByTestId("weekly-digest-card-loading")).toHaveCount(0);
 
-    await profileSwitch.selectOption("profile_personal");
-    await expect(profileSwitch).toHaveValue("profile_personal");
+    await selectProfile(page, "profile_personal");
     await expect(page.getByTestId("weekly-digest-card-loading")).toHaveCount(0);
 
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
@@ -5610,9 +5532,7 @@ test.describe("e2e smoke", () => {
     await installMockApi(page);
     await registerAndOpenDashboard(page);
 
-    const profileSwitch = page.getByTestId("profile-switch");
-    await profileSwitch.selectOption("profile_shared");
-    await expect(profileSwitch).toHaveValue("profile_shared");
+    await selectProfile(page, "profile_shared");
 
     await expect(page.getByTestId("subscriptions-monthly-total")).toHaveText("$41.50");
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$510.00");
