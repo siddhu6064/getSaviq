@@ -2,15 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Spinner } from "../components/ui";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Calendar,
-  List,
-  ScrollText,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, List, ScrollText, ChevronRight } from "lucide-react";
 import { formatCurrency, cn } from "../lib/utils";
 import { billsAPI } from "../services/api";
 import AddBillModal from "../components/AddBillModal";
@@ -157,7 +149,9 @@ function SectionHeader({ title, count, totalAmount }) {
         {title}
       </span>
       <div className="flex items-center gap-3">
-        <span className="text-xs text-text-secondary">{count} bill{count !== 1 ? "s" : ""}</span>
+        <span className="text-xs text-text-secondary">
+          {count} bill{count !== 1 ? "s" : ""}
+        </span>
         {totalAmount > 0 && (
           <span className="text-xs font-bold text-text-primary">{formatCurrency(totalAmount)}</span>
         )}
@@ -205,7 +199,7 @@ function CalendarView({ bills }) {
       {/* Day cells */}
       <div className="grid grid-cols-7 gap-1">
         {cells.map((day, idx) => {
-          const dayBills = day ? (billsByDay[day] || []) : [];
+          const dayBills = day ? billsByDay[day] || [] : [];
           const isToday = day === todayDay;
           return (
             <div
@@ -221,9 +215,7 @@ function CalendarView({ bills }) {
                   <div
                     className={cn(
                       "w-5 h-5 rounded-full flex items-center justify-center font-semibold mb-1",
-                      isToday
-                        ? "bg-brand-primary text-white"
-                        : "text-text-secondary",
+                      isToday ? "bg-brand-primary text-white" : "text-text-secondary",
                     )}
                   >
                     {day}
@@ -235,13 +227,15 @@ function CalendarView({ bills }) {
                         s === "overdue"
                           ? "bg-red-400"
                           : s === "due_soon"
-                          ? "bg-amber-400"
-                          : s === "paid"
-                          ? "bg-green-400"
-                          : "bg-gray-400";
+                            ? "bg-amber-400"
+                            : s === "paid"
+                              ? "bg-green-400"
+                              : "bg-gray-400";
                       return (
                         <div key={b.bill_id} className="flex items-center gap-1 min-w-0">
-                          <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotColor)} />
+                          <span
+                            className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotColor)}
+                          />
                           <span className="truncate text-[10px] text-text-primary leading-tight">
                             {b.name}
                           </span>
@@ -279,7 +273,11 @@ function DeleteConfirmDialog({ bill, onConfirm, onCancel, isDeleting }) {
           <Button variant="secondary" onClick={onCancel} disabled={isDeleting} className="flex-1">
             Cancel
           </Button>
-          <Button onClick={onConfirm} disabled={isDeleting} className="flex-1 bg-expense text-white hover:bg-expense/90">
+          <Button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 bg-expense text-white hover:bg-expense/90"
+          >
             {isDeleting ? <Spinner size="sm" className="text-white" /> : "Delete"}
           </Button>
         </div>
@@ -471,26 +469,19 @@ export default function BillsPage() {
       {error && (
         <div className="p-3 bg-expense-bg text-expense text-sm rounded-xl flex items-center gap-2">
           {error}
-          <button
-            onClick={fetchBills}
-            className="ml-auto text-xs underline hover:no-underline"
-          >
+          <button onClick={fetchBills} className="ml-auto text-xs underline hover:no-underline">
             Retry
           </button>
         </div>
       )}
-      {success && (
-        <div className="p-3 bg-income-bg text-income text-sm rounded-xl">{success}</div>
-      )}
+      {success && <div className="p-3 bg-income-bg text-income text-sm rounded-xl">{success}</div>}
 
       {/* No profile */}
       {!activeProfile && !isLoading && (
         <Card className="p-6 text-center">
           <ScrollText className="w-10 h-10 text-text-secondary mx-auto mb-3" />
           <p className="font-semibold text-text-primary">No profile selected</p>
-          <p className="text-sm text-text-secondary mt-1">
-            Select a profile to manage your bills.
-          </p>
+          <p className="text-sm text-text-secondary mt-1">Select a profile to manage your bills.</p>
         </Card>
       )}
 
@@ -529,10 +520,7 @@ export default function BillsPage() {
               {groupEntries.map(({ key, label }) => {
                 const groupBills = grouped[key];
                 if (groupBills.length === 0) return null;
-                const groupTotal = groupBills.reduce(
-                  (sum, b) => sum + b.expected_amount,
-                  0,
-                );
+                const groupTotal = groupBills.reduce((sum, b) => sum + b.expected_amount, 0);
                 return (
                   <div key={key}>
                     <SectionHeader

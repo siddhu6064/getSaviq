@@ -134,8 +134,7 @@ export const attachmentsAPI = {
 
 // Bills API
 export const billsAPI = {
-  getAll: (params?: { profile_id?: string; status?: string }) =>
-    api.get("/bills", { params }),
+  getAll: (params?: { profile_id?: string; status?: string }) => api.get("/bills", { params }),
   create: (data: any) => api.post("/bills", data),
   update: (billId: string, data: any) => api.put(`/bills/${billId}`, data),
   delete: (billId: string) => api.delete(`/bills/${billId}`),

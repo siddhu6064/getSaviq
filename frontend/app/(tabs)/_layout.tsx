@@ -72,9 +72,7 @@ export default function TabLayout() {
           options={{
             title: "Bills",
             tabBarBadge: billsDueSoonCount > 0 ? billsDueSoonCount : undefined,
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="receipt-outline" size={20} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Ionicons name="receipt-outline" size={20} color={color} />,
           }}
         />
         <Tabs.Screen

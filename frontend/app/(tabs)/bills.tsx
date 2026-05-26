@@ -48,7 +48,10 @@ const defaultForm: BillForm = {
 
 // ===================== STATUS CONFIG =====================
 
-const STATUS_CONFIG: Record<BillComputedStatus, { label: string; color: string; bg: string; order: number }> = {
+const STATUS_CONFIG: Record<
+  BillComputedStatus,
+  { label: string; color: string; bg: string; order: number }
+> = {
   overdue: { label: "Overdue", color: "#EF4444", bg: "#FEE2E2", order: 0 },
   due_soon: { label: "Due Soon", color: "#D97706", bg: "#FEF3C7", order: 1 },
   upcoming: { label: "Upcoming", color: "#6B7280", bg: "#F3F4F6", order: 2 },
@@ -114,7 +117,11 @@ function BillCard({
 
         <View style={styles.cardRight}>
           <Text style={[styles.amount, { color: colors.textPrimary }]}>
-            ${bill.expected_amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            $
+            {bill.expected_amount.toLocaleString("en-US", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}
           </Text>
           <Text style={[styles.dueDate, { color: colors.textSecondary }]}>Due {dueDateStr}</Text>
         </View>
@@ -225,7 +232,10 @@ function AddBillModal({
     }
   };
 
-  const inputStyle = [styles.input, { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.surface }];
+  const inputStyle = [
+    styles.input,
+    { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.surface },
+  ];
   const labelStyle = [styles.inputLabel, { color: colors.textSecondary }];
 
   const FREQ_OPTIONS: Array<{ value: BillForm["frequency"]; label: string }> = [
@@ -347,7 +357,11 @@ function AddBillModal({
             </View>
 
             <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: colors.primary }, isSubmitting && styles.saveButtonDisabled]}
+              style={[
+                styles.saveButton,
+                { backgroundColor: colors.primary },
+                isSubmitting && styles.saveButtonDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={isSubmitting}
             >
@@ -538,7 +552,10 @@ export default function BillsScreen() {
         {/* Error banner */}
         {error ? (
           <TouchableOpacity
-            style={[styles.errorCard, { backgroundColor: colors.surface, borderColor: colors.expense }]}
+            style={[
+              styles.errorCard,
+              { backgroundColor: colors.surface, borderColor: colors.expense },
+            ]}
             onPress={() => loadBills()}
             activeOpacity={0.8}
           >
@@ -550,7 +567,12 @@ export default function BillsScreen() {
 
         {/* Success banner */}
         {success ? (
-          <View style={[styles.successCard, { backgroundColor: colors.surface, borderColor: colors.income }]}>
+          <View
+            style={[
+              styles.successCard,
+              { backgroundColor: colors.surface, borderColor: colors.income },
+            ]}
+          >
             <Ionicons name="checkmark-circle-outline" size={18} color={colors.income} />
             <Text style={[styles.successText, { color: colors.income }]}>{success}</Text>
           </View>
@@ -560,7 +582,9 @@ export default function BillsScreen() {
         {!activeProfile ? (
           <View style={styles.emptyState}>
             <Ionicons name="receipt-outline" size={42} color={colors.textSecondary} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No profile selected</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              No profile selected
+            </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
               Select a profile to manage your bills.
             </Text>
@@ -572,7 +596,10 @@ export default function BillsScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
               Track recurring payments like rent, utilities, and subscriptions.
             </Text>
-            <TouchableOpacity style={[styles.emptyCta, { backgroundColor: colors.primary }]} onPress={openCreate}>
+            <TouchableOpacity
+              style={[styles.emptyCta, { backgroundColor: colors.primary }]}
+              onPress={openCreate}
+            >
               <Text style={styles.emptyCtaText}>Add First Bill</Text>
             </TouchableOpacity>
           </View>
@@ -733,11 +760,22 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     maxHeight: "90%",
   },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
   modalTitle: { fontSize: 18, fontWeight: "700" },
   iconButton: { padding: 4 },
   inputLabel: { marginTop: 12, marginBottom: 6, fontSize: 13 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
   chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16 },
   chipText: { fontSize: 13, fontWeight: "600" },

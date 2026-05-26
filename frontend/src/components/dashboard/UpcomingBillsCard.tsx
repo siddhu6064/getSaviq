@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -107,10 +101,7 @@ export function UpcomingBillsCard({ profileId, onPress }: Props) {
                     { backgroundColor: statusDotColor[b._status] || colors.textSecondary },
                   ]}
                 />
-                <Text
-                  style={[styles.billName, { color: colors.textPrimary }]}
-                  numberOfLines={1}
-                >
+                <Text style={[styles.billName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {b.name}
                 </Text>
                 <Text style={[styles.billAmount, { color: colors.textPrimary }]}>

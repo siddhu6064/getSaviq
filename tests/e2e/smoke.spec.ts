@@ -5222,7 +5222,10 @@ test.describe("e2e smoke", () => {
     mockApi.setWeeklyDigestMode("success");
     await registerAndOpenDashboard(page);
 
-    await expect(page.getByTestId("profile-switch")).toHaveAttribute("data-profile-id", "profile_personal");
+    await expect(page.getByTestId("profile-switch")).toHaveAttribute(
+      "data-profile-id",
+      "profile_personal",
+    );
     await expect(page.getByTestId("weekly-digest-net-total")).toHaveText("$380.00");
 
     await selectProfile(page, "profile_shared");
@@ -5239,7 +5242,10 @@ test.describe("e2e smoke", () => {
     mockApi.setWeeklyDigestMode("success");
     await registerAndOpenDashboard(page);
 
-    await expect(page.getByTestId("profile-switch")).toHaveAttribute("data-profile-id", "profile_personal");
+    await expect(page.getByTestId("profile-switch")).toHaveAttribute(
+      "data-profile-id",
+      "profile_personal",
+    );
 
     await selectProfile(page, "profile_shared");
     await expect(page.getByTestId("weekly-digest-card-loading")).toHaveCount(0);

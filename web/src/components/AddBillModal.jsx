@@ -135,9 +135,7 @@ export default function AddBillModal({
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="p-3 bg-expense-bg text-expense text-sm rounded-xl">{error}</div>
-        )}
+        {error && <div className="p-3 bg-expense-bg text-expense text-sm rounded-xl">{error}</div>}
 
         {/* Name */}
         <div>
@@ -156,9 +154,7 @@ export default function AddBillModal({
               }`}
             />
           </div>
-          {fieldErrors.name && (
-            <p className="text-xs text-expense mt-1">{fieldErrors.name}</p>
-          )}
+          {fieldErrors.name && <p className="text-xs text-expense mt-1">{fieldErrors.name}</p>}
         </div>
 
         {/* Merchant */}
