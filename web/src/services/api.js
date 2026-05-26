@@ -23,13 +23,21 @@ const api = axios.create({
   },
 });
 
-// Handle 401 errors
+// Handle 401 errors — but skip the redirect for:
+//   1. /api/auth/me  — that's the session-check on mount; let AuthContext handle it silently
+//   2. requests made while already on /login — avoids infinite reload loop
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      const requestUrl = error.config?.url || "";
+      const isSessionCheck = requestUrl.endsWith("/auth/me");
+      const alreadyOnLogin =
+        typeof window !== "undefined" && window.location.pathname.includes("/login");
+      if (!isSessionCheck && !alreadyOnLogin) {
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },

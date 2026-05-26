@@ -1454,11 +1454,8 @@ test.describe("e2e smoke", () => {
 
     await expect(page).toHaveURL("/");
 
-    await expect
-      .poll(async () => {
-        return await page.evaluate(() => window.localStorage.getItem("session_token"));
-      })
-      .not.toBeNull();
+    // session token is now an HttpOnly cookie — not readable from JS/localStorage
+    // URL check above already confirms successful auth
 
     await page.getByTestId("nav-transactions").click();
     await expect(page).toHaveURL(/\/transactions/);
