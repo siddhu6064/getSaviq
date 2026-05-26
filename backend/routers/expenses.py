@@ -529,7 +529,7 @@ async def upload_attachment(
     # Upload to R2
     from services.r2_service import upload_file as r2_upload
 
-    safe_original = (file.filename or "file").replace("/", "_").replace("\\", "_")
+    safe_original = re.sub(r"[^A-Za-z0-9._-]", "_", (file.filename or "file"))[:100]
     filename = f"{uuid.uuid4().hex}_{safe_original}"
     folder = f"expenses/{expense_id}"
 
@@ -605,16 +605,15 @@ async def delete_attachment(
     if not expense_doc:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    # Find the matching URL in the attachments array
-    from services.r2_service import delete_file as r2_delete, key_from_url
+    # Find the matching key in the attachments array
+    from services.r2_service import delete_file as r2_delete
 
     attachments: list = expense_doc.get("attachments") or []
     target_url: str | None = None
 
-    for url in attachments:
-        url_key = key_from_url(url)
-        if url_key == key or url == key:
-            target_url = url
+    for stored in attachments:
+        if stored == key:
+            target_url = stored
             break
 
     if not target_url:
