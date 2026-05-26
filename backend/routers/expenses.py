@@ -529,23 +529,54 @@ async def upload_attachment(
     folder = f"expenses/{expense_id}"
 
     try:
-        public_url = await r2_upload(file_bytes, filename, content_type, folder)
+        object_key = await r2_upload(file_bytes, filename, content_type, folder)
     except Exception as exc:
         logger.exception("R2 upload failed expense_id=%s", expense_id)
         raise HTTPException(status_code=502, detail="File upload failed") from exc
 
-    # Append URL to expense
+    # Append object key (not a public URL) to expense
     updated = await db.expenses.find_one_and_update(
         {"expense_id": expense_id, "user_id": current_user["user_id"]},
         {
-            "$push": {"attachments": public_url},
+            "$push": {"attachments": object_key},
             "$set": {"updated_at": datetime.now(timezone.utc)},
         },
         projection={"_id": 0},
         return_document=ReturnDocument.AFTER,
     )
-    logger.info("attachment uploaded expense_id=%s url=%s", expense_id, public_url)
+    logger.info("attachment uploaded expense_id=%s key=%s", expense_id, object_key)
     return updated
+
+
+@router.get("/expenses/{expense_id}/attachments/{key:path}/url")
+async def get_attachment_url(
+    expense_id: str,
+    key: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Generate a 15-minute presigned GET URL for a private R2 attachment.
+    The caller must own the expense — raises 403 otherwise.
+    """
+    expense_doc = await db.expenses.find_one(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
+    )
+    if not expense_doc:
+        raise HTTPException(status_code=403, detail="Expense not found or access denied")
+
+    attachments: list = expense_doc.get("attachments") or []
+    if key not in attachments:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    from services.r2_service import generate_presigned_url
+
+    try:
+        signed_url = generate_presigned_url(key)
+    except Exception:
+        logger.exception("Failed to generate presigned URL key=%s", key)
+        raise HTTPException(status_code=502, detail="Failed to generate download URL")
+
+    return {"url": signed_url}
 
 
 @router.delete("/expenses/{expense_id}/attachments/{filename:path}", response_model=MessageResponse)

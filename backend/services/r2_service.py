@@ -31,17 +31,7 @@ def _get_client():
     )
 
 
-def _build_public_url(key: str) -> str:
-    from config import get_settings
-
-    settings = get_settings()
-    if settings.CLOUDFLARE_R2_PUBLIC_URL:
-        return f"{settings.CLOUDFLARE_R2_PUBLIC_URL.rstrip('/')}/{key}"
-    # Fallback — R2 bucket URL pattern (only works if bucket is public)
-    return f"https://{settings.CLOUDFLARE_R2_BUCKET_NAME}.{settings.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/{key}"
-
-
-def _upload_sync(file_bytes: bytes, key: str, content_type: str) -> str:
+def _upload_sync(file_bytes: bytes, key: str, content_type: str) -> None:
     from config import get_settings
 
     settings = get_settings()
@@ -52,7 +42,6 @@ def _upload_sync(file_bytes: bytes, key: str, content_type: str) -> str:
         Body=file_bytes,
         ContentType=content_type,
     )
-    return _build_public_url(key)
 
 
 def _delete_sync(key: str) -> None:
@@ -71,15 +60,14 @@ async def upload_file(
 ) -> str:
     """
     Upload *file_bytes* to R2 at key ``{folder}/{filename}``.
-    Returns the public URL.
+    Returns the object key — NOT a public URL.
+    Access the file via generate_presigned_url(key).
     """
     key = f"{folder}/{filename}"
     loop = asyncio.get_event_loop()
-    url: str = await loop.run_in_executor(
-        None, partial(_upload_sync, file_bytes, key, content_type)
-    )
+    await loop.run_in_executor(None, partial(_upload_sync, file_bytes, key, content_type))
     logger.info("r2 upload key=%s", key)
-    return url
+    return key
 
 
 async def delete_file(filename: str, folder: str) -> None:
@@ -92,18 +80,36 @@ async def delete_file(filename: str, folder: str) -> None:
     logger.info("r2 delete key=%s", key)
 
 
-def key_from_url(url: str) -> str | None:
+def generate_presigned_url(key: str, expiry: int = 900) -> str:
     """
-    Extract the R2 object key from a public URL.
-    Returns None if the URL doesn't match this bucket's public base.
+    Generate a time-limited presigned GET URL for an R2 object key.
+    Default TTL: 900 seconds (15 minutes).
     """
     from config import get_settings
 
     settings = get_settings()
-    base = settings.CLOUDFLARE_R2_PUBLIC_URL
-    if base and url.startswith(base.rstrip("/") + "/"):
-        return url[len(base.rstrip("/")) + 1:]
-    # Fallback pattern
+    client = _get_client()
+    return client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": settings.CLOUDFLARE_R2_BUCKET_NAME, "Key": key},
+        ExpiresIn=expiry,
+    )
+
+
+def key_from_url(url: str) -> str | None:
+    """
+    Extract the R2 object key from a stored value.
+    Handles both legacy public URLs and new plain object keys.
+    """
+    if not url:
+        return None
+    # Already a plain key (not a URL)
+    if not url.startswith("http"):
+        return url
+    # Legacy: strip R2 bucket URL prefix for data stored before presigned-URL migration
+    from config import get_settings
+
+    settings = get_settings()
     if settings.CLOUDFLARE_ACCOUNT_ID and settings.CLOUDFLARE_R2_BUCKET_NAME:
         fallback = f"https://{settings.CLOUDFLARE_R2_BUCKET_NAME}.{settings.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/"
         if url.startswith(fallback):

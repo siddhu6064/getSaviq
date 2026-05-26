@@ -57,7 +57,6 @@ class Settings:
     CLOUDFLARE_R2_ACCESS_KEY_ID: str | None
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: str | None
     CLOUDFLARE_R2_BUCKET_NAME: str | None
-    CLOUDFLARE_R2_PUBLIC_URL: str | None  # e.g. https://pub-xxx.r2.dev
 
 
 
@@ -122,7 +121,6 @@ def get_settings() -> Settings:
         CLOUDFLARE_R2_ACCESS_KEY_ID=os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID") or None,
         CLOUDFLARE_R2_SECRET_ACCESS_KEY=os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY") or None,
         CLOUDFLARE_R2_BUCKET_NAME=os.getenv("CLOUDFLARE_R2_BUCKET_NAME") or None,
-        CLOUDFLARE_R2_PUBLIC_URL=os.getenv("CLOUDFLARE_R2_PUBLIC_URL") or None,
     )
     _validate_settings(settings)
     return settings
