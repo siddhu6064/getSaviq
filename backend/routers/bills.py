@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pymongo import ReturnDocument
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from models import (
     Bill,
     BillCreate,
@@ -42,6 +42,7 @@ async def create_bill(
     current_user: dict = Depends(get_current_user),
 ):
     """Create a new recurring bill."""
+    await get_accessible_profile(data.profile_id, current_user)
     bill = Bill(
         user_id=current_user["user_id"],
         profile_id=data.profile_id,
@@ -124,6 +125,7 @@ async def create_bill_from_subscription(
     Promote a subscription to a tracked bill.
     auto_detected is forced True to signal this was derived from subscription data.
     """
+    await get_accessible_profile(data.profile_id, current_user)
     bill = Bill(
         user_id=current_user["user_id"],
         profile_id=data.profile_id,
