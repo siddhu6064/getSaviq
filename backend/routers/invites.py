@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from database import db
 from deps import get_current_user
@@ -26,6 +27,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["invites"])
 
 INVITE_TTL_DAYS = 7
+
+
+class InviteTokenRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=64)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -161,14 +166,14 @@ async def get_invite_info(token: str = Query(...)):
 
 @router.post("/invite/accept", status_code=200)
 async def accept_invite_authenticated(
-    body: dict,
+    body: InviteTokenRequest,
     current_user: dict = Depends(get_current_user),
 ):
     """
     Accept a profile invite when the caller is already authenticated.
     Body: {"token": "<invite_token>"}
     """
-    token = (body or {}).get("token", "").strip()
+    token = body.token.strip()
     if not token:
         raise HTTPException(status_code=400, detail="token is required")
 
@@ -214,13 +219,13 @@ async def accept_invite_authenticated(
 # ── POST /invite/decline ──────────────────────────────────────────────────────
 
 @router.post("/invite/decline", response_model=MessageResponse)
-async def decline_invite(body: dict):
+async def decline_invite(body: InviteTokenRequest):
     """
     Decline a profile invite.
     Body: {"token": "<invite_token>"}
     No auth required — anyone with the token can decline.
     """
-    token = (body or {}).get("token", "").strip()
+    token = body.token.strip()
     if not token:
         raise HTTPException(status_code=400, detail="token is required")
 
