@@ -316,9 +316,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await api.post("/auth/google", { id_token: idToken });
-      const { user, session_token } = response.data;
+      const { user } = response.data;
 
-      await storage.setItem("session_token", session_token);
+      if (Platform.OS !== "web") {
+        const token: string | undefined = response.headers["x-session-token"];
+        if (token) await storage.setItem("session_token", token);
+      }
       await storage.removeItem("guest_mode");
       setIsGuestMode(false);
       setUser(user);
@@ -341,9 +344,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: credential.email,
         full_name: credential.fullName,
       });
-      const { user, session_token } = response.data;
+      const { user } = response.data;
 
-      await storage.setItem("session_token", session_token);
+      if (Platform.OS !== "web") {
+        const token: string | undefined = response.headers["x-session-token"];
+        if (token) await storage.setItem("session_token", token);
+      }
       await storage.removeItem("guest_mode");
       setIsGuestMode(false);
       setUser(user);
@@ -361,9 +367,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await api.post("/auth/login", { email, password });
-      const { user, session_token } = response.data;
+      const { user } = response.data;
 
-      await storage.setItem("session_token", session_token);
+      if (Platform.OS !== "web") {
+        const token: string | undefined = response.headers["x-session-token"];
+        if (token) await storage.setItem("session_token", token);
+      }
       await storage.removeItem("guest_mode");
       setIsGuestMode(false);
       setUser(user);
@@ -381,9 +390,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await api.post("/auth/register", { email, password, name });
-      const { user, session_token } = response.data;
+      const { user } = response.data;
 
-      await storage.setItem("session_token", session_token);
+      if (Platform.OS !== "web") {
+        const token: string | undefined = response.headers["x-session-token"];
+        if (token) await storage.setItem("session_token", token);
+      }
       await storage.removeItem("guest_mode");
       setIsGuestMode(false);
       setUser(user);

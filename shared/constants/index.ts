@@ -60,23 +60,6 @@ export const TRANSACTION_COLORS = {
   },
 };
 
-// Budget periods
-export const BUDGET_PERIODS = [
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "yearly", label: "Yearly" },
-] as const;
-
-// Recurring frequencies
-export const RECURRING_FREQUENCIES = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "biweekly", label: "Bi-weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "quarterly", label: "Quarterly" },
-  { value: "yearly", label: "Yearly" },
-] as const;
-
 // Week days
 export const WEEK_DAYS = [
   "Sunday",
@@ -112,13 +95,6 @@ export const THEME = {
     brandHover: "#4D7A5B",
     brandAccent: "#E07A5F",
   },
-};
-
-// App metadata
-export const APP_CONFIG = {
-  name: "SAVIQ",
-  version: "1.0.0",
-  description: "Track expenses, income & budgets",
 };
 
 // Category emoji map — single source of truth for mobile and web

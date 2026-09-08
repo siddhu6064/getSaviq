@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-
-def _to_float(value, default=0.0) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float(default)
+from utils.finance import to_float as _to_float
 
 
 def _detect_intent(question: str) -> str:

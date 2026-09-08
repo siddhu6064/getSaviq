@@ -8,9 +8,6 @@ from models import (
     MessageResponse,
     Profile,
     ProfileCreate,
-    ProfileMemberInfo,
-    ProfileMemberResponse,
-    ProfileMemberRole,
     ProfileUpdate,
     ProfileWithMembers,
 )

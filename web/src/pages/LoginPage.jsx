@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Button, Input, Card, Spinner } from "../components/ui";
+import { Button, Spinner } from "../components/ui";
 import { Wallet, Mail, Lock, User, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
@@ -83,8 +83,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim() || !email.trim() || password.length < 6) {
-      setError("Please fill all fields (password min 6 characters)");
+    if (!name.trim() || !email.trim() || password.length < 8) {
+      setError("Please fill all fields (password min 8 characters)");
       return;
     }
 
@@ -385,7 +385,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password (min 6 characters)"
+                    placeholder="Password (min 8 characters)"
                     className="w-full pl-12 pr-12 py-3 bg-white border border-border-color rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
                     data-testid="register-password-input"
                   />

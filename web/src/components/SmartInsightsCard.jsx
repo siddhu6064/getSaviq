@@ -76,7 +76,7 @@ export default function SmartInsightsCard({ profileId }) {
     setLoading(true);
     setErrorState(null);
     try {
-      const response = await insightsAPI.getV2({ profile_id: profileId });
+      const response = await insightsAPI.getSpendComparison({ profile_id: profileId });
       setPayload(response.data || null);
     } catch (err) {
       const mapped = mapInsightsError(err);

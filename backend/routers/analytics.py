@@ -14,40 +14,11 @@ from models import (
     PaymentMethodBreakdownItem,
     PaymentMethodBreakdownResponse,
 )
+from utils.date_helpers import add_months as _add_months
+from utils.date_helpers import month_start as _month_start
+from utils.date_helpers import parse_date_range as _parse_date_range
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
-
-
-def _month_start(dt: datetime) -> datetime:
-    return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-
-def _add_months(month_dt: datetime, delta: int) -> datetime:
-    year = month_dt.year + (month_dt.month - 1 + delta) // 12
-    month = (month_dt.month - 1 + delta) % 12 + 1
-    return month_dt.replace(year=year, month=month, day=1)
-
-
-def _parse_date_range(start_date: Optional[str], end_date: Optional[str]) -> tuple[Optional[datetime], Optional[datetime]]:
-    parsed_start = None
-    parsed_end = None
-
-    if start_date:
-        try:
-            parsed_start = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid start_date format")
-
-    if end_date:
-        try:
-            parsed_end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid end_date format")
-
-    if parsed_start and parsed_end and parsed_end < parsed_start:
-        raise HTTPException(status_code=400, detail="end_date cannot be earlier than start_date")
-
-    return parsed_start, parsed_end
 
 
 @router.get("/summary", response_model=AnalyticsSummaryResponse)

@@ -94,24 +94,3 @@ def generate_presigned_url(key: str, expiry: int = 900) -> str:
         Params={"Bucket": settings.CLOUDFLARE_R2_BUCKET_NAME, "Key": key},
         ExpiresIn=expiry,
     )
-
-
-def key_from_url(url: str) -> str | None:
-    """
-    Extract the R2 object key from a stored value.
-    Handles both legacy public URLs and new plain object keys.
-    """
-    if not url:
-        return None
-    # Already a plain key (not a URL)
-    if not url.startswith("http"):
-        return url
-    # Legacy: strip R2 bucket URL prefix for data stored before presigned-URL migration
-    from config import get_settings
-
-    settings = get_settings()
-    if settings.CLOUDFLARE_ACCOUNT_ID and settings.CLOUDFLARE_R2_BUCKET_NAME:
-        fallback = f"https://{settings.CLOUDFLARE_R2_BUCKET_NAME}.{settings.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/"
-        if url.startswith(fallback):
-            return url[len(fallback):]
-    return None

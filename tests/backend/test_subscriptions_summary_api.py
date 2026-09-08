@@ -9,7 +9,9 @@ def _register(client, email=None, password="secret123", name="Tester"):
         json={"email": email, "password": password, "name": name},
     )
     assert response.status_code == 200
-    return response.json()
+    data = response.json()
+    data["session_token"] = response.cookies.get("session_token")
+    return data
 
 
 def _auth_headers(token):
@@ -76,7 +78,7 @@ def test_subscriptions_summary_wrong_profile_access_blocked(client):
     other_headers = _auth_headers(other["session_token"])
 
     response = client.get(f"/api/subscriptions/summary?profile_id={owner_profile_id}", headers=other_headers)
-    assert response.status_code == 404
+    assert response.status_code == 403
 
 
 def test_subscriptions_summary_response_shape_is_stable(client):

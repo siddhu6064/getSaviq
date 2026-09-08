@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Spinner, Tabs } from "../components/ui";
 import { TrendingUp, TrendingDown, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
 import { formatCurrency, cn, getCategoryIcon } from "../lib/utils";
 import { statsAPI } from "../services/api";
+import { useIsMounted } from "../hooks/useIsMounted";
+import ProfileSelector from "../components/ProfileSelector";
 import {
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -27,13 +27,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState("month");
   const [error, setError] = useState(null);
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const isMounted = useIsMounted();
 
   const loadStats = useCallback(async () => {
     if (!activeProfile) return;
@@ -124,21 +118,11 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <select
-            value={activeProfile?.profile_id || ""}
-            onChange={(e) => {
-              const profile = profiles.find((p) => p.profile_id === e.target.value);
-              setActiveProfile(profile);
-            }}
-            className="px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-            data-testid="profile-select"
-          >
-            {profiles.map((profile) => (
-              <option key={profile.profile_id} value={profile.profile_id}>
-                {profile.name}
-              </option>
-            ))}
-          </select>
+          <ProfileSelector
+            profiles={profiles}
+            activeProfile={activeProfile}
+            onChange={setActiveProfile}
+          />
 
           <Tabs
             tabs={[

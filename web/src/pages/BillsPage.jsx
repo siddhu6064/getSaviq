@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Spinner } from "../components/ui";
-import { Plus, Pencil, Trash2, Calendar, List, ScrollText, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, List, ScrollText } from "lucide-react";
 import { formatCurrency, cn } from "../lib/utils";
 import { billsAPI } from "../services/api";
 import AddBillModal from "../components/AddBillModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 // ===================== STATUS LOGIC =====================
 
@@ -258,39 +258,10 @@ function CalendarView({ bills }) {
   );
 }
 
-// ===================== DELETE CONFIRM =====================
-
-function DeleteConfirmDialog({ bill, onConfirm, onCancel, isDeleting }) {
-  if (!bill) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <h3 className="text-lg font-bold text-text-primary mb-2">Delete Bill</h3>
-        <p className="text-sm text-text-secondary mb-5">
-          Delete &quot;{bill.name}&quot;? This cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onCancel} disabled={isDeleting} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="flex-1 bg-expense text-white hover:bg-expense/90"
-          >
-            {isDeleting ? <Spinner size="sm" className="text-white" /> : "Delete"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ===================== MAIN PAGE =====================
 
 export default function BillsPage() {
   const { activeProfile } = useAppData();
-  const navigate = useNavigate();
 
   const [bills, setBills] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -561,14 +532,14 @@ export default function BillsPage() {
       />
 
       {/* Delete Confirm */}
-      {deletingBill && (
-        <DeleteConfirmDialog
-          bill={deletingBill}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeletingBill(null)}
-          isDeleting={isDeleting}
-        />
-      )}
+      <DeleteConfirmModal
+        isOpen={!!deletingBill}
+        onClose={() => setDeletingBill(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Bill"
+        message={`Delete "${deletingBill?.name}"? This cannot be undone.`}
+        isConfirming={isDeleting}
+      />
     </div>
   );
 }

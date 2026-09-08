@@ -50,74 +50,11 @@ export function formatTime(timeString: string): string {
 }
 
 /**
- * Format time from hour and minute numbers
- */
-export function formatTimeFromNumbers(hour: number, minute: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
-}
-
-/**
- * Get date range for period
- */
-export function getDateRangeForPeriod(period: "week" | "month" | "year"): {
-  start: Date;
-  end: Date;
-} {
-  const now = new Date();
-  const end = new Date(now);
-  let start: Date;
-
-  switch (period) {
-    case "week":
-      start = new Date(now);
-      start.setDate(now.getDate() - 7);
-      break;
-    case "month":
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
-    case "year":
-      start = new Date(now.getFullYear(), 0, 1);
-      break;
-  }
-
-  return { start, end };
-}
-
-/**
- * Get current month start date
- */
-export function getMonthStart(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
-}
-
-/**
- * Get current week start date (Sunday)
- */
-export function getWeekStart(): Date {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const start = new Date(now);
-  start.setDate(now.getDate() - dayOfWeek);
-  start.setHours(0, 0, 0, 0);
-  return start;
-}
-
-/**
  * Calculate percentage
  */
 export function calculatePercentage(value: number, total: number): number {
   if (total === 0) return 0;
   return Math.round((value / total) * 100 * 10) / 10;
-}
-
-/**
- * Clamp a number between min and max
- */
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
 }
 
 /**
@@ -146,28 +83,6 @@ export function getInitials(name: string): string {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-/**
- * Debounce function
- */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-/**
- * Validate email format
- */
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
 }
 
 /**

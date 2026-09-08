@@ -26,7 +26,6 @@ from deps import (
     normalize_email,
 )
 from models import (
-    AuthResponse,
     Category,
     EmailLoginRequest,
     EmailRegisterRequest,
@@ -73,6 +72,13 @@ def _set_session_cookie(response: Response, token: str) -> None:
         max_age=604800,
         path="/",
     )
+
+
+def _set_mobile_token_header(request: Request, response: Response, token: str) -> None:
+    """Deliver session token via response header for native iOS/Android clients."""
+    platform = request.headers.get("X-Client-Platform", "").lower()
+    if platform in ("ios", "android"):
+        response.headers["X-Session-Token"] = token
 
 
 async def _make_session(user_id: str) -> tuple[str, UserSession]:
@@ -281,6 +287,7 @@ async def google_auth(request: Request, body: GoogleAuthRequest, response: Respo
 
     session_token = await _rotate_and_store_session(user_id)
     _set_session_cookie(response, session_token)
+    _set_mobile_token_header(request, response, session_token)
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     return {"user": user}
@@ -346,6 +353,7 @@ async def apple_auth_login(request: Request, body: AppleAuthRequest, response: R
 
     session_token = await _rotate_and_store_session(user_id)
     _set_session_cookie(response, session_token)
+    _set_mobile_token_header(request, response, session_token)
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     return {"user": user}
@@ -392,6 +400,7 @@ async def register_with_email(request: Request, body: EmailRegisterRequest, resp
 
         session_token = await _rotate_and_store_session(user_id)
         _set_session_cookie(response, session_token)
+        _set_mobile_token_header(request, response, session_token)
 
         return {
             "user": {
@@ -445,6 +454,7 @@ async def login_with_email(request: Request, body: EmailLoginRequest, response: 
 
         session_token = await _rotate_and_store_session(user["user_id"])
         _set_session_cookie(response, session_token)
+        _set_mobile_token_header(request, response, session_token)
         logger.info(
             "login success",
             extra={"request_method": request.method, "request_path": request.url.path},

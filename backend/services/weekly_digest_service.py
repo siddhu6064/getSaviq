@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 
+from utils.finance import to_float as _to_float
+
 
 DEFAULT_DIGEST_TONE = "encouraging"
 LOW_DATA_SUMMARY = "Not enough activity this week for a detailed digest yet."
@@ -38,14 +40,6 @@ def normalize_week_window(
     start_dt = datetime.combine(week_start, time.min).replace(tzinfo=timezone.utc)
     end_dt = datetime.combine(week_end, time.max).replace(tzinfo=timezone.utc)
     return start_dt, end_dt
-
-
-def _to_float(value) -> float:
-    try:
-        parsed = float(value or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
-    return parsed
 
 
 def _format_compact_currency(value: float) -> str:

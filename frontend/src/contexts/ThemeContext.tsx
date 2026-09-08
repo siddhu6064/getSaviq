@@ -93,5 +93,3 @@ export function useTheme() {
   }
   return context;
 }
-
-export { lightColors, darkColors };

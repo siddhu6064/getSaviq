@@ -701,7 +701,7 @@ async function installMockApi(page: Page) {
       });
     }
 
-    if (path === "/api/insights/v2" && method === "GET") {
+    if (path === "/api/insights/spend-comparison" && method === "GET") {
       if (state.insightsV2Mode === "error") {
         return json({ error: { code: "SERVER_ERROR", message: "failed" } }, 500);
       }
@@ -739,7 +739,6 @@ async function installMockApi(page: Page) {
               severity: "info",
             },
             insight_metadata: {
-              schema_version: "v2",
               period_type: "weekly",
               total_comparison: {
                 period_type: "weekly",
@@ -797,7 +796,6 @@ async function installMockApi(page: Page) {
               severity: "info",
             },
             insight_metadata: {
-              schema_version: "v2",
               period_type: "monthly",
               total_comparison: {
                 period_type: "monthly",

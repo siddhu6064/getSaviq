@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Modal, Button, Tabs, Input, Select, Spinner } from "./ui";
+import { Modal, Button, Tabs, Spinner } from "./ui";
 import {
   DollarSign,
   Calendar,

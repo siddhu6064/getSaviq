@@ -9,7 +9,9 @@ def _register(client, email=None, password="secret123", name="Tester"):
         json={"email": email, "password": password, "name": name},
     )
     assert response.status_code == 200
-    return response.json()
+    data = response.json()
+    data["session_token"] = response.cookies.get("session_token")
+    return data
 
 
 def _auth_headers(token):
@@ -102,7 +104,7 @@ def test_chat_insights_endpoint_blocks_wrong_profile_access(client):
         json={"profile_id": other_profile_id, "recent_days": 30},
     )
 
-    assert response.status_code == 404
+    assert response.status_code == 403
 
 
 def test_chat_insights_route_wired_into_openapi(client):
@@ -131,7 +133,7 @@ def test_chat_insights_failure_logs_non_sensitive_diagnostics(client, monkeypatc
         )
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "Unable to generate chat insights right now."
+    assert response.json()["error"]["message"] == "Unable to generate chat insights right now."
     assert "chat_insights_request_failed" in caplog.text
 
 

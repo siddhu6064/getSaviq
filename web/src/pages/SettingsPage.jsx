@@ -20,12 +20,19 @@ import {
 } from "lucide-react";
 import { categoriesAPI, invitesAPI, paymentMethodsAPI, profilesAPI } from "../services/api";
 import { getUserFriendlyError } from "../lib/errorMessages";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 const paymentTypeOptions = [
   { value: "cash", label: "Cash", icon: Banknote },
   { value: "credit_card", label: "Credit Card", icon: CreditCard },
   { value: "debit_card", label: "Debit Card", icon: CreditCard },
   { value: "bank_transfer", label: "Bank Transfer", icon: Building2 },
+];
+
+const profileTypeOptions = [
+  { value: "personal", label: "Personal" },
+  { value: "business", label: "Business" },
+  { value: "shared", label: "Shared" },
 ];
 
 const categoryColors = [
@@ -77,7 +84,7 @@ export default function SettingsPage() {
     last_four: "",
     is_default: false,
   });
-  const [profileForm, setProfileForm] = useState({ name: "" });
+  const [profileForm, setProfileForm] = useState({ name: "", profile_type: "personal" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -178,12 +185,12 @@ export default function SettingsPage() {
       if (editingItem) {
         await profilesAPI.update(editingItem.profile_id, profileForm);
       } else {
-        await profilesAPI.create(profileForm.name);
+        await profilesAPI.create(profileForm.name, profileForm.profile_type);
       }
       await refresh();
       setShowProfileModal(false);
       setEditingItem(null);
-      setProfileForm({ name: "" });
+      setProfileForm({ name: "", profile_type: "personal" });
     } catch (error) {
       console.error("Failed to save profile:", error);
     } finally {
@@ -360,7 +367,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={() => {
                     setEditingItem(null);
-                    setProfileForm({ name: "" });
+                    setProfileForm({ name: "", profile_type: "personal" });
                     setShowProfileModal(true);
                   }}
                   size="sm"
@@ -847,6 +854,37 @@ export default function SettingsPage() {
             data-testid="profile-name-input"
           />
 
+          {!editingItem && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Type</label>
+              <div className="grid grid-cols-3 gap-2">
+                {profileTypeOptions.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setProfileForm({ ...profileForm, profile_type: type.value })}
+                    className={`flex items-center justify-center p-3 rounded-xl border transition-all ${
+                      profileForm.profile_type === type.value
+                        ? "border-brand-primary bg-brand-primary/5"
+                        : "border-border-color hover:border-brand-primary/50"
+                    }`}
+                    data-testid={`profile-type-${type.value}`}
+                  >
+                    <span
+                      className={`text-sm font-medium ${
+                        profileForm.profile_type === type.value
+                          ? "text-brand-primary"
+                          : "text-text-primary"
+                      }`}
+                    >
+                      {type.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
@@ -871,38 +909,21 @@ export default function SettingsPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteConfirmModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (deleteConfirm?.type === "category") {
+            handleDeleteCategory(deleteConfirm.item.category_id);
+          } else if (deleteConfirm?.type === "payment") {
+            handleDeletePayment(deleteConfirm.item.payment_id);
+          } else if (deleteConfirm?.type === "profile") {
+            handleDeleteProfile(deleteConfirm.item.profile_id);
+          }
+        }}
         title={`Delete ${deleteConfirm?.type}`}
-        size="sm"
-      >
-        <p className="text-text-secondary mb-6">
-          Are you sure you want to delete "{deleteConfirm?.item?.name}"? This action cannot be
-          undone.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              if (deleteConfirm?.type === "category") {
-                handleDeleteCategory(deleteConfirm.item.category_id);
-              } else if (deleteConfirm?.type === "payment") {
-                handleDeletePayment(deleteConfirm.item.payment_id);
-              } else if (deleteConfirm?.type === "profile") {
-                handleDeleteProfile(deleteConfirm.item.profile_id);
-              }
-            }}
-            className="flex-1"
-            data-testid="confirm-delete"
-          >
-            Delete
-          </Button>
-        </div>
-      </Modal>
+        message={`Are you sure you want to delete "${deleteConfirm?.item?.name}"? This action cannot be undone.`}
+      />
 
       {/* Invite Member Modal */}
       <Modal

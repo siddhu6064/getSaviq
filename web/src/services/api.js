@@ -56,7 +56,7 @@ export const authAPI = {
 // Profiles API
 export const profilesAPI = {
   getAll: () => api.get("/profiles"),
-  create: (name) => api.post("/profiles", { name }),
+  create: (name, profile_type = "personal") => api.post("/profiles", { name, profile_type }),
   update: (profileId, data) => api.put(`/profiles/${profileId}`, data),
   delete: (profileId) => api.delete(`/profiles/${profileId}`),
   removeMember: (profileId, memberId) => api.delete(`/profiles/${profileId}/members/${memberId}`),
@@ -81,7 +81,6 @@ export const paymentMethodsAPI = {
 // Expenses/Transactions API
 export const expensesAPI = {
   getAll: (params) => api.get("/expenses", { params }),
-  getOne: (expenseId) => api.get(`/expenses/${expenseId}`),
   create: (data) => api.post("/expenses", data),
   update: (expenseId, data) => api.put(`/expenses/${expenseId}`, data),
   delete: (expenseId) => api.delete(`/expenses/${expenseId}`),
@@ -111,7 +110,6 @@ export const attachmentsAPI = {
 // Stats API
 export const statsAPI = {
   getSummary: (params) => api.get("/stats/summary", { params }),
-  getWeeklySummary: (params) => api.get("/stats/weekly-summary", { params }),
   getInsights: (params) => api.get("/insights", { params }),
 };
 
@@ -127,7 +125,7 @@ export const analyticsAPI = {
 export const insightsAPI = {
   getOverview: (params) => api.get("/insights/overview", { params }),
   getRecommendations: (params) => api.get("/insights/recommendations", { params }),
-  getV2: (params) => api.get("/insights/v2", { params }),
+  getSpendComparison: (params) => api.get("/insights/spend-comparison", { params }),
 };
 
 // AI API
@@ -138,7 +136,6 @@ export const aiAPI = {
 
 // Budget API
 export const budgetsAPI = {
-  getAll: (params) => api.get("/budgets", { params }),
   create: (data) => api.post("/budgets", data),
   update: (budgetId, data) => api.put(`/budgets/${budgetId}`, data),
   delete: (budgetId) => api.delete(`/budgets/${budgetId}`),
@@ -171,7 +168,6 @@ export const weeklyDigestAPI = {
 // Savings Goals API
 export const savingsGoalsAPI = {
   getAll: (params) => api.get("/savings-goals", { params }),
-  getOne: (goalId, params) => api.get(`/savings-goals/${goalId}`, { params }),
   create: (data) => api.post("/savings-goals", data),
   update: (goalId, data) => api.put(`/savings-goals/${goalId}`, data),
   delete: (goalId) => api.delete(`/savings-goals/${goalId}`),
@@ -219,7 +215,6 @@ export const billsAPI = {
   create: (data) => api.post("/bills", data),
   update: (billId, data) => api.put(`/bills/${billId}`, data),
   delete: (billId) => api.delete(`/bills/${billId}`),
-  fromSubscription: (data) => api.post("/bills/from-subscription", data),
 };
 
 // Export API

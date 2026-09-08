@@ -16,7 +16,9 @@ def _register(client, email=None, password="secret123", name="Tester"):
         json={"email": email, "password": password, "name": name},
     )
     assert response.status_code == 200
-    return response.json()
+    data = response.json()
+    data["session_token"] = response.cookies.get("session_token")
+    return data
 
 
 def _auth_headers(token):

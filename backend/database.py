@@ -32,7 +32,20 @@ async def create_indexes():
     await db.user_sessions.create_index([("user_id", 1)])
     await db.user_sessions.create_index([("expires_at", 1)], expireAfterSeconds=0)
 
-    await db.users.create_index([("email", 1)], unique=True, sparse=True)
+    # Sparse alone doesn't exempt "" (only a genuinely missing field) — Apple
+    # Sign-In users who hide their email get email="", and a second such user
+    # would collide on a plain sparse unique index. A partial filter that also
+    # requires a non-empty string fixes that while still enforcing uniqueness
+    # for every user who does have a real email.
+    try:
+        await db.users.drop_index("email_1")
+    except Exception:
+        pass
+    await db.users.create_index(
+        [("email", 1)],
+        unique=True,
+        partialFilterExpression={"email": {"$type": "string", "$gt": ""}},
+    )
     await db.users.create_index([("user_id", 1)], unique=True)
 
     await db.profiles.create_index([("user_id", 1)])

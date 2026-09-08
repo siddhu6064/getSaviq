@@ -1,20 +1,13 @@
 import React from "react";
 import { Repeat, RefreshCw } from "lucide-react";
 import { Card, Button, Spinner } from "./ui";
+import { formatCurrency } from "../lib/utils";
 import { mapSubscriptionsSummary } from "../lib/subscriptionsPresentation";
 import {
   resolveSubscriptionsCardState,
   SUBSCRIPTIONS_AI_ASSISTED_TEXT,
   triggerSubscriptionsRefresh,
 } from "../lib/subscriptionsCardState";
-
-function formatUsd(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
-}
 
 export default function SubscriptionsCard({
   summary,
@@ -116,7 +109,7 @@ export default function SubscriptionsCard({
               className="text-sm font-semibold text-text-primary"
               data-testid="subscriptions-monthly-total"
             >
-              {formatUsd(view.monthlyRecurringTotal)}
+              {formatCurrency(view.monthlyRecurringTotal || 0)}
             </p>
           </div>
           <div className="rounded-xl border border-border-color/80 bg-surface-hover/60 px-3 py-2">
@@ -125,7 +118,7 @@ export default function SubscriptionsCard({
               className="text-sm font-semibold text-text-primary"
               data-testid="subscriptions-annual-total"
             >
-              {formatUsd(view.annualRecurringTotal)}
+              {formatCurrency(view.annualRecurringTotal || 0)}
             </p>
           </div>
         </div>

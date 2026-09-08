@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Spinner, Badge } from "../components/ui";
 import { Plus, Pencil, Trash2, Target } from "lucide-react";
@@ -7,6 +7,9 @@ import { savingsGoalsAPI } from "../services/api";
 import CreateGoalModal from "../components/CreateGoalModal";
 import { getProjectedCompletionText } from "../lib/goalsPresentation";
 import { GOALS_EMPTY_STATE_COPY, getGoalActionMessage } from "../lib/goalsFeedback";
+import { useIsMounted } from "../hooks/useIsMounted";
+import ProfileSelector from "../components/ProfileSelector";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function GoalsPage() {
   const { profiles, activeProfile, setActiveProfile, loading } = useAppData();
@@ -17,14 +20,9 @@ export default function GoalsPage() {
   const [success, setSuccess] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const isMounted = useRef(true);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const isMounted = useIsMounted();
 
   const loadGoals = useCallback(async () => {
     if (!activeProfile?.profile_id) return;
@@ -77,8 +75,6 @@ export default function GoalsPage() {
   };
 
   const handleDelete = async (goalId) => {
-    if (!window.confirm("Delete this goal?")) return;
-
     setError("");
     try {
       await savingsGoalsAPI.delete(goalId);
@@ -86,6 +82,8 @@ export default function GoalsPage() {
       setSuccess(getGoalActionMessage("delete", true));
     } catch (err) {
       setError(getGoalActionMessage("delete", false));
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -145,21 +143,13 @@ export default function GoalsPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <select
-            value={activeProfile?.profile_id || ""}
-            onChange={(e) => {
-              const profile = profiles.find((p) => p.profile_id === e.target.value);
-              setActiveProfile(profile || null);
-            }}
-            className="w-full sm:w-auto px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-            data-testid="goals-profile-select"
-          >
-            {profiles.map((profile) => (
-              <option key={profile.profile_id} value={profile.profile_id}>
-                {profile.name}
-              </option>
-            ))}
-          </select>
+          <ProfileSelector
+            profiles={profiles}
+            activeProfile={activeProfile}
+            onChange={setActiveProfile}
+            testId="goals-profile-select"
+            responsive
+          />
 
           <Button
             onClick={openCreate}
@@ -247,7 +237,7 @@ export default function GoalsPage() {
                   size="sm"
                   variant="danger"
                   className="w-full sm:w-auto"
-                  onClick={() => handleDelete(goal.goal_id)}
+                  onClick={() => setDeleteConfirm(goal)}
                   data-testid="delete-goal-button"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
@@ -270,6 +260,15 @@ export default function GoalsPage() {
         profileId={activeProfile?.profile_id}
         editingGoal={editingGoal}
         isSubmitting={isSubmitting}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => handleDelete(deleteConfirm?.goal_id)}
+        title="Delete Goal"
+        message={`Delete "${deleteConfirm?.title}"? This action cannot be undone.`}
+        testId="confirm-delete-goal"
       />
     </div>
   );

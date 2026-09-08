@@ -4,21 +4,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 
 from database import db
+from utils.date_helpers import add_months as _add_months
+from utils.date_helpers import month_start as _month_start
 
 PeriodType = Literal["weekly", "monthly"]
-_PROJECTION = {"_id": 0, "amount": 1, "type": 1}
+_PROJECTION = {"_id": 0, "amount": 1, "type": 1, "category_id": 1}
 TOTAL_SPEND_SPIKE_PCT_THRESHOLD = 50.0
 CATEGORY_SPEND_SPIKE_PCT_THRESHOLD = 75.0
-
-
-def _month_start(dt: datetime) -> datetime:
-    return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-
-def _add_months(month_dt: datetime, delta: int) -> datetime:
-    year = month_dt.year + (month_dt.month - 1 + delta) // 12
-    month = (month_dt.month - 1 + delta) % 12 + 1
-    return month_dt.replace(year=year, month=month, day=1)
 
 
 def _period_bounds(period_type: PeriodType, now: datetime) -> tuple[datetime, datetime, datetime]:
@@ -201,7 +193,6 @@ def _build_insight_metadata(
     budget_risk: dict,
 ) -> dict:
     return {
-        "schema_version": "v2",
         "period_type": period_type,
         "total_comparison": {
             "period_type": period_type,

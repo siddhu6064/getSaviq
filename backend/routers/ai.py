@@ -9,12 +9,13 @@ from slowapi.util import get_remote_address
 
 from config import get_settings
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from models import ChatInsightsRequest, ChatInsightsResponse, ScanReceiptRequest
 from services.chat_insights_service import build_chat_transaction_context
 from services.chat_prompt_service import build_chat_prompt_template, format_recommendation_answer
 from services.insights_v2_service import generate_spend_comparison
 from services.openai_client import OpenAIClientError, analyze_receipt_image, generate_spending_insights
+from utils.date_helpers import add_months, month_start
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -26,17 +27,6 @@ router = APIRouter(tags=["ai"])
 STATS_PROJECTION = {"_id": 0, "amount": 1, "type": 1, "category_id": 1}
 _AI_ROUTE_METRICS = {"insights_fallback_count": 0}
 
-
-async def _ensure_profile_owned(profile_id: str, user_id: str):
-    profile = await db.profiles.find_one(
-        {"profile_id": profile_id, "user_id": user_id},
-        {"_id": 0, "profile_id": 1},
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-
-# ===================== SHARED HELPERS =====================
 
 # ===================== ENDPOINTS =====================
 
@@ -80,19 +70,19 @@ async def get_spending_insights(
     """Get AI-powered spending insights comparing periods."""
     now = datetime.now(timezone.utc)
 
-
-    base_query = {"user_id": current_user["user_id"]}
     if profile_id:
-        base_query["profile_id"] = profile_id
+        profile = await get_accessible_profile(profile_id, current_user)
+        owner_user_id = profile["user_id"]
+        base_query: dict = {"profile_id": profile_id}
+    else:
+        owner_user_id = current_user["user_id"]
+        base_query = {"user_id": owner_user_id}
 
     # Queries used by existing stats payload
     current_week_start = now - timedelta(days=now.weekday())
     last_week_start = current_week_start - timedelta(days=7)
-    current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if current_month_start.month == 1:
-        last_month_start = current_month_start.replace(year=current_month_start.year - 1, month=12)
-    else:
-        last_month_start = current_month_start.replace(month=current_month_start.month - 1)
+    current_month_start = month_start(now)
+    last_month_start = add_months(current_month_start, -1)
 
     this_week_q = {**base_query, "date": {"$gte": current_week_start}}
     last_week_q = {**base_query, "date": {"$gte": last_week_start, "$lt": current_week_start}}
@@ -110,13 +100,13 @@ async def get_spending_insights(
         user_cats,
     ) = await asyncio.gather(
         generate_spend_comparison(
-            user_id=current_user["user_id"],
+            user_id=owner_user_id,
             profile_id=profile_id,
             period_type="weekly",
             now=now,
         ),
         generate_spend_comparison(
-            user_id=current_user["user_id"],
+            user_id=owner_user_id,
             profile_id=profile_id,
             period_type="monthly",
             now=now,
@@ -209,11 +199,11 @@ async def build_ai_chat_insights_context(
     data: ChatInsightsRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    await _ensure_profile_owned(data.profile_id, current_user["user_id"])
+    profile = await get_accessible_profile(data.profile_id, current_user)
 
     try:
         context = await build_chat_transaction_context(
-            user_id=current_user["user_id"],
+            user_id=profile["user_id"],
             profile_id=data.profile_id,
             recent_days=data.recent_days,
             expenses_collection=db.expenses,

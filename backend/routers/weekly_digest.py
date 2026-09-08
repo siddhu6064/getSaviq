@@ -4,7 +4,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from services.weekly_digest_service import (
     build_weekly_financial_digest,
     dismiss_newest_persisted_digest,
@@ -17,15 +17,6 @@ router = APIRouter(prefix="/weekly-digest", tags=["weekly-digest"])
 logger = logging.getLogger(__name__)
 
 
-async def _ensure_profile_owned(profile_id: str, user_id: str):
-    profile = await db.profiles.find_one(
-        {"profile_id": profile_id, "user_id": user_id},
-        {"_id": 0},
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-
 @router.get("/latest")
 async def get_latest_weekly_digest(
     profile_id: str | None = Query(None),
@@ -34,11 +25,11 @@ async def get_latest_weekly_digest(
     if not profile_id:
         raise HTTPException(status_code=400, detail="profile_id is required")
 
-    await _ensure_profile_owned(profile_id, current_user["user_id"])
+    profile = await get_accessible_profile(profile_id, current_user)
 
     newest = await fetch_newest_persisted_digest(
         digest_collection=db.weekly_digests,
-        user_id=current_user["user_id"],
+        user_id=profile["user_id"],
         profile_id=profile_id,
     )
 
@@ -63,11 +54,11 @@ async def dismiss_latest_weekly_digest(
     if not profile_id:
         raise HTTPException(status_code=400, detail="profile_id is required")
 
-    await _ensure_profile_owned(profile_id, current_user["user_id"])
+    profile = await get_accessible_profile(profile_id, current_user)
 
     dismissed = await dismiss_newest_persisted_digest(
         digest_collection=db.weekly_digests,
-        user_id=current_user["user_id"],
+        user_id=profile["user_id"],
         profile_id=profile_id,
     )
     return {"dismissed": dismissed}
@@ -83,7 +74,8 @@ async def get_weekly_digest(
     if not profile_id:
         raise HTTPException(status_code=400, detail="profile_id is required")
 
-    await _ensure_profile_owned(profile_id, current_user["user_id"])
+    profile = await get_accessible_profile(profile_id, current_user)
+    owner_user_id = profile["user_id"]
 
     try:
         start_dt, end_dt = normalize_week_window(week_start=week_start, week_end=week_end)
@@ -92,7 +84,7 @@ async def get_weekly_digest(
         raise HTTPException(status_code=400, detail="Invalid date range.")
 
     digest = await build_weekly_financial_digest(
-        user_id=current_user["user_id"],
+        user_id=owner_user_id,
         profile_id=profile_id,
         week_start=start_dt,
         week_end=end_dt,
@@ -101,7 +93,7 @@ async def get_weekly_digest(
 
     await store_weekly_digest_payload(
         digest_collection=db.weekly_digests,
-        user_id=current_user["user_id"],
+        user_id=owner_user_id,
         profile_id=profile_id,
         week_start=start_dt,
         week_end=end_dt,

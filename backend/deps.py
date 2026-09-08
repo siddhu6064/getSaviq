@@ -1,11 +1,10 @@
-import os
 import logging
 import re
 from datetime import datetime, timezone
 
+import bcrypt
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from passlib.context import CryptContext
 
 from database import db
 
@@ -17,15 +16,13 @@ security = HTTPBearer(auto_error=False)
 
 # ===================== PASSWORD HELPERS =====================
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 # ===================== VALIDATORS =====================
@@ -40,8 +37,8 @@ def normalize_email(email: str) -> str:
 
 
 def validate_password(password: str) -> tuple[bool, str]:
-    if len(password) < 6:
-        return False, "Password must be at least 6 characters"
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
     return True, ""
 
 

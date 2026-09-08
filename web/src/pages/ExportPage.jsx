@@ -5,6 +5,7 @@ import { Download, FileText, FileSpreadsheet, Calendar, Filter } from "lucide-re
 import { formatCurrency, formatDate } from "../lib/utils";
 import { getUserFriendlyError } from "../lib/errorMessages";
 import { exportAPI } from "../services/api";
+import ProfileSelector from "../components/ProfileSelector";
 
 export default function ExportPage() {
   const { profiles, activeProfile, setActiveProfile, loading } = useAppData();
@@ -190,21 +191,11 @@ export default function ExportPage() {
           <p className="text-text-secondary mt-1">Download your financial data</p>
         </div>
 
-        <select
-          value={activeProfile?.profile_id || ""}
-          onChange={(e) => {
-            const profile = profiles.find((p) => p.profile_id === e.target.value);
-            setActiveProfile(profile);
-          }}
-          className="px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-          data-testid="profile-select"
-        >
-          {profiles.map((profile) => (
-            <option key={profile.profile_id} value={profile.profile_id}>
-              {profile.name}
-            </option>
-          ))}
-        </select>
+        <ProfileSelector
+          profiles={profiles}
+          activeProfile={activeProfile}
+          onChange={setActiveProfile}
+        />
       </div>
 
       {/* Date Range */}

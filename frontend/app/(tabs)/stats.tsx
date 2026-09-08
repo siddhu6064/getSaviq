@@ -18,12 +18,11 @@ import {
   sanitizeAnalyticsPayload,
 } from "../../src/utils/analyticsScreenState";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { formatCurrency as _formatCurrency } from "@shared/utils";
 
 function formatCurrency(value: unknown) {
   const safe = Number(value);
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    Number.isFinite(safe) ? safe : 0,
-  );
+  return _formatCurrency(Number.isFinite(safe) ? safe : 0);
 }
 
 export default function AnalyticsScreen() {

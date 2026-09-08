@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Input, Modal, Spinner, Badge } from "../components/ui";
-import { Target, Plus, Edit2, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Target, Plus, Edit2, Trash2 } from "lucide-react";
 import { formatCurrency, cn, getCategoryIcon } from "../lib/utils";
 import { budgetsAPI } from "../services/api";
+import { useIsMounted } from "../hooks/useIsMounted";
+import ProfileSelector from "../components/ProfileSelector";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function BudgetsPage() {
   const { profiles, categories, activeProfile, setActiveProfile, loading } = useAppData();
@@ -15,13 +18,7 @@ export default function BudgetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const isMounted = useIsMounted();
 
   const [budgetForm, setBudgetForm] = useState({
     category_id: "",
@@ -132,21 +129,11 @@ export default function BudgetsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <select
-            value={activeProfile?.profile_id || ""}
-            onChange={(e) => {
-              const profile = profiles.find((p) => p.profile_id === e.target.value);
-              setActiveProfile(profile);
-            }}
-            className="px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-            data-testid="profile-select"
-          >
-            {profiles.map((profile) => (
-              <option key={profile.profile_id} value={profile.profile_id}>
-                {profile.name}
-              </option>
-            ))}
-          </select>
+          <ProfileSelector
+            profiles={profiles}
+            activeProfile={activeProfile}
+            onChange={setActiveProfile}
+          />
 
           <Button onClick={openAddModal} data-testid="add-budget-button">
             <Plus className="w-5 h-5 mr-2" />
@@ -399,29 +386,14 @@ export default function BudgetsPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteConfirmModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => handleDeleteBudget(deleteConfirm?.budget_id)}
         title="Delete Budget"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-6">
-          Are you sure you want to delete this budget? This action cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => handleDeleteBudget(deleteConfirm?.budget_id)}
-            className="flex-1"
-            data-testid="confirm-delete-budget"
-          >
-            Delete
-          </Button>
-        </div>
-      </Modal>
+        message="Are you sure you want to delete this budget? This action cannot be undone."
+        testId="confirm-delete-budget"
+      />
     </div>
   );
 }

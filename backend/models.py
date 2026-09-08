@@ -66,8 +66,8 @@ class Category(BaseModel):
     user_id: str
     profile_id: Optional[str] = None  # None means available for all profiles
     name: str
-    icon: str = "tag"
-    color: str = "#6366f1"
+    icon: str = Field(default="tag", max_length=50)
+    color: str = Field(default="#6366f1", max_length=7)
     is_default: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -76,7 +76,7 @@ class PaymentMethod(BaseModel):
     payment_id: str = Field(default_factory=lambda: f"pm_{uuid.uuid4().hex[:12]}")
     user_id: str
     name: str
-    type: str  # "cash", "credit_card", "debit_card", "bank_transfer", "other"
+    type: str = Field(max_length=30)  # "cash", "credit_card", "debit_card", "bank_transfer", "other"
     last_four: Optional[str] = None  # Last 4 digits for cards
     is_default: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -92,12 +92,12 @@ class Expense(BaseModel):
     payment_method_id: str
     to_payment_method_id: Optional[str] = None  # For transfers
     description: str
-    merchant: Optional[str] = None
+    merchant: Optional[str] = Field(default=None, max_length=200)
     date: datetime
-    time: Optional[str] = None  # HH:MM format
+    time: Optional[str] = Field(default=None, max_length=5)  # HH:MM format
     receipt_image: Optional[str] = None  # Base64 encoded image
     notes: Optional[str] = None
-    attachments: List[str] = Field(default_factory=list)  # R2 public URLs
+    attachments: List[str] = Field(default_factory=list)  # R2 object keys (private; access via presigned URL endpoint)
     is_pending: bool = False
     # Recurring transaction fields
     is_recurring: bool = False
@@ -128,33 +128,13 @@ class SavingsGoal(BaseModel):
     target_amount: float = Field(gt=0)
     current_amount: float = Field(ge=0)
     deadline: datetime
-    category: str
+    category: str = Field(max_length=100)
     status: Literal["active", "paused", "completed", "cancelled"] = "active"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class UserSettings(BaseModel):
-    user_id: str
-    dark_mode: bool = False
-    currency: str = "USD"
-    # Push notification preferences
-    push_budget_alerts: bool = True
-    push_goal_milestones: bool = True
-    push_large_transactions: bool = True
-    weekly_digest_push: bool = True
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
 # ===================== REQUEST / RESPONSE SCHEMAS =====================
-
-class AuthResponse(BaseModel):
-    user: User
-    session_token: str
-
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class MessageResponse(BaseModel):
     message: str
@@ -293,7 +273,7 @@ class ProfileWithMembers(Profile):
 
 class CategoryCreate(BaseModel):
     name: str = Field(max_length=100)
-    icon: str = "tag"
+    icon: str = Field(default="tag", max_length=50)
     color: str = "#6366f1"
     profile_id: Optional[str] = None
 
@@ -307,7 +287,7 @@ class CategoryCreate(BaseModel):
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
-    icon: Optional[str] = None
+    icon: Optional[str] = Field(None, max_length=50)
     color: Optional[str] = None
 
     @field_validator("color")
@@ -322,7 +302,7 @@ class CategoryUpdate(BaseModel):
 
 class PaymentMethodCreate(BaseModel):
     name: str = Field(max_length=100)
-    type: str
+    type: str = Field(max_length=30)
     last_four: Optional[str] = None
     is_default: bool = False
 
@@ -338,7 +318,7 @@ class PaymentMethodCreate(BaseModel):
 
 class PaymentMethodUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
-    type: Optional[str] = None
+    type: Optional[str] = Field(None, max_length=30)
     last_four: Optional[str] = None
     is_default: Optional[bool] = None
 
@@ -362,7 +342,7 @@ class ExpenseCreate(BaseModel):
     description: str = Field(max_length=500)
     merchant: Optional[str] = Field(None, max_length=200)
     date: datetime
-    time: Optional[str] = None
+    time: Optional[str] = Field(None, max_length=5)
     receipt_image: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=500)
     attachments: List[str] = Field(default_factory=list)
@@ -422,7 +402,7 @@ class ExpenseUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=500)
     merchant: Optional[str] = Field(None, max_length=200)
     date: Optional[datetime] = None
-    time: Optional[str] = None
+    time: Optional[str] = Field(None, max_length=5)
     receipt_image: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=500)
     attachments: Optional[List[str]] = None
@@ -507,7 +487,7 @@ class SavingsGoalCreate(BaseModel):
     target_amount: float = Field(gt=0)
     current_amount: float = Field(ge=0)
     deadline: datetime
-    category: str
+    category: str = Field(max_length=100)
     status: Literal["active", "paused", "completed", "cancelled"] = "active"
 
     @field_validator("title", "category")
@@ -532,7 +512,7 @@ class SavingsGoalUpdate(BaseModel):
     target_amount: Optional[float] = None
     current_amount: Optional[float] = None
     deadline: Optional[datetime] = None
-    category: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=100)
     status: Optional[Literal["active", "paused", "completed", "cancelled"]] = None
 
     @field_validator("title", "category")
@@ -793,9 +773,9 @@ class PushTokenCreate(BaseModel):
 class Notification(BaseModel):
     notif_id: str = Field(default_factory=lambda: f"notif_{uuid.uuid4().hex[:12]}")
     user_id: str
-    type: str
-    title: str
-    body: str
+    type: str = Field(max_length=50)
+    title: str = Field(max_length=200)
+    body: str = Field(max_length=1000)
     read: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     link: Optional[str] = None

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { deriveSubscriptionState } from "../../utils/aiIntelligenceState";
 import { useTheme } from "../../contexts/ThemeContext";
+import { formatCurrency as _formatCurrency } from "@shared/utils";
 
 interface SubscriptionDetectionWidgetProps {
   isLoading: boolean;
@@ -13,9 +14,7 @@ interface SubscriptionDetectionWidgetProps {
 
 function formatCurrency(value: unknown) {
   const safe = Number(value);
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    Number.isFinite(safe) ? safe : 0,
-  );
+  return _formatCurrency(Number.isFinite(safe) ? safe : 0);
 }
 
 function formatCadence(label?: string) {

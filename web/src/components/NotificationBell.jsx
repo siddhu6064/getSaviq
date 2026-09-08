@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { notificationsAPI } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,12 +34,14 @@ export default function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
+  const { isGuest } = useAuth();
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   // ── fetch ────────────────────────────────────────────────────────────────
 
   const fetchNotifications = useCallback(async () => {
+    if (isGuest) return;
     try {
       setIsLoading(true);
       const res = await notificationsAPI.getAll();
@@ -48,14 +51,15 @@ export default function NotificationBell() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isGuest]);
 
-  // initial load + 60-second poll
+  // initial load + 60-second poll — skipped in guest mode (no session, nothing to fetch)
   useEffect(() => {
+    if (isGuest) return;
     fetchNotifications();
     const id = setInterval(fetchNotifications, 60_000);
     return () => clearInterval(id);
-  }, [fetchNotifications]);
+  }, [fetchNotifications, isGuest]);
 
   // ── outside-click close ──────────────────────────────────────────────────
 

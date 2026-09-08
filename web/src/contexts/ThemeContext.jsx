@@ -1,15 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { settingsAPI } from "../services/api";
+import { useAuth } from "./AuthContext";
 
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
+  const { user, isGuest, loading: authLoading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isAuthenticated = Boolean(user) && !isGuest;
 
   useEffect(() => {
+    if (authLoading) return;
     loadSettings();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
     // Apply dark mode class to document
@@ -28,9 +33,8 @@ export function ThemeProvider({ children }) {
         setDarkMode(localDarkMode === "true");
       }
 
-      // Try to load from API if authenticated
-      const token = localStorage.getItem("session_token");
-      if (token) {
+      // Load from API when a real (non-guest) session is authenticated
+      if (isAuthenticated) {
         const response = await settingsAPI.get();
         setDarkMode(response.data.dark_mode || false);
       }
@@ -46,11 +50,9 @@ export function ThemeProvider({ children }) {
     setDarkMode(newValue);
     localStorage.setItem("dark_mode", newValue.toString());
 
+    if (!isAuthenticated) return;
     try {
-      const token = localStorage.getItem("session_token");
-      if (token) {
-        await settingsAPI.update({ dark_mode: newValue });
-      }
+      await settingsAPI.update({ dark_mode: newValue });
     } catch (error) {
       console.error("Failed to save dark mode setting:", error);
     }

@@ -158,8 +158,8 @@ export default function LoginScreen() {
   };
 
   const handleEmailRegister = async () => {
-    if (!name.trim() || !email.trim() || password.length < 6) {
-      Alert.alert("Error", "Please fill all fields (password min 6 characters)");
+    if (!name.trim() || !email.trim() || password.length < 8) {
+      Alert.alert("Error", "Please fill all fields (password min 8 characters)");
       return;
     }
     try {
@@ -420,7 +420,7 @@ export default function LoginScreen() {
             style={styles.textInput}
             value={password}
             onChangeText={setPassword}
-            placeholder="Password (min 6 characters)"
+            placeholder="Password (min 8 characters)"
             placeholderTextColor={lightTheme.colors.placeholder}
             secureTextEntry={!showPassword}
           />

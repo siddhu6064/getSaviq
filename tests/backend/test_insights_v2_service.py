@@ -199,11 +199,11 @@ def test_severity_mapping_coverage_all_levels():
         budgets=[{"user_id": "u1", "profile_id": "p1", "period": "monthly", "category_id": None, "amount": 1000}],
     )
     warning = _compare(
-        expenses=[{"user_id": "u1", "profile_id": "p1", "date": datetime(2026, 4, 15, tzinfo=timezone.utc), "amount": 500, "type": "expense"}],
+        expenses=[{"user_id": "u1", "profile_id": "p1", "date": datetime(2026, 4, 15, tzinfo=timezone.utc), "amount": 750, "type": "expense"}],
         budgets=[{"user_id": "u1", "profile_id": "p1", "period": "monthly", "category_id": None, "amount": 1000}],
     )
     high = _compare(
-        expenses=[{"user_id": "u1", "profile_id": "p1", "date": datetime(2026, 4, 2, tzinfo=timezone.utc), "amount": 650, "type": "expense"}],
+        expenses=[{"user_id": "u1", "profile_id": "p1", "date": datetime(2026, 4, 2, tzinfo=timezone.utc), "amount": 120, "type": "expense"}],
         budgets=[{"user_id": "u1", "profile_id": "p1", "period": "monthly", "category_id": None, "amount": 1000}],
         now=datetime(2026, 4, 2, tzinfo=timezone.utc),
     )
@@ -245,7 +245,6 @@ def test_strict_field_presence_in_metadata_envelope():
         "budget_risk",
         "category_comparisons",
         "period_type",
-        "schema_version",
         "total_comparison",
     ]
     assert sorted(md["total_comparison"].keys()) == [

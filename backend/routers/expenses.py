@@ -567,6 +567,9 @@ async def get_attachment_url(
     """
     Generate a 15-minute presigned GET URL for a private R2 attachment.
     The caller must own the expense — raises 403 otherwise.
+
+    Not currently called by web or mobile (neither wires a "view attachment"
+    action yet) — kept as ready-to-use API surface for that feature.
     """
     expense_doc = await db.expenses.find_one(
         {"expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
@@ -723,7 +726,9 @@ async def get_weekly_summary(
     profile_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
 ):
-    """Get this week's spending summary vs last week for notification content"""
+    """Get this week's spending summary vs last week for notification content.
+
+    Not currently called by web or mobile — kept as ready-to-use API surface."""
     now = datetime.now(timezone.utc)
 
     days_since_monday = now.weekday()  # 0=Mon, 6=Sun

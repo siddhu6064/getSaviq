@@ -29,7 +29,7 @@ import notificationService, {
 import { AutomationOnboardingModal } from "../../src/components/AutomationCard";
 import { ApplePaySetupGuide } from "../../src/components/ApplePaySetupGuide";
 import { GooglePaySetupGuide } from "../../src/components/GooglePaySetupGuide";
-import api, { settingsAPI, exportAPI, invitesAPI, profilesAPI } from "../../src/services/api";
+import api, { settingsAPI, exportAPI, profilesAPI } from "../../src/services/api";
 import {
   buildExportFileName,
   getExportErrorMessage,
@@ -85,6 +85,11 @@ export default function MoreScreen() {
   const [inviteError, setInviteError] = useState("");
   const [isInviting, setIsInviting] = useState(false);
 
+  const [showProfileCreateModal, setShowProfileCreateModal] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
+  const [newProfileType, setNewProfileType] = useState<"personal" | "business" | "shared">(
+    "personal",
+  );
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAutomationModal, setShowAutomationModal] = useState(false);
@@ -597,6 +602,22 @@ export default function MoreScreen() {
     ]);
   };
 
+  const handleAddProfile = async () => {
+    if (!newProfileName.trim()) {
+      Alert.alert("Error", "Enter a name");
+      return;
+    }
+    try {
+      await profilesAPI.create(newProfileName.trim(), newProfileType);
+      await fetchProfiles();
+      setShowProfileCreateModal(false);
+      setNewProfileName("");
+      setNewProfileType("personal");
+    } catch {
+      Alert.alert("Error", "Failed to create profile");
+    }
+  };
+
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       Alert.alert("Error", "Enter a name");
@@ -685,7 +706,13 @@ export default function MoreScreen() {
           </View>
 
           {/* ====== PROFILE SWITCHER ====== */}
-          <Text style={styles.sectionTitle}>Profile</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Profile</Text>
+            <TouchableOpacity onPress={() => setShowProfileCreateModal(true)} style={styles.addBtn}>
+              <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+              <Text style={styles.addBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.card}>
             {profiles.map((profile, idx) => {
               const isActive = activeProfile?.profile_id === profile.profile_id;
@@ -1320,6 +1347,70 @@ export default function MoreScreen() {
           <View style={{ height: 100 }} />
         </ScrollView>
       </SafeAreaView>
+
+      {/* Add Profile Modal */}
+      <Modal visible={showProfileCreateModal} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>New Profile</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowProfileCreateModal(false);
+                  setNewProfileName("");
+                  setNewProfileType("personal");
+                }}
+              >
+                <Ionicons name="close" size={24} color="#8E8E93" />
+              </TouchableOpacity>
+            </View>
+            <View style={modalStyles.body}>
+              <Text style={modalStyles.label}>Name</Text>
+              <TextInput
+                style={modalStyles.input}
+                value={newProfileName}
+                onChangeText={setNewProfileName}
+                placeholder="e.g., Family Budget"
+                placeholderTextColor="#C7C7CC"
+              />
+              <Text style={[modalStyles.label, { marginTop: 16 }]}>Type</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+                {(["personal", "business", "shared"] as const).map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    onPress={() => setNewProfileType(t)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: newProfileType === t ? "#007AFF" : "#E5E5EA",
+                      backgroundColor: newProfileType === t ? "#EFF6FF" : "#FFF",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: newProfileType === t ? "#007AFF" : "#3C3C43",
+                      }}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity
+                style={[modalStyles.saveBtn, { marginTop: 20 }]}
+                onPress={handleAddProfile}
+              >
+                <Text style={modalStyles.saveBtnText}>Add Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Category Modal */}
       <Modal visible={showCategoryModal} animationType="slide" transparent>

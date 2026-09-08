@@ -37,12 +37,15 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests
+// Add auth token and platform header to requests
 api.interceptors.request.use(
   async (config) => {
     const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (Platform.OS !== "web") {
+      config.headers["X-Client-Platform"] = Platform.OS;
     }
     return config;
   },
@@ -63,7 +66,6 @@ api.interceptors.response.use(
 
 // Budget API
 export const budgetsAPI = {
-  getAll: (params?: { profile_id?: string }) => api.get("/budgets", { params }),
   create: (data: any) => api.post("/budgets", data),
   update: (budgetId: string, data: any) => api.put(`/budgets/${budgetId}`, data),
   delete: (budgetId: string) => api.delete(`/budgets/${budgetId}`),
@@ -138,7 +140,6 @@ export const billsAPI = {
   create: (data: any) => api.post("/bills", data),
   update: (billId: string, data: any) => api.put(`/bills/${billId}`, data),
   delete: (billId: string) => api.delete(`/bills/${billId}`),
-  fromSubscription: (data: any) => api.post("/bills/from-subscription", data),
 };
 
 // Invites API
@@ -150,6 +151,8 @@ export const invitesAPI = {
 
 // Profiles management API (owner actions)
 export const profilesAPI = {
+  create: (name: string, profile_type: "personal" | "business" | "shared" = "personal") =>
+    api.post("/profiles", { name, profile_type }),
   invite: (profileId: string, email: string) =>
     api.post(`/profiles/${profileId}/invite`, { email }),
   removeMember: (profileId: string, memberId: string) =>

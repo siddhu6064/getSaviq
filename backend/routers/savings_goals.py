@@ -73,15 +73,6 @@ from services.savings_goals_service import (
 router = APIRouter(prefix="/savings-goals", tags=["savings-goals"])
 
 
-async def _ensure_profile_owned(profile_id: str, user_id: str):
-    profile = await db.profiles.find_one(
-        {"profile_id": profile_id, "user_id": user_id},
-        {"_id": 0},
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-
 async def _enrich_goal(
     goal: dict,
     user_id: str,
@@ -170,6 +161,8 @@ async def get_savings_goal(
     manual_monthly_contribution: Optional[float] = None,
     current_user: dict = Depends(get_current_user),
 ):
+    """Not currently called by web or mobile (both use the list endpoint and
+    filter client-side) — kept for REST completeness / direct-link use."""
     goal = await db.savings_goals.find_one(
         {"goal_id": goal_id, "user_id": current_user["user_id"]},
         {"_id": 0},
@@ -214,7 +207,7 @@ async def update_savings_goal(
             _goal_milestone_alert(
                 user_id=current_user["user_id"],
                 goal_id=goal_id,
-                goal_name=updated.get("name", "Your goal"),
+                goal_name=updated.get("title", "Your goal"),
                 old_amount=float(existing.get("current_amount", 0)),
                 new_amount=float(updated.get("current_amount", 0)),
                 target_amount=float(updated.get("target_amount", 1)),

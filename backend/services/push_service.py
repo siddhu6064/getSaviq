@@ -7,7 +7,6 @@ Usage:
 Never await send_push directly in a request handler — use create_task.
 """
 
-import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any

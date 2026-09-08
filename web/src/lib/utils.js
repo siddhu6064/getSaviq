@@ -1,21 +1,5 @@
 // Re-export shared utilities
-export {
-  formatCurrency,
-  formatDate,
-  formatShortDate,
-  formatTime,
-  calculatePercentage,
-  getInitials,
-  groupByDate,
-} from "@shared/utils";
-
-export {
-  CATEGORY_ICON_MAP as SHARED_CATEGORY_ICON_MAP,
-  CATEGORY_COLORS,
-  PAYMENT_TYPES,
-  TRANSACTION_COLORS,
-  THEME,
-} from "@shared/constants";
+export { formatCurrency, formatDate, formatShortDate } from "@shared/utils";
 
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";

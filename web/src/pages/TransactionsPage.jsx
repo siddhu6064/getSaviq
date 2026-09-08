@@ -16,6 +16,9 @@ import { formatCurrency, formatDate, cn } from "../lib/utils";
 import { getUserFriendlyError } from "../lib/errorMessages";
 import { expensesAPI, exportAPI } from "../services/api";
 import AddTransactionModal from "../components/AddTransactionModal";
+import { useIsMounted } from "../hooks/useIsMounted";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import { useDateRangeFilter } from "../hooks/useDateRangeFilter";
 
 export default function TransactionsPage() {
   const location = useLocation();
@@ -31,7 +34,6 @@ export default function TransactionsPage() {
   const [datePreset, setDatePreset] = useState("30d");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
-  const [dateValidationError, setDateValidationError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [editingTx, setEditingTx] = useState(null);
   const [viewingTx, setViewingTx] = useState(null);
@@ -40,14 +42,8 @@ export default function TransactionsPage() {
   const [success, setSuccess] = useState("");
   const [exportingType, setExportingType] = useState("");
 
-  const isMounted = useRef(true);
+  const isMounted = useIsMounted();
   const initializedFromQuery = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (initializedFromQuery.current) return;
@@ -84,38 +80,11 @@ export default function TransactionsPage() {
     }
   }, [location.search, profiles, setActiveProfile]);
 
-  useEffect(() => {
-    if (datePreset !== "custom") {
-      setDateValidationError("");
-      return;
-    }
-    if (!customStartDate || !customEndDate) {
-      setDateValidationError("Select both start and end dates to apply a custom range.");
-      return;
-    }
-    if (new Date(customEndDate) < new Date(customStartDate)) {
-      setDateValidationError("End date cannot be earlier than start date.");
-      return;
-    }
-    setDateValidationError("");
-  }, [customEndDate, customStartDate, datePreset]);
-
-  const getDateRangeParams = useCallback(() => {
-    if (datePreset === "custom") {
-      if (!customStartDate || !customEndDate) return null;
-      const start = new Date(`${customStartDate}T00:00:00`);
-      const end = new Date(`${customEndDate}T23:59:59`);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
-      return { start_date: start.toISOString(), end_date: end.toISOString() };
-    }
-    const end = new Date();
-    const start = new Date(end);
-    if (datePreset === "30d") start.setDate(end.getDate() - 30);
-    if (datePreset === "90d") start.setDate(end.getDate() - 90);
-    if (datePreset === "6m") start.setMonth(end.getMonth() - 6);
-    if (datePreset === "1y") start.setFullYear(end.getFullYear() - 1);
-    return { start_date: start.toISOString(), end_date: end.toISOString() };
-  }, [customEndDate, customStartDate, datePreset]);
+  const { dateValidationError, getDateRangeParams } = useDateRangeFilter(
+    datePreset,
+    customStartDate,
+    customEndDate,
+  );
 
   const loadTransactions = useCallback(async () => {
     if (!activeProfile) return;
@@ -372,17 +341,17 @@ export default function TransactionsPage() {
             ))}
           </div>
 
-          {/* Payment Method Filter */}
+          {/* Category Filter */}
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="w-full sm:w-auto px-4 py-2 bg-surface-hover border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
             data-testid="category-filter"
           >
-            <option value="all">All Payment Methods</option>
-            {paymentMethods.map((pm) => (
-              <option key={pm.payment_id} value={pm.payment_id}>
-                {pm.name}
+            <option value="all">All Categories</option>
+            {categories.map((c) => (
+              <option key={c.category_id} value={c.category_id}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -715,8 +684,7 @@ export default function TransactionsPage() {
           if (message) setSuccess(message);
           loadTransactions();
         }}
-        mode="edit"
-        initialTransaction={editingTx}
+        mode="create"
         profiles={profiles}
         categories={categories}
         paymentMethods={paymentMethods}
@@ -879,30 +847,13 @@ export default function TransactionsPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteConfirmModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => handleDelete(deleteConfirm?.expense_id)}
         title="Delete Transaction"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-6">
-          Are you sure you want to delete "{deleteConfirm?.description}"? This action cannot be
-          undone.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => handleDelete(deleteConfirm?.expense_id)}
-            className="flex-1"
-            data-testid="confirm-delete"
-          >
-            Delete
-          </Button>
-        </div>
-      </Modal>
+        message={`Are you sure you want to delete "${deleteConfirm?.description}"? This action cannot be undone.`}
+      />
     </div>
   );
 }

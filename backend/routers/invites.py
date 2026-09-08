@@ -132,7 +132,8 @@ async def invite_to_profile(
 # ── GET /invite/accept?token= ─────────────────────────────────────────────────
 
 @router.get("/invite/accept", status_code=200)
-async def get_invite_info(token: str = Query(...)):
+@limiter.limit("20/minute")
+async def get_invite_info(request: Request, token: str = Query(...)):
     """
     Validate an invite token and return invite details.
     No auth required — used by the frontend to show the invite landing page.
@@ -170,7 +171,9 @@ async def get_invite_info(token: str = Query(...)):
 
 
 @router.post("/invite/accept", status_code=200)
+@limiter.limit("20/minute")
 async def accept_invite_authenticated(
+    request: Request,
     body: InviteTokenRequest,
     current_user: dict = Depends(get_current_user),
 ):
@@ -194,9 +197,18 @@ async def accept_invite_authenticated(
     if _is_expired(member_doc["invited_at"]):
         raise HTTPException(status_code=410, detail="Invite has expired")
 
-    # Validate the email matches (security check)
+    # Validate the caller is the intended invitee. Most users have an email to
+    # check directly; Apple Sign-In users who hid their email don't, so fall
+    # back to the invited_user_id captured at invite-creation time (set only
+    # when the invitee already had an account with a matching email then).
     caller_email = current_user.get("email", "").strip().lower()
-    if caller_email and caller_email != member_doc["invited_email"]:
+    if caller_email:
+        if caller_email != member_doc["invited_email"]:
+            raise HTTPException(
+                status_code=403,
+                detail="This invite was not sent to your account",
+            )
+    elif member_doc.get("invited_user_id") != current_user["user_id"]:
         raise HTTPException(
             status_code=403,
             detail="This invite was not sent to your account",

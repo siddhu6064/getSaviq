@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from database import db
-from deps import get_current_user
+from deps import get_accessible_profile, get_current_user
 from services.forecast_service import generate_spend_forecast
 from services.week13_metrics_service import (
     compute_budget_confidence,
@@ -15,30 +15,10 @@ from services.week13_metrics_service import (
     compute_spend_velocity,
     compute_top_category_summary,
 )
+from utils.date_helpers import days_in_month as _days_in_month
+from utils.finance import to_float as _to_float
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
-
-
-async def _ensure_profile_owned(profile_id: str, user_id: str):
-    profile = await db.profiles.find_one(
-        {"profile_id": profile_id, "user_id": user_id},
-        {"_id": 0},
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-
-def _to_float(value) -> float:
-    try:
-        return float(value or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def _days_in_month(now: datetime) -> int:
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-    return (next_month.date() - month_start.date()).days
 
 
 @router.get("/metrics")
@@ -49,7 +29,8 @@ async def get_dashboard_metrics(
     if not profile_id:
         raise HTTPException(status_code=400, detail="profile_id is required")
 
-    await _ensure_profile_owned(profile_id, current_user["user_id"])
+    profile = await get_accessible_profile(profile_id, current_user)
+    owner_user_id = profile["user_id"]
 
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -58,7 +39,7 @@ async def get_dashboard_metrics(
 
     expenses = await db.expenses.find(
         {
-            "user_id": current_user["user_id"],
+            "user_id": owner_user_id,
             "profile_id": profile_id,
             "date": {"$gte": month_start, "$lte": now},
         },
@@ -73,7 +54,7 @@ async def get_dashboard_metrics(
 
     categories = await db.categories.find(
         {
-            "user_id": current_user["user_id"],
+            "user_id": owner_user_id,
             "profile_id": profile_id,
         },
         {"_id": 0, "category_id": 1, "name": 1},
@@ -113,7 +94,7 @@ async def get_dashboard_metrics(
 
     budgets = await db.budgets.find(
         {
-            "user_id": current_user["user_id"],
+            "user_id": owner_user_id,
             "profile_id": profile_id,
             "period": "monthly",
         },
@@ -131,7 +112,7 @@ async def get_dashboard_metrics(
 
     goals = await db.savings_goals.find(
         {
-            "user_id": current_user["user_id"],
+            "user_id": owner_user_id,
             "profile_id": profile_id,
         },
         {"_id": 0, "current_amount": 1, "target_amount": 1},
@@ -173,7 +154,7 @@ async def get_dashboard_metrics(
         discretionary_trend = max(0.0, min(100.0, round(50.0 + (trend_ratio * 50.0), 2)))
 
     forecast = await generate_spend_forecast(
-        user_id=current_user["user_id"],
+        user_id=owner_user_id,
         profile_id=profile_id,
         expenses_collection=db.expenses,
         budgets_collection=db.budgets,

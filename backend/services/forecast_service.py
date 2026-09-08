@@ -4,24 +4,15 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 import math
 
+from utils.date_helpers import days_in_month as _days_in_month
+from utils.date_helpers import month_start as _month_start
+
 
 def _month_end_days_remaining(now: datetime) -> int:
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     next_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
     return max((next_month.date() - now.date()).days, 0)
-
-
-def _month_start(now: datetime) -> datetime:
-    if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
-    return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-
-def _days_in_month(now: datetime) -> int:
-    month_start = _month_start(now)
-    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-    return (next_month.date() - month_start.date()).days
 
 
 def _to_spend_amount(tx: dict) -> float:

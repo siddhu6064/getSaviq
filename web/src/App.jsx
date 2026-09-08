@@ -15,7 +15,6 @@ import ExportPage from "./pages/ExportPage";
 import GoalsPage from "./pages/GoalsPage";
 import BillsPage from "./pages/BillsPage";
 import NetWorthPage from "./pages/NetWorthPage";
-import SAVIQDashboard from "./pages/SAVIQDashboard";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import { Spinner } from "./components/ui";
 
@@ -154,8 +153,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* Design preview — no auth required */}
-      <Route path="/preview" element={<SAVIQDashboard />} />
       {/* Accept invite — auth handled inside the component */}
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -166,13 +163,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
           <AppDataProvider>
             <AppRoutes />
           </AppDataProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

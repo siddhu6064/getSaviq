@@ -41,9 +41,6 @@ class Settings:
     APP_URL: str | None
     WEB_URL: str | None
     MOBILE_APP_URL: str | None
-    # JWT_SECRET is required by config validation but the app uses opaque session tokens (not JWTs).
-    # This field is retained for potential future use. Do not use this value for signing tokens.
-    JWT_SECRET: str | None
     ALLOWED_ORIGINS: list[str]
     LOG_LEVEL: str
     SESSION_DAYS: int
@@ -80,11 +77,6 @@ def _validate_settings(settings: Settings) -> None:
     if not settings.ALLOWED_ORIGINS:
         errors.append("ALLOWED_ORIGINS must include at least one origin")
 
-    if not settings.JWT_SECRET:
-        errors.append("JWT_SECRET is required in staging/production environments")
-    elif settings.JWT_SECRET in ("replace_with_long_random_secret", "your-secret-here", "changeme"):
-        errors.append("JWT_SECRET must be set to a real secret, not the placeholder value")
-
     if env == "production":
         if settings.MONGO_URL.startswith("mongodb://localhost"):
             errors.append("MONGO_URL must not point to localhost in production")
@@ -110,7 +102,6 @@ def get_settings() -> Settings:
         APP_URL=os.getenv("APP_URL") or None,
         WEB_URL=os.getenv("WEB_URL") or None,
         MOBILE_APP_URL=os.getenv("MOBILE_APP_URL") or None,
-        JWT_SECRET=os.getenv("JWT_SECRET") or None,
         ALLOWED_ORIGINS=_parse_origins(os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")),
         LOG_LEVEL=_get_choice("LOG_LEVEL", "INFO", {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}),
         SESSION_DAYS=_get_int("SESSION_DAYS", 7, min_value=1),

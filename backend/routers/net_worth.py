@@ -29,15 +29,6 @@ logger = logging.getLogger(__name__)
 
 # ===================== HELPERS =====================
 
-async def _ensure_profile_owned(profile_id: str, user_id: str):
-    profile = await db.profiles.find_one(
-        {"profile_id": profile_id, "user_id": user_id},
-        {"_id": 0},
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
-
 async def _calc_net_worth_for_user(user_id: str, profile_id: Optional[str] = None):
     """Return (assets_total, liabilities_total, by_profile list) for a user."""
     asset_query: dict = {"user_id": user_id}

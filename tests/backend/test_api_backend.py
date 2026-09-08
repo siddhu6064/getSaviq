@@ -590,7 +590,7 @@ def test_insights_v2_profile_scoped_success(client, fake_db):
     )
     assert create.status_code == 200
 
-    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
+    response = client.get("/api/insights/spend-comparison", cookies=cookies, params={"profile_id": profile_id})
 
     assert response.status_code == 200
     payload = response.json()
@@ -605,11 +605,11 @@ def test_insights_v2_invalid_or_unauthorized_profile_rejected(client):
     auth = _register(client)
     cookies = _auth_headers(auth["session_token"])
 
-    missing_param = client.get("/api/insights/v2", cookies=cookies)
+    missing_param = client.get("/api/insights/spend-comparison", cookies=cookies)
     assert missing_param.status_code == 400
     assert missing_param.json()["error"]["code"] == "BAD_REQUEST"
 
-    missing = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": "profile_missing"})
+    missing = client.get("/api/insights/spend-comparison", cookies=cookies, params={"profile_id": "profile_missing"})
     assert missing.status_code == 404
     assert missing.json()["error"]["code"] == "NOT_FOUND"
 
@@ -619,14 +619,14 @@ def test_insights_v2_stable_response_shape(client, fake_db):
     cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
-    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
+    response = client.get("/api/insights/spend-comparison", cookies=cookies, params={"profile_id": profile_id})
     assert response.status_code == 200
 
     payload = response.json()
     for period_key in ("weekly", "monthly"):
         period_payload = payload[period_key]
         assert {"period_type", "current_total", "previous_total", "delta_amount", "delta_percent", "category_comparisons", "anomalies", "budget_risk", "insight_metadata"} <= set(period_payload.keys())
-        assert {"schema_version", "period_type", "total_comparison", "category_comparisons", "anomalies", "budget_risk"} <= set(period_payload["insight_metadata"].keys())
+        assert {"period_type", "total_comparison", "category_comparisons", "anomalies", "budget_risk"} <= set(period_payload["insight_metadata"].keys())
 
 
 def test_insights_v2_no_data_response_shape(client, fake_db):
@@ -634,7 +634,7 @@ def test_insights_v2_no_data_response_shape(client, fake_db):
     cookies = _auth_headers(auth["session_token"])
     profile_id, _, _ = _first_ids_for_user(fake_db, auth["user"]["user_id"])
 
-    response = client.get("/api/insights/v2", cookies=cookies, params={"profile_id": profile_id})
+    response = client.get("/api/insights/spend-comparison", cookies=cookies, params={"profile_id": profile_id})
     assert response.status_code == 200
     payload = response.json()
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Badge, Spinner } from "../components/ui";
 import { Plus, Pencil, Trash2, TrendingUp, Wallet, CreditCard } from "lucide-react";
@@ -6,6 +6,8 @@ import { formatCurrency, cn } from "../lib/utils";
 import { netWorthAPI } from "../services/api";
 import AssetModal from "../components/AssetModal";
 import LiabilityModal from "../components/LiabilityModal";
+import { useIsMounted } from "../hooks/useIsMounted";
+import ProfileSelector from "../components/ProfileSelector";
 import {
   AreaChart,
   Area,
@@ -38,13 +40,13 @@ function TypeBadge({ type, colorMap }) {
   );
 }
 
-function SectionEmpty({ icon: Icon, label, onAdd }) {
+function SectionEmpty({ icon: Icon, label, singular, onAdd }) {
   return (
     <div className="text-center py-10">
       <Icon className="w-10 h-10 text-text-secondary/40 mx-auto mb-3" />
       <p className="text-sm text-text-secondary mb-4">No {label} yet</p>
       <Button size="sm" onClick={onAdd}>
-        <Plus className="w-4 h-4 mr-1" /> Add {label.replace(/s$/, "")}
+        <Plus className="w-4 h-4 mr-1" /> Add {singular}
       </Button>
     </div>
   );
@@ -170,13 +172,7 @@ export default function NetWorthPage() {
   const [showLiabModal, setShowLiabModal] = useState(false);
   const [editingLiab, setEditingLiab] = useState(null);
 
-  const isMounted = useRef(true);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const isMounted = useIsMounted();
 
   // Auto-clear success banner
   useEffect(() => {
@@ -308,21 +304,13 @@ export default function NetWorthPage() {
         </div>
 
         {/* Profile switcher */}
-        <select
-          value={profileId || ""}
-          onChange={(e) => {
-            const p = profiles.find((x) => x.profile_id === e.target.value);
-            setActiveProfile(p || null);
-          }}
-          className="w-full sm:w-auto px-4 py-2 bg-white border border-border-color rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-          data-testid="net-worth-profile-select"
-        >
-          {profiles.map((p) => (
-            <option key={p.profile_id} value={p.profile_id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <ProfileSelector
+          profiles={profiles}
+          activeProfile={activeProfile}
+          onChange={setActiveProfile}
+          testId="net-worth-profile-select"
+          responsive
+        />
       </div>
 
       {/* Summary banner */}
@@ -383,7 +371,7 @@ export default function NetWorthPage() {
               <Spinner size="lg" />
             </div>
           ) : assets.length === 0 ? (
-            <SectionEmpty icon={Wallet} label="assets" onAdd={openAddAsset} />
+            <SectionEmpty icon={Wallet} label="assets" singular="asset" onAdd={openAddAsset} />
           ) : (
             <ul className="divide-y divide-border-color" data-testid="assets-list">
               {assets.map((a) => (
@@ -448,7 +436,12 @@ export default function NetWorthPage() {
               <Spinner size="lg" />
             </div>
           ) : liabilities.length === 0 ? (
-            <SectionEmpty icon={CreditCard} label="liabilities" onAdd={openAddLiab} />
+            <SectionEmpty
+              icon={CreditCard}
+              label="liabilities"
+              singular="liability"
+              onAdd={openAddLiab}
+            />
           ) : (
             <ul className="divide-y divide-border-color" data-testid="liabilities-list">
               {liabilities.map((l) => (
