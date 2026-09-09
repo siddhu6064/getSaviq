@@ -19,11 +19,18 @@ import { SmartMetricInsightCard } from "../../src/components/dashboard/SmartMetr
 import { SmartInsightsWidget } from "../../src/components/dashboard/SmartInsightsWidget";
 import { ForecastWidget } from "../../src/components/dashboard/ForecastWidget";
 import { WeeklyDigestWidget } from "../../src/components/dashboard/WeeklyDigestWidget";
+import { WeeklyDigestBanner } from "../../src/components/dashboard/WeeklyDigestBanner";
 import { SubscriptionDetectionWidget } from "../../src/components/dashboard/SubscriptionDetectionWidget";
 import { AIInsightsChatModal } from "../../src/components/dashboard/AIInsightsChatModal";
 import { NetWorthSummaryCard } from "../../src/components/dashboard/NetWorthSummaryCard";
 import { UpcomingBillsCard } from "../../src/components/dashboard/UpcomingBillsCard";
+import { CategoryBreakdownCard } from "../../src/components/dashboard/CategoryBreakdownCard";
+import { PaymentBreakdownCard } from "../../src/components/dashboard/PaymentBreakdownCard";
+import { BudgetProgressSummaryCard } from "../../src/components/dashboard/BudgetProgressSummaryCard";
+import { RecommendationsWidget } from "../../src/components/dashboard/RecommendationsWidget";
+import { SpendComparisonInsightCard } from "../../src/components/dashboard/SpendComparisonInsightCard";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { NotificationBell } from "../../src/components/NotificationBell";
 import {
   isCurrentDashboardRequest,
   shouldResetDashboardIntelligence,
@@ -35,6 +42,7 @@ export default function DashboardScreen() {
   const {
     activeProfile,
     paymentMethods,
+    categories,
     expenses,
     fetchExpenses,
     fetchPaymentMethods,
@@ -293,17 +301,20 @@ export default function DashboardScreen() {
                 {activeProfile ? activeProfile.name : "No profile selected"}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/more")}
-              style={[
-                styles.profileBtn,
-                { borderColor: colors.border, backgroundColor: colors.surface },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="swap-horizontal-outline" size={16} color={colors.primary} />
-              <Text style={[styles.profileBtnText, { color: colors.primary }]}>Switch</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <NotificationBell />
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/more")}
+                style={[
+                  styles.profileBtn,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="swap-horizontal-outline" size={16} color={colors.primary} />
+                <Text style={[styles.profileBtnText, { color: colors.primary }]}>Switch</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {!activeProfile ? (
@@ -463,6 +474,13 @@ export default function DashboardScreen() {
                 forecast={forecastPayload}
               />
 
+              <WeeklyDigestBanner
+                loading={isLoading || isRefreshing}
+                error={weeklyDigestError || error}
+                digest={weeklyDigestPayload}
+                profileId={activeProfile?.profile_id}
+              />
+
               <WeeklyDigestWidget
                 isLoading={isLoading || isRefreshing}
                 error={weeklyDigestError || error}
@@ -483,6 +501,38 @@ export default function DashboardScreen() {
               <UpcomingBillsCard
                 profileId={activeProfile?.profile_id}
                 onPress={() => router.push("/(tabs)/bills" as any)}
+              />
+
+              <SpendComparisonInsightCard profileId={activeProfile?.profile_id} />
+
+              <CategoryBreakdownCard
+                profileId={activeProfile?.profile_id}
+                onPressCategory={(categoryId) =>
+                  router.push({
+                    pathname: "/(tabs)/transactions",
+                    params: { category_id: categoryId },
+                  } as any)
+                }
+              />
+
+              <PaymentBreakdownCard
+                profileId={activeProfile?.profile_id}
+                onPressPaymentMethod={(paymentMethodId) =>
+                  router.push({
+                    pathname: "/(tabs)/transactions",
+                    params: { payment_method_id: paymentMethodId },
+                  } as any)
+                }
+              />
+
+              <RecommendationsWidget profileId={activeProfile?.profile_id} />
+
+              <BudgetProgressSummaryCard
+                profileId={activeProfile?.profile_id}
+                categoryNameById={categories.reduce((acc: Record<string, string>, cat: any) => {
+                  acc[cat.category_id] = cat.name;
+                  return acc;
+                }, {})}
               />
             </>
           )}

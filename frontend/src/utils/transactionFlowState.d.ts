@@ -18,6 +18,8 @@ export function deriveVisibleTransactions(params: {
   year: number;
   searchQuery: string;
   txType?: string;
+  categoryId?: string;
+  paymentMethodId?: string;
   categoryNameById?: Record<string, string>;
 }): Expense[];
 export function buildTransactionRowHandlers(params: {

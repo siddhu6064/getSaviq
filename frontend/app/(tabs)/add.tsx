@@ -352,6 +352,7 @@ export default function AddScreen() {
   const [time, setTime] = useState(new Date());
   const [isPending, setIsPending] = useState(false);
   const [repeatFrequency, setRepeatFrequency] = useState("never");
+  const [recurringEndDate, setRecurringEndDate] = useState<Date | null>(null);
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -369,6 +370,7 @@ export default function AddScreen() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showToPaymentModal, setShowToPaymentModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showRecurringEndDatePicker, setShowRecurringEndDatePicker] = useState(false);
   const [showImageOptions, setShowImageOptions] = useState(false);
 
   useEffect(() => {
@@ -574,6 +576,10 @@ export default function AddScreen() {
       Alert.alert("Error", "No active profile selected");
       return;
     }
+    if (repeatFrequency !== "never" && recurringEndDate && recurringEndDate < date) {
+      Alert.alert("Error", "Recurring end date cannot be before the transaction date");
+      return;
+    }
 
     if (
       !canSubmitTransaction({
@@ -605,6 +611,10 @@ export default function AddScreen() {
         is_pending: isPending,
         is_recurring: repeatFrequency !== "never",
         recurring_frequency: repeatFrequency !== "never" ? repeatFrequency : undefined,
+        recurring_end_date:
+          repeatFrequency !== "never" && recurringEndDate
+            ? recurringEndDate.toISOString()
+            : undefined,
       };
 
       if (editId) {
@@ -877,6 +887,38 @@ export default function AddScreen() {
             />
           </NeumorphicCard>
 
+          {/* Recurring End Date (only when repeat is enabled) */}
+          {repeatFrequency !== "never" && (
+            <NeumorphicCard style={styles.listCard} noPadding>
+              <ListItemRow
+                icon={
+                  <Ionicons
+                    name="calendar-clear-outline"
+                    size={20}
+                    color={lightTheme.colors.textTertiary}
+                  />
+                }
+                label="End Date"
+                value={recurringEndDate ? recurringEndDate.toLocaleDateString() : "Never"}
+                onPress={() => setShowRecurringEndDatePicker(true)}
+                rightElement={
+                  recurringEndDate ? (
+                    <TouchableOpacity
+                      onPress={() => setRecurringEndDate(null)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={lightTheme.colors.textTertiary}
+                      />
+                    </TouchableOpacity>
+                  ) : undefined
+                }
+              />
+            </NeumorphicCard>
+          )}
+
           {/* Add Image */}
           {receiptImage ? (
             <View style={styles.receiptPreview}>
@@ -919,6 +961,15 @@ export default function AddScreen() {
         value={time}
         onSelect={setTime}
         onClose={() => setShowTimePicker(false)}
+      />
+
+      {/* Recurring End Date Picker Modal */}
+      <DateTimePickerModal
+        visible={showRecurringEndDatePicker}
+        mode="date"
+        value={recurringEndDate || date}
+        onSelect={setRecurringEndDate}
+        onClose={() => setShowRecurringEndDatePicker(false)}
       />
 
       {/* Category Modal - Emoji Grid */}

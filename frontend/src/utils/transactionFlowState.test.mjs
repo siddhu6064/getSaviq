@@ -130,6 +130,70 @@ test("screen-level orchestration: deriveVisibleTransactions applies transaction 
   );
 });
 
+test("screen-level orchestration: deriveVisibleTransactions applies category filter", () => {
+  const visible = deriveVisibleTransactions({
+    expenses: baseExpenses,
+    month: 3,
+    year: 2026,
+    searchQuery: "",
+    categoryId: "cat_transport",
+    categoryNameById: {
+      cat_food: "Food & Dining",
+      cat_transport: "Transportation",
+    },
+  });
+
+  assert.deepEqual(
+    visible.map((expense) => expense.expense_id),
+    ["exp_2"],
+  );
+});
+
+test("screen-level orchestration: deriveVisibleTransactions applies payment method filter", () => {
+  const visible = deriveVisibleTransactions({
+    expenses: [
+      { ...baseExpenses[0], payment_method_id: "pm_cash" },
+      { ...baseExpenses[1], payment_method_id: "pm_card" },
+    ],
+    month: 3,
+    year: 2026,
+    searchQuery: "",
+    paymentMethodId: "pm_card",
+    categoryNameById: {
+      cat_food: "Food & Dining",
+      cat_transport: "Transportation",
+    },
+  });
+
+  assert.deepEqual(
+    visible.map((expense) => expense.expense_id),
+    ["exp_2"],
+  );
+});
+
+test("screen-level orchestration: deriveVisibleTransactions combines category and payment method filters", () => {
+  const visible = deriveVisibleTransactions({
+    expenses: [
+      { ...baseExpenses[0], payment_method_id: "pm_cash" },
+      { ...baseExpenses[1], payment_method_id: "pm_cash" },
+    ],
+    month: 3,
+    year: 2026,
+    searchQuery: "",
+    categoryId: "cat_transport",
+    paymentMethodId: "pm_cash",
+    categoryNameById: {
+      cat_food: "Food & Dining",
+      cat_transport: "Transportation",
+    },
+  });
+
+  assert.deepEqual(
+    visible.map((expense) => expense.expense_id),
+    ["exp_2"],
+  );
+});
+
 test("empty-state orchestration: filtered-empty and month-empty states are explicit", () => {
   const filteredEmpty = deriveTransactionEmptyState({ hasFiltersApplied: true, filteredCount: 0 });
   assert.equal(filteredEmpty.showClearFilters, true);

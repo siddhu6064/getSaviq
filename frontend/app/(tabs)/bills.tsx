@@ -25,6 +25,7 @@ import {
 } from "../../src/utils/billsStatus";
 import { useBillsStore } from "../../src/store/billsStore";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { BillsCalendarView } from "../../src/components/BillsCalendarView";
 
 // ===================== TYPES =====================
 
@@ -394,6 +395,7 @@ export default function BillsScreen() {
   const [success, setSuccess] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  const [view, setView] = useState<"list" | "calendar">("list");
   const previousProfileIdRef = useRef<string | null>(null);
 
   const loadBills = useCallback(
@@ -604,6 +606,65 @@ export default function BillsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
+          <>
+            <View style={styles.viewToggleRow}>
+              <TouchableOpacity
+                style={[
+                  styles.viewToggleBtn,
+                  { borderColor: colors.border },
+                  view === "list" && {
+                    backgroundColor: colors.textPrimary,
+                    borderColor: colors.textPrimary,
+                  },
+                ]}
+                onPress={() => setView("list")}
+              >
+                <Ionicons
+                  name="list-outline"
+                  size={14}
+                  color={view === "list" ? colors.surface : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.viewToggleText,
+                    { color: view === "list" ? colors.surface : colors.textSecondary },
+                  ]}
+                >
+                  List
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.viewToggleBtn,
+                  { borderColor: colors.border },
+                  view === "calendar" && {
+                    backgroundColor: colors.textPrimary,
+                    borderColor: colors.textPrimary,
+                  },
+                ]}
+                onPress={() => setView("calendar")}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={view === "calendar" ? colors.surface : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.viewToggleText,
+                    { color: view === "calendar" ? colors.surface : colors.textSecondary },
+                  ]}
+                >
+                  Calendar
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {view === "calendar" && <BillsCalendarView bills={enriched} />}
+          </>
+        )}
+
+        {activeProfile && bills.length > 0 && view === "list" && (
           <SectionList
             sections={sections}
             keyExtractor={(item) => item.bill_id}
@@ -699,6 +760,17 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 14, textAlign: "center" },
   emptyCta: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   emptyCtaText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
+  viewToggleRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  viewToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  viewToggleText: { fontSize: 12, fontWeight: "600" },
   listContent: { paddingBottom: 120 },
   sectionHeader: {
     flexDirection: "row",

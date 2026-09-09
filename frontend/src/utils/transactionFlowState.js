@@ -29,12 +29,19 @@ export function deriveVisibleTransactions({
   year,
   searchQuery,
   txType = "all",
+  categoryId = "all",
+  paymentMethodId = "all",
   categoryNameById = {},
 }) {
   const monthSlice = filterTransactionsForMonth(expenses, month, year);
   const searched = searchTransactions(monthSlice, searchQuery, categoryNameById);
-  if (txType === "all") return searched;
-  return searched.filter((expense) => expense.type === txType);
+  const byType =
+    txType === "all" ? searched : searched.filter((expense) => expense.type === txType);
+  const byCategory =
+    categoryId === "all" ? byType : byType.filter((expense) => expense.category_id === categoryId);
+  return paymentMethodId === "all"
+    ? byCategory
+    : byCategory.filter((expense) => expense.payment_method_id === paymentMethodId);
 }
 
 export function upsertTransaction(expenses, nextExpense) {

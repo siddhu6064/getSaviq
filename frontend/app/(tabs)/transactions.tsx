@@ -16,7 +16,7 @@ import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../src/store/appStore";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Expense } from "../../src/types";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { budgetsAPI, attachmentsAPI } from "../../src/services/api";
@@ -99,6 +99,7 @@ const TX_TYPE_FILTERS: Array<{ key: TransactionTypeFilter; label: string }> = [
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ category_id?: string; payment_method_id?: string }>();
   const {
     expenses,
     categories,
@@ -118,7 +119,16 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [txTypeFilter, setTxTypeFilter] = useState<TransactionTypeFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [showCategoryFilterModal, setShowCategoryFilterModal] = useState(false);
+  const [showPaymentFilterModal, setShowPaymentFilterModal] = useState(false);
   const previousProfileIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (params.category_id) setCategoryFilter(String(params.category_id));
+    if (params.payment_method_id) setPaymentFilter(String(params.payment_method_id));
+  }, [params.category_id, params.payment_method_id]);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [isDeletingAttachment, setIsDeletingAttachment] = useState(false);
 
@@ -165,9 +175,20 @@ export default function TransactionsScreen() {
       year: currentYear,
       searchQuery,
       txType: txTypeFilter,
+      categoryId: categoryFilter,
+      paymentMethodId: paymentFilter,
       categoryNameById,
     });
-  }, [expenses, currentMonth, currentYear, searchQuery, txTypeFilter, categories]);
+  }, [
+    expenses,
+    currentMonth,
+    currentYear,
+    searchQuery,
+    txTypeFilter,
+    categoryFilter,
+    paymentFilter,
+    categories,
+  ]);
 
   const incomeTotal = useMemo(() => {
     return monthExpenses.filter((e) => e.type === "income").reduce((s, e) => s + e.amount, 0);
@@ -180,9 +201,11 @@ export default function TransactionsScreen() {
   }, [monthExpenses]);
 
   const netTotal = incomeTotal - expenseTotal;
-  const hasFiltersApplied = showSearch
-    ? Boolean(searchQuery.trim()) || txTypeFilter !== "all"
-    : txTypeFilter !== "all";
+  const hasFiltersApplied =
+    (showSearch && Boolean(searchQuery.trim())) ||
+    txTypeFilter !== "all" ||
+    categoryFilter !== "all" ||
+    paymentFilter !== "all";
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -342,6 +365,54 @@ export default function TransactionsScreen() {
               </TouchableOpacity>
             );
           })}
+
+          <TouchableOpacity
+            testID="tx-category-filter-pill"
+            style={[
+              styles.typeFilterChip,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+              categoryFilter !== "all" && {
+                backgroundColor: colors.textPrimary,
+                borderColor: colors.textPrimary,
+              },
+            ]}
+            onPress={() => setShowCategoryFilterModal(true)}
+          >
+            <Text
+              style={[
+                styles.typeFilterText,
+                { color: categoryFilter !== "all" ? colors.surface : colors.textSecondary },
+              ]}
+            >
+              {categoryFilter === "all"
+                ? "Category"
+                : categories.find((c) => c.category_id === categoryFilter)?.name || "Category"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="tx-payment-filter-pill"
+            style={[
+              styles.typeFilterChip,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+              paymentFilter !== "all" && {
+                backgroundColor: colors.textPrimary,
+                borderColor: colors.textPrimary,
+              },
+            ]}
+            onPress={() => setShowPaymentFilterModal(true)}
+          >
+            <Text
+              style={[
+                styles.typeFilterText,
+                { color: paymentFilter !== "all" ? colors.surface : colors.textSecondary },
+              ]}
+            >
+              {paymentFilter === "all"
+                ? "Account"
+                : paymentMethods.find((p) => p.payment_id === paymentFilter)?.name || "Account"}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
 
         {/* Month Navigator */}
@@ -429,6 +500,8 @@ export default function TransactionsScreen() {
               hasFiltersApplied={hasFiltersApplied}
               onClearFilters={() => {
                 setTxTypeFilter("all");
+                setCategoryFilter("all");
+                setPaymentFilter("all");
                 setSearchQuery("");
                 setShowSearch(false);
               }}
@@ -620,6 +693,98 @@ export default function TransactionsScreen() {
             )}
           </View>
         </View>
+      </Modal>
+
+      {/* Category filter picker */}
+      <Modal visible={showCategoryFilterModal} animationType="slide" transparent>
+        <TouchableOpacity
+          style={modalStyles.overlay}
+          activeOpacity={1}
+          onPress={() => setShowCategoryFilterModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={modalStyles.content}>
+            <View style={modalStyles.handle} />
+            <ScrollView>
+              <TouchableOpacity
+                style={styles.filterOptionRow}
+                onPress={() => {
+                  setCategoryFilter("all");
+                  setShowCategoryFilterModal(false);
+                }}
+              >
+                <Text style={[styles.filterOptionText, { color: colors.textPrimary }]}>
+                  All Categories
+                </Text>
+                {categoryFilter === "all" && (
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.category_id}
+                  style={styles.filterOptionRow}
+                  onPress={() => {
+                    setCategoryFilter(cat.category_id);
+                    setShowCategoryFilterModal(false);
+                  }}
+                >
+                  <Text style={[styles.filterOptionText, { color: colors.textPrimary }]}>
+                    {getCategoryEmoji(cat.name)} {cat.name}
+                  </Text>
+                  {categoryFilter === cat.category_id && (
+                    <Ionicons name="checkmark" size={18} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Payment method filter picker */}
+      <Modal visible={showPaymentFilterModal} animationType="slide" transparent>
+        <TouchableOpacity
+          style={modalStyles.overlay}
+          activeOpacity={1}
+          onPress={() => setShowPaymentFilterModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={modalStyles.content}>
+            <View style={modalStyles.handle} />
+            <ScrollView>
+              <TouchableOpacity
+                style={styles.filterOptionRow}
+                onPress={() => {
+                  setPaymentFilter("all");
+                  setShowPaymentFilterModal(false);
+                }}
+              >
+                <Text style={[styles.filterOptionText, { color: colors.textPrimary }]}>
+                  All Accounts
+                </Text>
+                {paymentFilter === "all" && (
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+              {paymentMethods.map((pm) => (
+                <TouchableOpacity
+                  key={pm.payment_id}
+                  style={styles.filterOptionRow}
+                  onPress={() => {
+                    setPaymentFilter(pm.payment_id);
+                    setShowPaymentFilterModal(false);
+                  }}
+                >
+                  <Text style={[styles.filterOptionText, { color: colors.textPrimary }]}>
+                    {pm.name}
+                  </Text>
+                  {paymentFilter === pm.payment_id && (
+                    <Ionicons name="checkmark" size={18} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -1264,6 +1429,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   typeFilterText: { fontSize: 12, fontWeight: "600" },
+  filterOptionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E5EA",
+  },
+  filterOptionText: { fontSize: 15, fontWeight: "500" },
   clearFiltersBtn: {
     marginTop: 10,
     borderWidth: 1,

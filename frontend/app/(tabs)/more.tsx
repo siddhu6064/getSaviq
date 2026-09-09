@@ -19,8 +19,10 @@ import { useAuth } from "../../src/contexts/AuthContext";
 import { useAppStore } from "../../src/store/appStore";
 import * as Linking from "expo-linking";
 import * as Clipboard from "expo-clipboard";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import * as Print from "expo-print";
+import { formatCurrency as _formatCurrency, formatDate as _formatDate } from "@shared/utils";
 import notificationService, {
   NotificationSettings,
   WeeklySettings,
@@ -36,6 +38,7 @@ import {
   shouldCloseExportModalOnProfileSwitch,
   shouldStartExport,
 } from "../../src/utils/exportState";
+import { deriveExportDatePreset } from "../../src/utils/exportDatePresets";
 
 const CATEGORY_COLORS = [
   "#ef4444",
@@ -58,7 +61,7 @@ const PAYMENT_TYPES = [
 ];
 
 export default function MoreScreen() {
-  const { user, signOut, isGuestMode } = useAuth();
+  const { user, signOut, deleteAccount, isGuestMode } = useAuth();
   const {
     profiles,
     activeProfile,
@@ -84,6 +87,11 @@ export default function MoreScreen() {
   const [inviteStatus, setInviteStatus] = useState<null | "success">(null);
   const [inviteError, setInviteError] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deleteAccountInput, setDeleteAccountInput] = useState("");
+  const [deleteAccountError, setDeleteAccountError] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const [showProfileCreateModal, setShowProfileCreateModal] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
@@ -132,6 +140,10 @@ export default function MoreScreen() {
   const [darkMode, setDarkMode] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [exportPreview, setExportPreview] = useState<any>(null);
+  const [activeExportPreset, setActiveExportPreset] = useState<string | null>(null);
   const previousProfileIdRef = useRef<string | null>(activeProfile?.profile_id || null);
   const canStartExport = shouldStartExport({ isExporting, profileId: activeProfile?.profile_id });
 
@@ -163,6 +175,32 @@ export default function MoreScreen() {
     }
     previousProfileIdRef.current = nextProfileId;
   }, [activeProfile?.profile_id, showExportModal]);
+
+  useEffect(() => {
+    if (!showExportModal || !activeProfile?.profile_id) {
+      setExportPreview(null);
+      return;
+    }
+    let cancelled = false;
+    exportAPI
+      .getJSON(activeProfile.profile_id, exportStartDate || undefined, exportEndDate || undefined)
+      .then((res) => {
+        if (!cancelled) setExportPreview(res.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) setExportPreview(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExportModal, activeProfile?.profile_id, exportStartDate, exportEndDate]);
+
+  const applyExportPreset = (preset: string) => {
+    const range = deriveExportDatePreset(preset);
+    setExportStartDate(range.start);
+    setExportEndDate(range.end);
+    setActiveExportPreset(preset);
+  };
 
   const loadDarkModeSettings = async () => {
     try {
@@ -226,7 +264,11 @@ export default function MoreScreen() {
     if (!activeProfile) return;
     try {
       setIsExporting(true);
-      const response = await exportAPI.getCSV(activeProfile.profile_id);
+      const response = await exportAPI.getCSV(
+        activeProfile.profile_id,
+        exportStartDate || undefined,
+        exportEndDate || undefined,
+      );
       const csvData = response.data;
 
       if (Platform.OS === "web") {
@@ -257,7 +299,11 @@ export default function MoreScreen() {
     if (!activeProfile) return;
     try {
       setIsExporting(true);
-      const response = await exportAPI.getJSON(activeProfile.profile_id);
+      const response = await exportAPI.getJSON(
+        activeProfile.profile_id,
+        exportStartDate || undefined,
+        exportEndDate || undefined,
+      );
       const jsonData = JSON.stringify(response.data, null, 2);
 
       if (Platform.OS === "web") {
@@ -276,6 +322,101 @@ export default function MoreScreen() {
       setShowExportModal(false);
     } catch (error) {
       Alert.alert("Error", getExportErrorMessage(error, "json"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!shouldStartExport({ isExporting, profileId: activeProfile?.profile_id })) return;
+    if (!activeProfile) return;
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Not available",
+        "PDF export is available in the mobile app. Use the web app's Export page for PDF reports.",
+      );
+      return;
+    }
+    try {
+      setIsExporting(true);
+      const response = await exportAPI.getJSON(
+        activeProfile.profile_id,
+        exportStartDate || undefined,
+        exportEndDate || undefined,
+      );
+      const data = response.data;
+
+      const categoryRows = (data.category_breakdown || [])
+        .map((cat: any) => `<div class="cat-row">${cat.name}: ${_formatCurrency(cat.amount)}</div>`)
+        .join("");
+
+      const transactionRows = (data.expenses || [])
+        .slice(0, 50)
+        .map((exp: any) => {
+          const date = new Date(exp.date).toLocaleDateString();
+          const desc = (exp.description || "").substring(0, 40);
+          const cat = (exp.category_name || "").substring(0, 25);
+          const amountClass =
+            exp.type === "income" ? "amt-income" : exp.type === "expense" ? "amt-expense" : "";
+          const amount =
+            exp.type === "income"
+              ? `+${_formatCurrency(exp.amount)}`
+              : exp.type === "expense"
+                ? `-${_formatCurrency(exp.amount)}`
+                : _formatCurrency(exp.amount);
+          return `<tr><td>${date}</td><td>${desc}</td><td>${cat}</td><td class="${amountClass}">${amount}</td></tr>`;
+        })
+        .join("");
+
+      const html = `
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <style>
+              body { font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 32px; color: #2B2A28; }
+              h1 { color: #4A6D5C; font-size: 22px; margin-bottom: 4px; }
+              .meta { color: #73716D; font-size: 11px; margin: 2px 0; }
+              h2 { font-size: 15px; margin-top: 24px; margin-bottom: 8px; }
+              .summary-row { font-size: 12px; margin: 3px 0; }
+              .cat-row { font-size: 12px; margin: 3px 0; padding-left: 8px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+              th { text-align: left; font-size: 10px; color: #73716D; font-weight: 600; padding: 4px 6px; border-bottom: 1px solid #E5E3DF; }
+              td { font-size: 10px; padding: 4px 6px; border-bottom: 1px solid #F2F0EC; }
+              .amt-income { color: #16A34A; }
+              .amt-expense { color: #DC2626; }
+            </style>
+          </head>
+          <body>
+            <h1>Expense Report</h1>
+            <div class="meta">Profile: ${activeProfile.name}</div>
+            <div class="meta">Generated: ${_formatDate(new Date().toISOString())}</div>
+
+            <h2>Summary</h2>
+            <div class="summary-row">Total Income: ${_formatCurrency(data.summary.total_income)}</div>
+            <div class="summary-row">Total Expenses: ${_formatCurrency(data.summary.total_expense)}</div>
+            <div class="summary-row">Balance: ${_formatCurrency(data.summary.balance)}</div>
+            <div class="summary-row">Transactions: ${data.summary.transaction_count}</div>
+
+            <h2>Category Breakdown</h2>
+            ${categoryRows}
+
+            <h2>Recent Transactions</h2>
+            <table>
+              <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th></tr></thead>
+              <tbody>${transactionRows}</tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      const fileUri =
+        (FileSystem as any).documentDirectory + buildExportFileName(activeProfile.name, "pdf");
+      await FileSystem.moveAsync({ from: uri, to: fileUri });
+      await Sharing.shareAsync(fileUri, { mimeType: "application/pdf" });
+      setShowExportModal(false);
+    } catch (error) {
+      Alert.alert("Error", getExportErrorMessage(error, "pdf"));
     } finally {
       setIsExporting(false);
     }
@@ -600,6 +741,23 @@ export default function MoreScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Sign Out", style: "destructive", onPress: signOut },
     ]);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteAccountInput.trim() !== "DELETE") {
+      setDeleteAccountError("Please type DELETE to confirm.");
+      return;
+    }
+    try {
+      setIsDeletingAccount(true);
+      setDeleteAccountError("");
+      await deleteAccount();
+      setShowDeleteAccountModal(false);
+    } catch (error) {
+      setDeleteAccountError("Failed to delete account. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const handleAddProfile = async () => {
@@ -1340,8 +1498,22 @@ export default function MoreScreen() {
           {/* Sign Out */}
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
             <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={styles.signOutText}>{isGuestMode ? "Exit Guest Mode" : "Sign Out"}</Text>
           </TouchableOpacity>
+
+          {!isGuestMode && (
+            <TouchableOpacity
+              style={[styles.signOutBtn, { marginTop: 8 }]}
+              onPress={() => {
+                setDeleteAccountInput("");
+                setDeleteAccountError("");
+                setShowDeleteAccountModal(true);
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+              <Text style={styles.signOutText}>Delete Account</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={styles.version}>Version 1.0.0</Text>
           <View style={{ height: 100 }} />
@@ -1814,7 +1986,77 @@ export default function MoreScreen() {
               <Text style={{ color: "#8E8E93", fontSize: 13, marginBottom: 20 }}>
                 Select a profile to enable export.
               </Text>
-            ) : null}
+            ) : (
+              <>
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+                  {[
+                    { key: "this_month", label: "This Month" },
+                    { key: "this_year", label: "This Year" },
+                    { key: "last_month", label: "Last Month" },
+                  ].map((p) => (
+                    <TouchableOpacity
+                      key={p.key}
+                      onPress={() => applyExportPreset(p.key)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        borderRadius: 14,
+                        backgroundColor: activeExportPreset === p.key ? "#000" : "#F8F8FA",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color: activeExportPreset === p.key ? "#FFF" : "#666",
+                        }}
+                      >
+                        {p.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  {(exportStartDate || exportEndDate) && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setExportStartDate("");
+                        setExportEndDate("");
+                        setActiveExportPreset(null);
+                      }}
+                      style={{ paddingHorizontal: 8, paddingVertical: 7, justifyContent: "center" }}
+                    >
+                      <Ionicons name="close-circle-outline" size={18} color="#8E8E93" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {exportPreview?.summary && (
+                  <View
+                    style={{
+                      backgroundColor: "#F8F8FA",
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: "#8E8E93", marginBottom: 6 }}>
+                      Preview{" "}
+                      {exportStartDate ? `(${exportStartDate} — ${exportEndDate})` : "(all time)"}
+                    </Text>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ fontSize: 12, color: "#34C759" }}>
+                        Income {_formatCurrency(exportPreview.summary.total_income)}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: "#FF3B30" }}>
+                        Expenses {_formatCurrency(exportPreview.summary.total_expense)}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: "#000", fontWeight: "700" }}>
+                        {exportPreview.summary.transaction_count} txns
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </>
+            )}
 
             <TouchableOpacity
               style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
@@ -1848,11 +2090,92 @@ export default function MoreScreen() {
               <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
             </TouchableOpacity>
 
+            {Platform.OS !== "web" && (
+              <TouchableOpacity
+                style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
+                onPress={handleExportPDF}
+                disabled={!canStartExport}
+              >
+                <View style={[exportStyles.iconBg, { backgroundColor: "#FDE8E8" }]}>
+                  <Ionicons name="document-outline" size={24} color="#DC2626" />
+                </View>
+                <View style={exportStyles.optionInfo}>
+                  <Text style={exportStyles.optionTitle}>Export as PDF</Text>
+                  <Text style={exportStyles.optionDesc}>
+                    Formatted report with summary and transactions
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+              </TouchableOpacity>
+            )}
+
             {isExporting && (
               <Text style={{ textAlign: "center", color: "#007AFF", marginTop: 16 }}>
                 Preparing export...
               </Text>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal visible={showDeleteAccountModal} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>Delete Account</Text>
+              <TouchableOpacity onPress={() => setShowDeleteAccountModal(false)}>
+                <Ionicons name="close" size={24} color="#8E8E93" />
+              </TouchableOpacity>
+            </View>
+            <View style={modalStyles.body}>
+              <Text style={{ color: "#8E8E93", fontSize: 14, marginBottom: 12 }}>
+                This action is permanent and will delete your account and associated data.
+              </Text>
+              <Text style={{ color: "#8E8E93", fontSize: 14, marginBottom: 12 }}>
+                Type <Text style={{ fontWeight: "700", color: "#000" }}>DELETE</Text> to confirm.
+              </Text>
+              <TextInput
+                style={modalStyles.input}
+                value={deleteAccountInput}
+                onChangeText={setDeleteAccountInput}
+                placeholder="DELETE"
+                placeholderTextColor="#C7C7CC"
+                autoCapitalize="characters"
+              />
+              {!!deleteAccountError && (
+                <Text style={{ color: "#FF3B30", fontSize: 13, marginTop: 8 }}>
+                  {deleteAccountError}
+                </Text>
+              )}
+              <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
+                <TouchableOpacity
+                  style={[exportStyles.optionCard, { flex: 1, justifyContent: "center" }]}
+                  onPress={() => setShowDeleteAccountModal(false)}
+                  disabled={isDeletingAccount}
+                >
+                  <Text style={{ textAlign: "center", fontWeight: "600", color: "#000" }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    exportStyles.optionCard,
+                    { flex: 1, justifyContent: "center", backgroundColor: "#FF3B30" },
+                  ]}
+                  onPress={handleDeleteAccount}
+                  disabled={isDeletingAccount}
+                >
+                  {isDeletingAccount ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={{ textAlign: "center", fontWeight: "700", color: "#FFF" }}>
+                      Delete Account
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>

@@ -41,6 +41,7 @@ interface AuthContextType {
   registerWithEmail: (email: string, password: string, name: string) => Promise<void>;
   continueAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -440,6 +441,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAccount = async () => {
+    await api.delete("/auth/account", { data: { confirmation: "DELETE" } });
+    await storage.removeItem("session_token");
+    await storage.removeItem("guest_mode");
+    setIsGuestMode(false);
+    logout();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -453,6 +462,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerWithEmail,
         continueAsGuest,
         signOut,
+        deleteAccount,
         checkAuth,
       }}
     >

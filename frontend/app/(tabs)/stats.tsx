@@ -19,6 +19,14 @@ import {
 } from "../../src/utils/analyticsScreenState";
 import { useTheme } from "../../src/contexts/ThemeContext";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
+import { deriveAnalyticsPeriodRange } from "../../src/utils/analyticsPeriodRange";
+
+type AnalyticsPeriod = "week" | "month" | "year";
+const PERIOD_TABS: Array<{ key: AnalyticsPeriod; label: string }> = [
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
+  { key: "year", label: "Year" },
+];
 
 function formatCurrency(value: unknown) {
   const safe = Number(value);
@@ -36,6 +44,7 @@ export default function AnalyticsScreen() {
   const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([]);
   const [paymentBreakdown, setPaymentBreakdown] = useState<any[]>([]);
   const [monthlyTrend, setMonthlyTrend] = useState<any[]>([]);
+  const [period, setPeriod] = useState<AnalyticsPeriod>("month");
   const requestIdRef = useRef(0);
 
   const loadAnalytics = useCallback(
@@ -65,13 +74,16 @@ export default function AnalyticsScreen() {
         }
         setError("");
 
-        const params = { profile_id: activeProfile.profile_id };
+        const range = deriveAnalyticsPeriodRange(period);
+        const params = { profile_id: activeProfile.profile_id, ...range };
         const [summaryResponse, categoryResponse, paymentResponse, trendResponse] =
           await Promise.all([
             api.get("/analytics/summary", { params }),
             api.get("/analytics/category-breakdown", { params }),
             api.get("/analytics/payment-method-breakdown", { params }),
-            api.get("/analytics/monthly-trend", { params }),
+            api.get("/analytics/monthly-trend", {
+              params: { profile_id: activeProfile.profile_id },
+            }),
           ]);
 
         if (requestId === requestIdRef.current) {
@@ -105,7 +117,7 @@ export default function AnalyticsScreen() {
         }
       }
     },
-    [activeProfile?.profile_id],
+    [activeProfile?.profile_id, period],
   );
 
   useEffect(() => {
@@ -151,6 +163,36 @@ export default function AnalyticsScreen() {
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {activeProfile ? activeProfile.name : "No profile selected"}
             </Text>
+          </View>
+
+          <View style={styles.periodTabsRow}>
+            {PERIOD_TABS.map((tab) => {
+              const active = period === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  testID={`analytics-period-${tab.key}`}
+                  style={[
+                    styles.periodTab,
+                    { borderColor: colors.border, backgroundColor: colors.surface },
+                    active && {
+                      backgroundColor: colors.textPrimary,
+                      borderColor: colors.textPrimary,
+                    },
+                  ]}
+                  onPress={() => setPeriod(tab.key)}
+                >
+                  <Text
+                    style={[
+                      styles.periodTabText,
+                      { color: active ? colors.surface : colors.textSecondary },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {!activeProfile ? (
@@ -447,6 +489,15 @@ const styles = StyleSheet.create({
   header: { marginBottom: 2 },
   title: { fontSize: 28, fontWeight: "800" },
   subtitle: { marginTop: 2, fontSize: 13 },
+  periodTabsRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  periodTab: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  periodTabText: { fontSize: 13, fontWeight: "600" },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
   helper: { fontSize: 14 },
   emptyTitle: { fontSize: 16, fontWeight: "700" },

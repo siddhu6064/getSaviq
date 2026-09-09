@@ -149,6 +149,12 @@ export const invitesAPI = {
   decline: (token: string) => api.post("/invite/decline", { token }),
 };
 
+// Notifications API
+export const notificationsAPI = {
+  getAll: () => api.get("/notifications"),
+  markAllRead: () => api.put("/notifications/read-all"),
+};
+
 // Profiles management API (owner actions)
 export const profilesAPI = {
   create: (name: string, profile_type: "personal" | "business" | "shared" = "personal") =>

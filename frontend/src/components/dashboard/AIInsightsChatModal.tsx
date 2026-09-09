@@ -219,6 +219,19 @@ export function AIInsightsChatModal({
               {profileName ? `Profile: ${profileName}` : "Ask about this profile"}
             </Text>
           </View>
+          {messages.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                if (profileId) {
+                  setAIChatSession(profileId, { messages: [], prompt: DEFAULT_AI_CHAT_PROMPT });
+                }
+              }}
+              style={styles.clearButton}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.clearButtonText, { color: colors.textSecondary }]}>Clear</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[styles.closeButton, { backgroundColor: colors.surfaceHover }]}
             onPress={onClose}
@@ -389,6 +402,8 @@ const styles = StyleSheet.create({
   titleWrap: { flex: 1, paddingRight: 8 },
   title: { fontSize: 18, fontWeight: "800", color: lightTheme.colors.text },
   subtitle: { marginTop: 2, fontSize: 12, color: lightTheme.colors.textSecondary },
+  clearButton: { paddingHorizontal: 10, paddingVertical: 8, marginRight: 4 },
+  clearButtonText: { fontSize: 13, fontWeight: "600" },
   closeButton: {
     width: 44,
     height: 44,
