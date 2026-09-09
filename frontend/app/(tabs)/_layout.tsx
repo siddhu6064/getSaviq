@@ -45,26 +45,21 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="stats"
+          name="add"
           options={{
-            title: "Analytics",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="bar-chart-outline" size={20} color={color} />
+            title: "",
+            tabBarButton: (props) => (
+              <TouchableOpacity
+                {...(props as any)}
+                style={styles.fabTabButton}
+                onPress={() => router.push("/(tabs)/add")}
+                activeOpacity={0.85}
+              >
+                <View style={styles.fab}>
+                  <Ionicons name="add" size={28} color="#FFF" />
+                </View>
+              </TouchableOpacity>
             ),
-          }}
-        />
-        <Tabs.Screen
-          name="budgets"
-          options={{
-            title: "Budgets",
-            tabBarIcon: ({ color }) => <Ionicons name="wallet-outline" size={20} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="goals"
-          options={{
-            title: "Goals",
-            tabBarIcon: ({ color }) => <Ionicons name="flag-outline" size={20} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -76,15 +71,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="net-worth"
-          options={{
-            title: "Net Worth",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="stats-chart-outline" size={20} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="more"
           options={{
             title: "More",
@@ -93,28 +79,19 @@ export default function TabLayout() {
             ),
           }}
         />
+        {/* Reachable via Home's quick actions + More's Quick Links, not the dock —
+            keeps the dock to 5 slots instead of 8. */}
+        <Tabs.Screen name="stats" options={{ href: null }} />
+        <Tabs.Screen name="budgets" options={{ href: null }} />
+        <Tabs.Screen name="goals" options={{ href: null }} />
+        <Tabs.Screen name="net-worth" options={{ href: null }} />
         <Tabs.Screen
           name="accounts"
           options={{
             href: null,
           }}
         />
-        <Tabs.Screen
-          name="add"
-          options={{
-            href: null,
-          }}
-        />
       </Tabs>
-
-      {/* Floating Add Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push("/(tabs)/add")}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
     </>
   );
 }
@@ -136,13 +113,16 @@ const styles = StyleSheet.create({
   tabIconContainer: {
     alignItems: "center",
   },
+  fabTabButton: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   fab: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? 100 : 76,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    marginTop: Platform.OS === "ios" ? -28 : -24,
     backgroundColor: "#FF6B6B",
     justifyContent: "center",
     alignItems: "center",
@@ -151,6 +131,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 100,
   },
 });

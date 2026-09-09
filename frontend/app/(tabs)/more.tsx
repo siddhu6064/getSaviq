@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -61,6 +62,7 @@ const PAYMENT_TYPES = [
 ];
 
 export default function MoreScreen() {
+  const router = useRouter();
   const { user, signOut, deleteAccount, isGuestMode } = useAuth();
   const {
     profiles,
@@ -999,6 +1001,33 @@ export default function MoreScreen() {
             })}
           </View>
 
+          {/* Quick Links — screens moved off the dock to keep it to 5 tabs */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Quick Links</Text>
+          </View>
+          <View style={styles.card}>
+            {[
+              { label: "Analytics", icon: "bar-chart-outline", route: "/(tabs)/stats" },
+              { label: "Budgets", icon: "wallet-outline", route: "/(tabs)/budgets" },
+              { label: "Goals", icon: "flag-outline", route: "/(tabs)/goals" },
+              { label: "Net Worth", icon: "stats-chart-outline", route: "/(tabs)/net-worth" },
+            ].map((link, i, arr) => (
+              <View key={link.route}>
+                <TouchableOpacity
+                  style={styles.listRow}
+                  onPress={() => router.push(link.route as any)}
+                >
+                  <View style={styles.listRowLeft}>
+                    <Ionicons name={link.icon as any} size={18} color="#007AFF" />
+                    <Text style={styles.listRowText}>{link.label}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
+                </TouchableOpacity>
+                {i < arr.length - 1 && <View style={styles.divider} />}
+              </View>
+            ))}
+          </View>
+
           {/* Categories */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categories</Text>
@@ -1081,11 +1110,8 @@ export default function MoreScreen() {
                 </Text>
               </View>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <View style={automationStyles.setupBadge}>
-                <Text style={automationStyles.setupBadgeText}>Set Up</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <View style={automationStyles.setupBadge}>
+              <Text style={automationStyles.setupBadgeText}>Set Up</Text>
             </View>
           </TouchableOpacity>
 
@@ -1120,16 +1146,13 @@ export default function MoreScreen() {
                 </Text>
               </View>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <View
-                style={[
-                  automationStyles.setupBadge,
-                  { backgroundColor: "#E8F5E9", borderColor: "#BBF7D0" },
-                ]}
-              >
-                <Text style={[automationStyles.setupBadgeText, { color: "#166534" }]}>Set Up</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <View
+              style={[
+                automationStyles.setupBadge,
+                { backgroundColor: "#E8F5E9", borderColor: "#BBF7D0" },
+              ]}
+            >
+              <Text style={[automationStyles.setupBadgeText, { color: "#166534" }]}>Set Up</Text>
             </View>
           </TouchableOpacity>
 

@@ -558,6 +558,11 @@ export default function DashboardScreen() {
               icon="bar-chart-outline"
               onPress={() => router.push("/(tabs)/stats")}
             />
+            <ActionButton
+              label="Net Worth"
+              icon="stats-chart-outline"
+              onPress={() => router.push("/(tabs)/net-worth")}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>

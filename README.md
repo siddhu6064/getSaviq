@@ -23,11 +23,20 @@ SAVIQ combines transaction tracking, forecasting, savings planning, and AI guida
 
 ### Mobile
 
-| Bills (list)                                       | Automation                                                   | Apple Pay Auto-Fill                                                  |
-| -------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
-| ![Mobile bills](docs/screenshots/mobile-bills.png) | ![Mobile automation](docs/screenshots/mobile-automation.png) | ![Mobile Apple Pay auto-fill](docs/screenshots/mobile-shortcuts.png) |
+| Dashboard (5-tab dock)                                | Quick Add (collapsed)                                      | Automation                                                   |
+| ----------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| ![Mobile dashboard](docs/screenshots/mobile-dock.png) | ![Mobile quick add](docs/screenshots/mobile-add-quick.png) | ![Mobile automation](docs/screenshots/mobile-automation.png) |
 
-_Apple Pay Auto-Fill: an iOS Shortcuts automation deep-links into the app with amount, merchant, and category pre-filled from the Pay transaction._
+| Bills (list)                                       | Apple Pay Auto-Fill                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| ![Mobile bills](docs/screenshots/mobile-bills.png) | ![Mobile Apple Pay auto-fill](docs/screenshots/mobile-shortcuts.png) |
+
+_Dashboard: the dock was cut from 8 tabs (4 of which truncated) to 5, with Add as a
+centered raised button instead of a floating FAB that overlapped content. Quick Add:
+logging an expense now defaults to Amount + Note + Category + Sheet, with
+Date/Time/Pending/Repeat/Image tucked behind an "Advanced" disclosure. Apple Pay
+Auto-Fill: an iOS Shortcuts automation deep-links into the app with amount, merchant,
+and category pre-filled from the Pay transaction._
 
 ---
 
@@ -159,6 +168,29 @@ Mobile is now at full feature parity with web — every item below was audited a
 - Push notification deep linking to relevant screens.
 
 See [`MOBILE_PARITY_CHECKLIST.md`](MOBILE_PARITY_CHECKLIST.md) for the full audit trail (14/14 items, 13/14 live click-tested).
+
+### 12) Mobile UX Pass
+
+A follow-up review of the mobile app (post feature-parity) found and fixed four
+usability issues, each verified live in a simulator:
+
+- **Dock cut from 8 tabs to 5.** The bottom tab bar previously packed in Home,
+  Transactions, Analytics, Budgets, Goals, Bills, Net Worth, and More — 4 of 8
+  labels truncated (`Analyt…`, `Budg…`, `Net W…`). Now: Home, Transactions, a
+  centered raised Add button, Bills, More. Analytics/Budgets/Goals/Net Worth
+  moved to Home's quick-actions row and a new "Quick Links" section on More, so
+  nothing lost reachability.
+- **FAB integrated into the dock**, replacing a floating "+" that was
+  absolute-positioned and overlapped dock icons and toast notifications.
+- **Automation rows: one affordance each.** The Apple Pay / Google Pay setup
+  rows previously showed both a "Set Up" pill and a chevron that did the same
+  thing; the redundant chevron is gone.
+- **Add Expense defaults to a 4-field quick log** (Amount, Note, Category,
+  Sheet) instead of an 11-field scroll. Date, Time, Pending, Repeat, End Date,
+  and Add Image now live behind a collapsible "Advanced" section (auto-expanded
+  when editing an existing transaction).
+
+See [`MOBILE_UX_CHECKLIST.md`](MOBILE_UX_CHECKLIST.md) for the full list (4/4 done).
 
 ---
 

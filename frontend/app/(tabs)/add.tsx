@@ -372,6 +372,7 @@ export default function AddScreen() {
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showRecurringEndDatePicker, setShowRecurringEndDatePicker] = useState(false);
   const [showImageOptions, setShowImageOptions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(!!editExpense);
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
@@ -839,91 +840,8 @@ export default function AddScreen() {
             </NeumorphicCard>
           )}
 
-          {/* Date & Time */}
-          <NeumorphicCard style={styles.listCard} noPadding>
-            <ListItemRow
-              icon={
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={lightTheme.colors.textTertiary}
-                />
-              }
-              label="Date"
-              value={formatDate(date)}
-              onPress={() => setShowDatePicker(true)}
-            />
-            <Divider />
-            <ListItemRow
-              icon={
-                <Ionicons name="time-outline" size={20} color={lightTheme.colors.textTertiary} />
-              }
-              label="Time"
-              value={formatTime(time)}
-              onPress={() => setShowTimePicker(true)}
-            />
-          </NeumorphicCard>
-
-          {/* Pending */}
-          <NeumorphicCard style={styles.listCard} noPadding>
-            <ListItemRow
-              icon={
-                <Ionicons
-                  name="hourglass-outline"
-                  size={20}
-                  color={lightTheme.colors.textTertiary}
-                />
-              }
-              label="Pending"
-              showArrow={false}
-              rightElement={<ToggleSwitch value={isPending} onValueChange={setIsPending} />}
-            />
-          </NeumorphicCard>
-
-          {/* Repeat */}
-          <NeumorphicCard style={styles.listCard} noPadding>
-            <ListItemRow
-              icon={<Ionicons name="repeat" size={20} color={lightTheme.colors.textTertiary} />}
-              label="Repeat"
-              value={getRepeatLabel()}
-              onPress={() => setShowRepeatModal(true)}
-            />
-          </NeumorphicCard>
-
-          {/* Recurring End Date (only when repeat is enabled) */}
-          {repeatFrequency !== "never" && (
-            <NeumorphicCard style={styles.listCard} noPadding>
-              <ListItemRow
-                icon={
-                  <Ionicons
-                    name="calendar-clear-outline"
-                    size={20}
-                    color={lightTheme.colors.textTertiary}
-                  />
-                }
-                label="End Date"
-                value={recurringEndDate ? recurringEndDate.toLocaleDateString() : "Never"}
-                onPress={() => setShowRecurringEndDatePicker(true)}
-                rightElement={
-                  recurringEndDate ? (
-                    <TouchableOpacity
-                      onPress={() => setRecurringEndDate(null)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={18}
-                        color={lightTheme.colors.textTertiary}
-                      />
-                    </TouchableOpacity>
-                  ) : undefined
-                }
-              />
-            </NeumorphicCard>
-          )}
-
-          {/* Add Image */}
-          {receiptImage ? (
+          {/* Receipt image preview stays visible regardless of Advanced state */}
+          {receiptImage && (
             <View style={styles.receiptPreview}>
               <Image source={{ uri: receiptImage }} style={styles.receiptImage} />
               {isScanning && (
@@ -939,11 +857,123 @@ export default function AddScreen() {
                 <Ionicons name="close-circle" size={28} color={lightTheme.colors.danger} />
               </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity style={styles.addImageBtn} onPress={() => setShowImageOptions(true)}>
-              <Ionicons name="camera-outline" size={20} color={lightTheme.colors.primary} />
-              <Text style={styles.addImageText}>Add Image</Text>
-            </TouchableOpacity>
+          )}
+
+          {/* Advanced — date/time, pending, repeat, image. Collapsed by default so a
+              quick log is just Amount + Note + Category + Sheet + Save. */}
+          <TouchableOpacity
+            style={styles.advancedToggle}
+            onPress={() => setShowAdvanced((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.advancedToggleText}>Advanced</Text>
+            <Ionicons
+              name={showAdvanced ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={lightTheme.colors.textTertiary}
+            />
+          </TouchableOpacity>
+
+          {showAdvanced && (
+            <>
+              {/* Date & Time */}
+              <NeumorphicCard style={styles.listCard} noPadding>
+                <ListItemRow
+                  icon={
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color={lightTheme.colors.textTertiary}
+                    />
+                  }
+                  label="Date"
+                  value={formatDate(date)}
+                  onPress={() => setShowDatePicker(true)}
+                />
+                <Divider />
+                <ListItemRow
+                  icon={
+                    <Ionicons
+                      name="time-outline"
+                      size={20}
+                      color={lightTheme.colors.textTertiary}
+                    />
+                  }
+                  label="Time"
+                  value={formatTime(time)}
+                  onPress={() => setShowTimePicker(true)}
+                />
+              </NeumorphicCard>
+
+              {/* Pending */}
+              <NeumorphicCard style={styles.listCard} noPadding>
+                <ListItemRow
+                  icon={
+                    <Ionicons
+                      name="hourglass-outline"
+                      size={20}
+                      color={lightTheme.colors.textTertiary}
+                    />
+                  }
+                  label="Pending"
+                  showArrow={false}
+                  rightElement={<ToggleSwitch value={isPending} onValueChange={setIsPending} />}
+                />
+              </NeumorphicCard>
+
+              {/* Repeat */}
+              <NeumorphicCard style={styles.listCard} noPadding>
+                <ListItemRow
+                  icon={<Ionicons name="repeat" size={20} color={lightTheme.colors.textTertiary} />}
+                  label="Repeat"
+                  value={getRepeatLabel()}
+                  onPress={() => setShowRepeatModal(true)}
+                />
+              </NeumorphicCard>
+
+              {/* Recurring End Date (only when repeat is enabled) */}
+              {repeatFrequency !== "never" && (
+                <NeumorphicCard style={styles.listCard} noPadding>
+                  <ListItemRow
+                    icon={
+                      <Ionicons
+                        name="calendar-clear-outline"
+                        size={20}
+                        color={lightTheme.colors.textTertiary}
+                      />
+                    }
+                    label="End Date"
+                    value={recurringEndDate ? recurringEndDate.toLocaleDateString() : "Never"}
+                    onPress={() => setShowRecurringEndDatePicker(true)}
+                    rightElement={
+                      recurringEndDate ? (
+                        <TouchableOpacity
+                          onPress={() => setRecurringEndDate(null)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={18}
+                            color={lightTheme.colors.textTertiary}
+                          />
+                        </TouchableOpacity>
+                      ) : undefined
+                    }
+                  />
+                </NeumorphicCard>
+              )}
+
+              {/* Add Image */}
+              {!receiptImage && (
+                <TouchableOpacity
+                  style={styles.addImageBtn}
+                  onPress={() => setShowImageOptions(true)}
+                >
+                  <Ionicons name="camera-outline" size={20} color={lightTheme.colors.primary} />
+                  <Text style={styles.addImageText}>Add Image</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -1392,6 +1422,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addImageText: { fontSize: 16, fontWeight: "500", color: lightTheme.colors.primary },
+  advancedToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: lightTheme.colors.textTertiary,
+  },
 });
 
 const catGridStyles = StyleSheet.create({
