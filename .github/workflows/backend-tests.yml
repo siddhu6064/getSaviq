@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Remove stale google-chrome apt repo
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+
       - name: Install system dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y libmagic1
 
@@ -102,6 +105,9 @@ jobs:
 
       - name: Build web app
         run: npm --prefix web run build
+
+      - name: Remove stale google-chrome apt repo
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
