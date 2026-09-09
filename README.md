@@ -9,12 +9,31 @@
 **Financial intelligence for modern households and solo operators.**  
 SAVIQ combines transaction tracking, forecasting, savings planning, and AI guidance across web and mobile in one profile-aware platform.
 
-> **Current posture:** feature-complete with 5 competitive gap phases shipped. Ready for public beta rollout.
+> **Current posture:** feature-complete with 5 competitive gap phases shipped. Web and mobile are at full feature parity. Ready for public beta rollout.
+
+---
+
+## Screenshots
+
+### Web
+
+| Dashboard                                            | Transactions                                               | Bills                                        |
+| ---------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
+| ![Web dashboard](docs/screenshots/web-dashboard.png) | ![Web transactions](docs/screenshots/web-transactions.png) | ![Web bills](docs/screenshots/web-bills.png) |
+
+### Mobile
+
+| Bills (list)                                       | Automation                                                   | Apple Pay Auto-Fill                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| ![Mobile bills](docs/screenshots/mobile-bills.png) | ![Mobile automation](docs/screenshots/mobile-automation.png) | ![Mobile Apple Pay auto-fill](docs/screenshots/mobile-shortcuts.png) |
+
+_Apple Pay Auto-Fill: an iOS Shortcuts automation deep-links into the app with amount, merchant, and category pre-filled from the Pay transaction._
 
 ---
 
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Why SAVIQ](#why-saviq)
 - [Core Differentiators](#core-differentiators)
 - [Feature Highlights](#feature-highlights)
@@ -118,13 +137,28 @@ SAVIQ exists to help users make confident financial decisions, not just log tran
 
 ### 10) Exports
 
-- Data export endpoints for CSV and JSON scoped by profile/date windows.
+- CSV, JSON, and PDF export, scoped by profile and date-range presets (This Month / This Year / Last Month), with a live preview before export.
+- Mobile PDF export renders a formatted HTML report (summary + category breakdown + transactions) and shares it via the native iOS/Android share sheet.
 
 ### 11) Mobile Coverage
 
+Mobile is now at full feature parity with web — every item below was audited against the web app and verified working live in an iOS simulator:
+
 - Route-level coverage across dashboard, transactions, budgets, goals, analytics, net worth, bills, and AI chat flows.
+- In-app notification center (bell icon, unread badge, mark-all-read, tap-to-navigate).
+- Account deletion with typed-confirmation modal.
+- Dashboard category/payment-method breakdown cards, budget progress summary, recommendations widget, and spend-comparison smart insight — all tap-through to filtered Transactions.
+- Category/payment-method filters on Transactions, with deep-link pre-population from dashboard drill-downs.
+- Recurring transaction end date.
+- Bills Calendar view (month grid, due-day dots, status coloring) alongside the existing list view.
+- Analytics period tabs (Week/Month/Year).
+- Weekly Digest dismissible banner.
+- AI chat "Clear conversation" button.
+- **Apple Pay / Google Pay Auto-Detect** — an in-app setup guide walks the user through an iOS Shortcuts (or Android equivalent) automation that fires on a Pay transaction and deep-links straight into a pre-filled Add Expense screen (amount, merchant, category).
 - Mobile-first interaction patterns, dark mode support for primary flows, and profile switching restore behavior.
 - Push notification deep linking to relevant screens.
+
+See [`MOBILE_PARITY_CHECKLIST.md`](MOBILE_PARITY_CHECKLIST.md) for the full audit trail (14/14 items, 13/14 live click-tested).
 
 ---
 
@@ -336,6 +370,7 @@ This is the primary remaining validation gap between internal beta and wider rol
 | Feature scope (core features)   | ✅ Complete                                                                                 |
 | Competitive gap features        | ✅ Complete                                                                                 |
 | Web + mobile route parity       | ✅ Complete                                                                                 |
+| Web + mobile feature parity     | ✅ Complete — 14/14 gap items shipped, 13/14 live click-tested on simulator                 |
 | Backend/API implementation      | ✅ Complete for all flows                                                                   |
 | Automated tests                 | ✅ Strong (backend + web + targeted mobile logic)                                           |
 | Environment & API keys          | ✅ All services configured (MongoDB Atlas, Gemini, Resend, PostHog, Cloudflare R2, Upstash) |
@@ -369,9 +404,7 @@ This is the primary remaining validation gap between internal beta and wider rol
    - Broader on-device validation across lifecycle, deep-link, and notification scenarios.
 7. **Bank sync via Teller** _(after first paying subscriber)_
    - Teller preferred over Plaid — no monthly minimum, pay-as-you-go.
-8. **Export expansion**
-   - PDF export support to complement CSV/JSON.
-9. **Collaboration & business profile evolution**
+8. **Collaboration & business profile evolution**
    - Team/org primitives (roles, memberships, org-level access).
 
 ---
@@ -383,6 +416,11 @@ The following bugs were patched during initial beta setup:
 - `insights_v2_service.py` — MongoDB collection truth-value comparison fixed (`or` → `is not None`)
 - `forecast_service.py`, `dashboard_metrics.py`, `insights.py`, `analytics.py` — timezone-naive vs timezone-aware datetime comparison fixed across all date filter expressions (`.replace(tzinfo=timezone.utc)`)
 - `openai_client.py` — uses `responses.create()` (OpenAI Responses API); needs refactor to `chat.completions.create()` before switching to Gemini or DeepSeek
+- `frontend/app/(tabs)/more.tsx` — `expo-file-system`'s SDK 54 legacy API (`writeAsStringAsync`/`moveAsync`) started throwing unconditionally after a dependency version bump, silently breaking CSV/JSON/PDF export on mobile behind a misleading "check your connection" error; fixed by importing from `expo-file-system/legacy`.
+
+## Known Issues (Open)
+
+- **Web dashboard — "Top Category" Smart Metric and the Weekly Digest narrative display a raw `category_id` (e.g. `cat_4d1ba7e8483e`) instead of the category's name.** Found while capturing screenshots for this README. Likely a missing category-name join/lookup in the smart-metrics or digest-generation service — not yet root-caused or fixed.
 
 ---
 

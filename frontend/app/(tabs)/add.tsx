@@ -390,7 +390,10 @@ export default function AddScreen() {
   useEffect(() => {
     if (fromShortcut) {
       if (params.amount) setAmount(String(params.amount));
-      if (params.merchant) setNotes(String(params.merchant));
+      if (params.merchant) {
+        setNotes(String(params.merchant));
+        setShowNotes(true);
+      }
       if (params.type === "income") setTransactionType(1);
       else if (params.type === "transfer") setTransactionType(2);
       // Match category by name

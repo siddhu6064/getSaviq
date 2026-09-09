@@ -76,38 +76,39 @@ and statically verified, not click-tested end-to-end.
 
 ---
 
-**Progress: 14/14 implemented, statically verified (typecheck + 99 unit tests
-+ successful real device build/boot). 13/14 interactively click-tested live
-in an iPhone 17 Pro simulator** (touch-input was fixed — see below — and a
-fresh account was registered and driven through the app):
+\*\*Progress: 14/14 implemented, statically verified (typecheck + 99 unit tests
 
-- #1 PDF export — confirmed: generates a real PDF (19 KB), opens native iOS
+- successful real device build/boot). 13/14 interactively click-tested live
+  in an iPhone 17 Pro simulator\*\* (touch-input was fixed — see below — and a
+  fresh account was registered and driven through the app):
+
+* #1 PDF export — confirmed: generates a real PDF (19 KB), opens native iOS
   share sheet with Preview/Print/Markup.
-- #2 Notification bell — confirmed: opens bottom-sheet modal, correct empty
+* #2 Notification bell — confirmed: opens bottom-sheet modal, correct empty
   state.
-- #3 Account deletion — confirmed: typed-"DELETE"-to-confirm modal renders
+* #3 Account deletion — confirmed: typed-"DELETE"-to-confirm modal renders
   and behaves correctly.
-- #4 Category/Payment breakdown cards — confirmed: render on Home with
+* #4 Category/Payment breakdown cards — confirmed: render on Home with
   correct empty states.
-- #5 Budget Progress summary — confirmed: renders on Home, correct empty
+* #5 Budget Progress summary — confirmed: renders on Home, correct empty
   state.
-- #6 Recommendations widget — confirmed: renders on Home, correct empty
+* #6 Recommendations widget — confirmed: renders on Home, correct empty
   state.
-- #7 Spend-comparison insight — implemented, renders (hidden when no data,
+* #7 Spend-comparison insight — implemented, renders (hidden when no data,
   as designed — same as web).
-- #8 Category/payment filters on Transactions — confirmed: pills present,
+* #8 Category/payment filters on Transactions — confirmed: pills present,
   category picker modal opens, filter applies and updates the empty state.
-- #9 `recurring_end_date` on Add Transaction — confirmed: End Date row
+* #9 `recurring_end_date` on Add Transaction — confirmed: End Date row
   appears when Repeat ≠ Never.
-- #10 Bills Calendar view — confirmed: added a real bill, toggled to
+* #10 Bills Calendar view — confirmed: added a real bill, toggled to
   Calendar, month grid renders with the bill on its due day.
-- #11 Analytics period tabs — confirmed: Week/Month/Year tabs switch
+* #11 Analytics period tabs — confirmed: Week/Month/Year tabs switch
   correctly.
-- #12 Export date-range presets + preview — confirmed: presets and live
+* #12 Export date-range presets + preview — confirmed: presets and live
   preview (income/expenses/txn count) render in the Export modal.
-- #13 Weekly Digest banner — implemented, renders (hidden when no digest
+* #13 Weekly Digest banner — implemented, renders (hidden when no digest
   data yet, as designed).
-- #14 AI Chat clear button — **not live-tested**: its entry point
+* #14 AI Chat clear button — **not live-tested**: its entry point
   (`onPressAskAI` in `SmartInsightsWidget`) only renders once Smart Insights
   has real signals, which a fresh test account doesn't have yet. Verified by
   code read instead (`AIInsightsChatModal.tsx`: Clear button present in
@@ -123,10 +124,10 @@ fresh account was registered and driven through the app):
   `tap` expects point-space coordinates). Both fixed; all further testing
   used a ~0.4375 px→pt conversion.
 - **`frontend/app/(tabs)/more.tsx:22`** — `import * as FileSystem from
-  "expo-file-system"` broke PDF/CSV/JSON export at runtime ("Could not
+"expo-file-system"` broke PDF/CSV/JSON export at runtime ("Could not
   export ... Check your connection" — a misleading message; the real cause
   was unrelated to networking). Root cause: this session's earlier `npx
-  expo install --fix` bumped `expo-file-system` to the SDK 54 package
+expo install --fix` bumped `expo-file-system` to the SDK 54 package
   (19.0.24), whose top-level export dropped the legacy
   `writeAsStringAsync`/`moveAsync`/`documentDirectory` API in favor of a
   new `File`/`Directory` API — the legacy names still exist but now throw
