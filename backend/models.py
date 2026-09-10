@@ -104,6 +104,7 @@ class Expense(BaseModel):
     recurring_frequency: Optional[str] = None
     recurring_start_date: Optional[datetime] = None
     recurring_end_date: Optional[datetime] = None
+    refund_for_expense_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -130,6 +131,24 @@ class SavingsGoal(BaseModel):
     deadline: datetime
     category: str = Field(max_length=100)
     status: Literal["active", "paused", "completed", "cancelled"] = "active"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TripBudget(BaseModel):
+    """A spend cap for a bounded date range (e.g. a trip) — distinct from
+    Budget, which auto-renews on a calendar period (week/month/year). A trip
+    budget is one-off and needs a name; it doesn't fit the recurring model."""
+    trip_id: str = Field(default_factory=lambda: f"trip_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    profile_id: str
+    name: str = Field(max_length=100)
+    amount: float = Field(gt=0)
+    start_date: datetime
+    end_date: datetime
+    category_id: Optional[str] = None  # None means all expense categories count
+    notes: Optional[str] = Field(default=None, max_length=500)
+    status: Literal["active", "completed", "cancelled"] = "active"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -352,6 +371,7 @@ class ExpenseCreate(BaseModel):
     recurring_frequency: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
     recurring_start_date: Optional[datetime] = None
     recurring_end_date: Optional[datetime] = None
+    refund_for_expense_id: Optional[str] = None
 
     @field_validator("description")
     @classmethod
@@ -562,6 +582,65 @@ class SavingsGoalResponse(SavingsGoal):
     projected_completion: SavingsGoalProjection
 
 
+class TripBudgetCreate(BaseModel):
+    profile_id: str
+    name: str = Field(max_length=100)
+    amount: float = Field(gt=0)
+    start_date: datetime
+    end_date: datetime
+    category_id: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=500)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("Field cannot be blank")
+        return value.strip()
+
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        end = self.end_date if self.end_date.tzinfo else self.end_date.replace(tzinfo=timezone.utc)
+        start = self.start_date if self.start_date.tzinfo else self.start_date.replace(tzinfo=timezone.utc)
+        if end < start:
+            raise ValueError("end_date cannot be before start_date")
+        return self
+
+
+class TripBudgetUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=100)
+    amount: Optional[float] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    category_id: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=500)
+    status: Optional[Literal["active", "completed", "cancelled"]] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_optional_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("Field cannot be blank")
+        return value.strip()
+
+    @field_validator("amount")
+    @classmethod
+    def validate_amount(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and value <= 0:
+            raise ValueError("Amount must be greater than 0")
+        return value
+
+
+class TripBudgetResponse(TripBudget):
+    spent: float = 0.0
+    remaining: float = 0.0
+    percentage: float = 0.0
+    is_over_budget: bool = False
+    days_remaining: Optional[int] = None
+
+
 class UserSettingsUpdate(BaseModel):
     dark_mode: Optional[bool] = None
     currency: Optional[str] = Field(None, max_length=10)
@@ -573,6 +652,16 @@ class UserSettingsUpdate(BaseModel):
 
 class ScanReceiptRequest(BaseModel):
     image: str = Field(max_length=5_000_000)  # Base64 encoded image
+
+
+class RefundExpenseRequest(BaseModel):
+    amount: Optional[float] = Field(default=None, gt=0)
+    date: Optional[datetime] = None
+    notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class ParseExpenseTextRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
 
 
 class ChatInsightsRequest(BaseModel):

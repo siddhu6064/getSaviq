@@ -10,11 +10,16 @@ from slowapi.util import get_remote_address
 from config import get_settings
 from database import db
 from deps import get_accessible_profile, get_current_user
-from models import ChatInsightsRequest, ChatInsightsResponse, ScanReceiptRequest
+from models import ChatInsightsRequest, ChatInsightsResponse, ParseExpenseTextRequest, ScanReceiptRequest
 from services.chat_insights_service import build_chat_transaction_context
 from services.chat_prompt_service import build_chat_prompt_template, format_recommendation_answer
 from services.insights_v2_service import generate_spend_comparison
-from services.openai_client import OpenAIClientError, analyze_receipt_image, generate_spending_insights
+from services.openai_client import (
+    OpenAIClientError,
+    analyze_receipt_image,
+    generate_spending_insights,
+    parse_expense_text,
+)
 from utils.date_helpers import add_months, month_start
 
 logger = logging.getLogger(__name__)
@@ -60,6 +65,38 @@ async def scan_receipt(
     except Exception as e:
         logger.error(f"Receipt scan error: {e}")
         raise HTTPException(status_code=500, detail="Failed to scan receipt. Please try again.")
+
+
+@router.post("/ai/parse-expense-text")
+async def parse_expense_text_route(
+    data: ParseExpenseTextRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Parse a natural-language (typed or dictated) sentence into draft expense fields."""
+    try:
+        fallback = {
+            "type": "expense",
+            "amount": None,
+            "merchant": None,
+            "description": None,
+            "date": None,
+            "category_suggestion": "Other",
+            "confidence": 0.0,
+        }
+        try:
+            result = await parse_expense_text(data.text)
+            if not isinstance(result, dict):
+                return fallback
+            return {**fallback, **result}
+        except OpenAIClientError as e:
+            logger.warning(f"Expense text parsing failed: {e}")
+            return fallback
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Parse expense text error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse text. Please try again.")
 
 
 @router.get("/insights")

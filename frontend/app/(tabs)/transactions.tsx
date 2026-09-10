@@ -19,7 +19,7 @@ import { useAppStore } from "../../src/store/appStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Expense } from "../../src/types";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
-import { budgetsAPI, attachmentsAPI } from "../../src/services/api";
+import { budgetsAPI, attachmentsAPI, expensesAPI } from "../../src/services/api";
 import {
   buildTransactionRowHandlers,
   deriveTransactionEmptyState,
@@ -132,6 +132,11 @@ export default function TransactionsScreen() {
   }, [params.category_id, params.payment_method_id]);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [isDeletingAttachment, setIsDeletingAttachment] = useState(false);
+  const [refundedAmount, setRefundedAmount] = useState(0);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundNotes, setRefundNotes] = useState("");
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
   const activeProfileId = activeProfile?.profile_id;
   const loadTransactions = useCallback(async () => {
@@ -278,6 +283,59 @@ export default function TransactionsScreen() {
         },
       },
     ]);
+  };
+
+  useEffect(() => {
+    if (!showDetailModal || !selectedExpense || selectedExpense.type !== "expense") {
+      setRefundedAmount(0);
+      return;
+    }
+    let cancelled = false;
+    expensesAPI
+      .getRefunds(selectedExpense.expense_id)
+      .then((res) => {
+        if (cancelled) return;
+        const total = (res.data ?? []).reduce((sum: number, r: any) => sum + r.amount, 0);
+        setRefundedAmount(total);
+      })
+      .catch(() => {
+        if (!cancelled) setRefundedAmount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showDetailModal, selectedExpense]);
+
+  const handleOpenRefund = () => {
+    if (!selectedExpense) return;
+    const remaining = Math.max(selectedExpense.amount - refundedAmount, 0);
+    setRefundAmount(remaining.toFixed(2));
+    setRefundNotes("");
+    setShowRefundModal(true);
+  };
+
+  const handleSubmitRefund = async () => {
+    if (!selectedExpense) return;
+    const amount = parseFloat(refundAmount);
+    if (!amount || amount <= 0) {
+      Alert.alert("Error", "Please enter a valid refund amount");
+      return;
+    }
+    setIsSubmittingRefund(true);
+    try {
+      await expensesAPI.refund(selectedExpense.expense_id, {
+        amount,
+        notes: refundNotes || undefined,
+      });
+      setShowRefundModal(false);
+      setRefundedAmount((prev) => prev + amount);
+      if (activeProfileId) loadTransactions();
+      Alert.alert("Refund Recorded", "The refund has been logged as income.");
+    } catch {
+      Alert.alert("Error", "Failed to record refund. Please try again.");
+    } finally {
+      setIsSubmittingRefund(false);
+    }
   };
 
   return (
@@ -609,6 +667,9 @@ export default function TransactionsScreen() {
                   {selectedExpense.description && (
                     <DetailRow label="Description" value={selectedExpense.description} />
                   )}
+                  {refundedAmount > 0 && (
+                    <DetailRow label="Refunded" value={formatCurrency(refundedAmount)} />
+                  )}
                 </View>
 
                 {/* Attachments */}
@@ -672,6 +733,19 @@ export default function TransactionsScreen() {
                   </View>
                 )}
 
+                {selectedExpense.type === "expense" && refundedAmount < selectedExpense.amount && (
+                  <TouchableOpacity
+                    testID="tx-detail-refund"
+                    style={modalStyles.refundBtn}
+                    onPress={handleOpenRefund}
+                  >
+                    <Ionicons name="arrow-undo" size={18} color={colors.primary} />
+                    <Text style={[modalStyles.refundBtnText, { color: colors.primary }]}>
+                      Record Refund
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 <View style={modalStyles.actions}>
                   <TouchableOpacity
                     testID="tx-detail-edit"
@@ -692,6 +766,62 @@ export default function TransactionsScreen() {
                 </View>
               </ScrollView>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Refund entry modal */}
+      <Modal visible={showRefundModal} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
+            <View style={[modalStyles.handle, { backgroundColor: colors.border }]} />
+            <View style={modalStyles.header}>
+              <Text style={[modalStyles.title, { color: colors.textPrimary }]}>Record Refund</Text>
+              <TouchableOpacity onPress={() => setShowRefundModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[modalStyles.refundInputLabel, { color: colors.textSecondary }]}>
+              Amount
+            </Text>
+            <TextInput
+              testID="refund-amount-input"
+              style={[
+                modalStyles.refundInput,
+                { color: colors.textPrimary, borderColor: colors.border },
+              ]}
+              value={refundAmount}
+              onChangeText={setRefundAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <Text style={[modalStyles.refundInputLabel, { color: colors.textSecondary }]}>
+              Notes (optional)
+            </Text>
+            <TextInput
+              testID="refund-notes-input"
+              style={[
+                modalStyles.refundInput,
+                { color: colors.textPrimary, borderColor: colors.border },
+              ]}
+              value={refundNotes}
+              onChangeText={setRefundNotes}
+              placeholder="e.g. Returned item"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <TouchableOpacity
+              testID="refund-submit"
+              style={[modalStyles.editBtn, isSubmittingRefund && { opacity: 0.6 }]}
+              onPress={handleSubmitRefund}
+              disabled={isSubmittingRefund}
+            >
+              {isSubmittingRefund ? (
+                <ActivityIndicator color={colors.surface} />
+              ) : (
+                <Text style={modalStyles.editBtnText}>Save Refund</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1775,6 +1905,25 @@ const modalStyles = StyleSheet.create({
     gap: 8,
   },
   deleteBtnText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
+  refundBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0F0F4",
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
+  refundBtnText: { fontSize: 15, fontWeight: "600" },
+  refundInputLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6, marginTop: 12 },
+  refundInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
   // Attachments section
   attachmentsSection: { marginBottom: 16, paddingHorizontal: 4 },
   attachmentsLabel: {

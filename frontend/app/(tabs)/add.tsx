@@ -356,6 +356,8 @@ export default function AddScreen() {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [quickAddText, setQuickAddText] = useState("");
+  const [isParsingQuickAdd, setIsParsingQuickAdd] = useState(false);
   // Notes
   const [showNotes, setShowNotes] = useState(false);
   // Attachments (edit mode only)
@@ -569,6 +571,41 @@ export default function AddScreen() {
     }
   };
 
+  const handleQuickAddParse = async () => {
+    if (!quickAddText.trim()) return;
+    setIsParsingQuickAdd(true);
+    try {
+      const response = await api.post("/ai/parse-expense-text", { text: quickAddText.trim() });
+      const result = response.data;
+
+      if (result.type === "income") setTransactionType(1);
+      else if (result.type === "expense") setTransactionType(0);
+      if (result.amount) setAmount(result.amount.toString());
+      if (result.description) {
+        setNotes(result.description);
+        setShowNotes(true);
+      } else if (result.merchant) {
+        setNotes(result.merchant);
+        setShowNotes(true);
+      }
+      if (result.date) {
+        const parsedDate = new Date(result.date);
+        if (!isNaN(parsedDate.getTime())) setDate(parsedDate);
+      }
+      if (result.category_suggestion) {
+        const suggestion = String(result.category_suggestion).toLowerCase();
+        const match = categories.find((c) => c.name.toLowerCase() === suggestion);
+        if (match) setSelectedCategory(match.category_id);
+      }
+      setQuickAddText("");
+    } catch (error) {
+      console.log("Quick add parse error:", error);
+      Alert.alert("Couldn't parse that", "Please fill in the details manually.");
+    } finally {
+      setIsParsingQuickAdd(false);
+    }
+  };
+
   const handleSave = async () => {
     if (isLoading) return;
 
@@ -704,6 +741,38 @@ export default function AddScreen() {
             selectedIndex={transactionType}
             onSelect={setTransactionType}
           />
+
+          {/* Quick Add — type or dictate (tap the keyboard mic), AI fills the form */}
+          {!editId && (
+            <NeumorphicCard style={styles.quickAddCard}>
+              <View style={styles.quickAddHeader}>
+                <Ionicons name="mic-outline" size={16} color={lightTheme.colors.primary} />
+                <Text style={styles.quickAddLabel}>Quick Add</Text>
+              </View>
+              <View style={styles.quickAddRow}>
+                <TextInput
+                  style={styles.quickAddInput}
+                  value={quickAddText}
+                  onChangeText={setQuickAddText}
+                  placeholder="Spent $45 on lunch at Chipotle yesterday"
+                  placeholderTextColor={lightTheme.colors.placeholder}
+                  returnKeyType="done"
+                  onSubmitEditing={handleQuickAddParse}
+                />
+                <TouchableOpacity
+                  style={styles.quickAddBtn}
+                  onPress={handleQuickAddParse}
+                  disabled={isParsingQuickAdd || !quickAddText.trim()}
+                >
+                  {isParsingQuickAdd ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Ionicons name="sparkles" size={16} color="#FFF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </NeumorphicCard>
+          )}
 
           {/* Amount Card */}
           <NeumorphicCard style={styles.amountCard}>
@@ -1333,6 +1402,27 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: "700", color: lightTheme.colors.text },
   scrollView: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
+  quickAddCard: { marginTop: 12 },
+  quickAddHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  quickAddLabel: { fontSize: 13, fontWeight: "600", color: lightTheme.colors.textSecondary },
+  quickAddRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  quickAddInput: {
+    flex: 1,
+    fontSize: 14,
+    color: lightTheme.colors.text,
+    backgroundColor: "#F2F2F7",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  quickAddBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: lightTheme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   amountCard: { marginTop: 12 },
   amountLabel: { fontSize: 14, color: lightTheme.colors.textTertiary, marginBottom: 8 },
   amountRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },

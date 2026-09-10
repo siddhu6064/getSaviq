@@ -22,6 +22,8 @@ _METRICS = {
     "receipt_failure_count": 0,
     "insights_success_count": 0,
     "insights_failure_count": 0,
+    "parse_text_success_count": 0,
+    "parse_text_failure_count": 0,
 }
 
 
@@ -265,6 +267,130 @@ async def analyze_receipt_image(image_data_url: str) -> dict:
         model=model,
         latency_ms=latency_ms,
         success_count=_METRICS["receipt_success_count"],
+    )
+    return payload
+
+
+async def parse_expense_text(text: str) -> dict:
+    request_id = str(uuid.uuid4())
+    if not text or not text.strip():
+        raise OpenAIClientError("Text is required", error_type="validation_error", request_id=request_id)
+
+    model = os.environ.get("OPENAI_PARSE_TEXT_MODEL", "gpt-4.1-mini")
+    max_output_tokens = _int_from_env("OPENAI_PARSE_TEXT_MAX_TOKENS", default=300, minimum=150, maximum=800)
+    today = time.strftime("%Y-%m-%d")
+    started_at = time.monotonic()
+    _log_ai_event("request_start", "parse_expense_text", request_id=request_id, model=model, max_output_tokens=max_output_tokens)
+
+    try:
+        client = _build_client()
+        response = await client.responses.create(
+            model=model,
+            max_output_tokens=max_output_tokens,
+            input=[
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": (
+                                "You are a natural-language expense-logging assistant. The user speaks or "
+                                "types a short sentence describing a transaction (e.g. 'spent 45 dollars on "
+                                f"lunch at Chipotle yesterday'). Today's date is {today}. Resolve relative "
+                                "dates ('today', 'yesterday', weekday names) against that date. Extract "
+                                "structured fields and return ONLY raw JSON in this exact shape:\n"
+                                "{\n"
+                                '  "type": "<one of: expense, income>",\n'
+                                '  "amount": <number or null>,\n'
+                                '  "merchant": "<string or null>",\n'
+                                '  "description": "<short string or null>",\n'
+                                '  "date": "<YYYY-MM-DD or null>",\n'
+                                '  "category_suggestion": "<one of: Food & Dining, Transportation, Shopping, Bills & Utilities, Entertainment, Healthcare, Travel, Education, Other>",\n'
+                                '  "confidence": <0.0 to 1.0>\n'
+                                "}\n"
+                                "Default type to \"expense\" unless the sentence clearly describes money "
+                                "received (paycheck, refund, deposit). Set missing fields to null. No "
+                                "markdown, no explanations."
+                            ),
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": text.strip()[:500]}],
+                },
+            ],
+        )
+    except OpenAIClientError as exc:
+        if not getattr(exc, "request_id", None):
+            exc.request_id = request_id
+        latency_ms = round((time.monotonic() - started_at) * 1000, 2)
+        _METRICS["parse_text_failure_count"] += 1
+        _log_ai_event(
+            "request_failure",
+            "parse_expense_text",
+            request_id=request_id,
+            model=model,
+            latency_ms=latency_ms,
+            failure_count=_METRICS["parse_text_failure_count"],
+            error_type=exc.error_type,
+            exception=type(exc).__name__,
+        )
+        raise
+    except Exception as exc:
+        provider_error = OpenAIClientError(
+            f"Expense text parsing failed: {exc}",
+            error_type="provider_error",
+            request_id=request_id,
+        )
+        latency_ms = round((time.monotonic() - started_at) * 1000, 2)
+        _METRICS["parse_text_failure_count"] += 1
+        _log_ai_event(
+            "request_failure",
+            "parse_expense_text",
+            request_id=request_id,
+            model=model,
+            latency_ms=latency_ms,
+            failure_count=_METRICS["parse_text_failure_count"],
+            error_type=provider_error.error_type,
+            exception=type(exc).__name__,
+        )
+        raise provider_error from exc
+
+    try:
+        payload = _parse_json_payload(_extract_output_text(response))
+        if not isinstance(payload, dict):
+            raise OpenAIClientError(
+                "Parsed response must be a JSON object",
+                error_type="validation_error",
+                request_id=request_id,
+            )
+    except OpenAIClientError as exc:
+        if not getattr(exc, "request_id", None):
+            exc.request_id = request_id
+        latency_ms = round((time.monotonic() - started_at) * 1000, 2)
+        _METRICS["parse_text_failure_count"] += 1
+        _log_ai_event(
+            "request_failure",
+            "parse_expense_text",
+            request_id=request_id,
+            model=model,
+            latency_ms=latency_ms,
+            failure_count=_METRICS["parse_text_failure_count"],
+            error_type=exc.error_type,
+            exception=type(exc).__name__,
+        )
+        raise
+
+    latency_ms = round((time.monotonic() - started_at) * 1000, 2)
+    _METRICS["parse_text_success_count"] += 1
+    _log_ai_event(
+        "request_success",
+        "parse_expense_text",
+        request_id=request_id,
+        model=model,
+        latency_ms=latency_ms,
+        success_count=_METRICS["parse_text_success_count"],
     )
     return payload
 

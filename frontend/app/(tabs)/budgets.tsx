@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../src/store/appStore";
-import { budgetsAPI } from "../../src/services/api";
+import { budgetsAPI, tripBudgetsAPI } from "../../src/services/api";
 import {
   buildBudgetPayload,
   validateBudgetAmount,
@@ -45,17 +45,39 @@ export default function BudgetsScreen() {
   const [isCategoryBudgetForm, setIsCategoryBudgetForm] = useState(false);
   const previousProfileIdRef = useRef<string | null>(null);
 
+  const [tripBudgets, setTripBudgets] = useState<any[]>([]);
+  const [showTripModal, setShowTripModal] = useState(false);
+  const [editingTripId, setEditingTripId] = useState<string | null>(null);
+  const [tripName, setTripName] = useState("");
+  const [tripAmount, setTripAmount] = useState("");
+  const [tripStartDate, setTripStartDate] = useState("");
+  const [tripEndDate, setTripEndDate] = useState("");
+  const [tripCategoryId, setTripCategoryId] = useState<string | null>(null);
+  const [submittingTrip, setSubmittingTrip] = useState(false);
+
   useEffect(() => {
     const nextProfileId = activeProfile?.profile_id || null;
     if (shouldReloadBudgetsForProfileChange(previousProfileIdRef.current, nextProfileId)) {
       loadBudgets();
+      loadTripBudgets();
     } else if (!nextProfileId) {
       setLoading(false);
       setShowBudgetModal(false);
       setBudgetProgress({ budgets: [], total_budget: null });
+      setTripBudgets([]);
     }
     previousProfileIdRef.current = nextProfileId;
   }, [activeProfile?.profile_id]);
+
+  const loadTripBudgets = async () => {
+    if (!activeProfile) return;
+    try {
+      const response = await tripBudgetsAPI.getAll(activeProfile.profile_id);
+      setTripBudgets(response.data);
+    } catch {
+      // Non-fatal — trip budgets are a secondary section, don't block the screen
+    }
+  };
 
   const loadBudgets = async () => {
     if (!activeProfile) return;
@@ -190,6 +212,101 @@ export default function BudgetsScreen() {
         },
       ],
     );
+  };
+
+  const resetTripModalState = () => {
+    setShowTripModal(false);
+    setEditingTripId(null);
+    setTripName("");
+    setTripAmount("");
+    setTripStartDate("");
+    setTripEndDate("");
+    setTripCategoryId(null);
+  };
+
+  const openCreateTripModal = () => {
+    resetTripModalState();
+    setShowTripModal(true);
+  };
+
+  const openEditTripModal = (trip: any) => {
+    setEditingTripId(trip.trip_id);
+    setTripName(trip.name);
+    setTripAmount(trip.amount.toString());
+    setTripStartDate(trip.start_date.slice(0, 10));
+    setTripEndDate(trip.end_date.slice(0, 10));
+    setTripCategoryId(trip.category_id || null);
+    setShowTripModal(true);
+  };
+
+  const isValidDateString = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value));
+
+  const handleSaveTrip = async () => {
+    if (!activeProfile || submittingTrip) return;
+
+    if (!tripName.trim()) {
+      Alert.alert("Error", "Please enter a trip name");
+      return;
+    }
+    const amount = parseFloat(tripAmount);
+    if (!amount || amount <= 0) {
+      Alert.alert("Error", "Please enter a valid amount");
+      return;
+    }
+    if (!isValidDateString(tripStartDate) || !isValidDateString(tripEndDate)) {
+      Alert.alert("Error", "Please enter valid dates (YYYY-MM-DD)");
+      return;
+    }
+    if (new Date(tripEndDate) < new Date(tripStartDate)) {
+      Alert.alert("Error", "End date cannot be before start date");
+      return;
+    }
+
+    const payload = {
+      profile_id: activeProfile.profile_id,
+      name: tripName.trim(),
+      amount,
+      start_date: new Date(tripStartDate).toISOString(),
+      end_date: new Date(tripEndDate).toISOString(),
+      category_id: tripCategoryId,
+    };
+
+    try {
+      setSubmittingTrip(true);
+      if (editingTripId) {
+        await tripBudgetsAPI.update(editingTripId, payload);
+      } else {
+        await tripBudgetsAPI.create(payload);
+      }
+      resetTripModalState();
+      await loadTripBudgets();
+    } catch {
+      Alert.alert(
+        "Error",
+        editingTripId ? "Failed to update trip budget" : "Failed to save trip budget",
+      );
+    } finally {
+      setSubmittingTrip(false);
+    }
+  };
+
+  const handleDeleteTrip = (tripId: string) => {
+    Alert.alert("Delete Trip Budget", "Are you sure you want to delete this trip budget?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await tripBudgetsAPI.delete(tripId);
+            await loadTripBudgets();
+          } catch {
+            Alert.alert("Error", "Failed to delete trip budget");
+          }
+        },
+      },
+    ]);
   };
 
   const viewState = deriveBudgetsViewState({ activeProfile, isLoading: loading });
@@ -361,9 +478,269 @@ export default function BudgetsScreen() {
           <Text style={[styles.secondaryHint, { color: colors.textSecondary }]}>
             Tap a budget to edit. Long press to delete.
           </Text>
+
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trip Budgets</Text>
+            <TouchableOpacity style={styles.iconButton} onPress={openCreateTripModal}>
+              <Ionicons name="add-circle" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {tripBudgets.length > 0 ? (
+            tripBudgets.map((trip: any) => {
+              const category = categories.find((c) => c.category_id === trip.category_id);
+              return (
+                <TouchableOpacity
+                  key={trip.trip_id}
+                  style={[
+                    styles.categoryCard,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                  onPress={() => openEditTripModal(trip)}
+                  onLongPress={() => handleDeleteTrip(trip.trip_id)}
+                >
+                  <View style={styles.categoryHeader}>
+                    <Ionicons
+                      name="airplane"
+                      size={16}
+                      color={colors.primary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={[styles.categoryName, { color: colors.textPrimary }]}>
+                      {trip.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.categoryPct,
+                        { color: trip.is_over_budget ? colors.expense : colors.primary },
+                      ]}
+                    >
+                      {trip.percentage.toFixed(0)}%
+                    </Text>
+                  </View>
+                  <Text style={[styles.tripMeta, { color: colors.textSecondary }]}>
+                    {new Date(trip.start_date).toLocaleDateString()} –{" "}
+                    {new Date(trip.end_date).toLocaleDateString()}
+                    {category ? ` · ${category.name}` : ""}
+                    {trip.days_remaining != null &&
+                      trip.days_remaining >= 0 &&
+                      ` · ${trip.days_remaining}d left`}
+                  </Text>
+                  <View
+                    style={[styles.categoryProgressBg, { backgroundColor: colors.surfaceHover }]}
+                  >
+                    <View
+                      style={[
+                        styles.categoryProgressBar,
+                        {
+                          width: `${Math.min(trip.percentage, 100)}%`,
+                          backgroundColor: trip.is_over_budget
+                            ? colors.expense
+                            : trip.percentage > 80
+                              ? colors.warning
+                              : colors.income,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.categoryFooter}>
+                    <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
+                      {formatCurrency(trip.spent)}
+                    </Text>
+                    <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
+                      of {formatCurrency(trip.amount)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>
+              No trip budgets yet. Tap + to set a spend cap for a trip.
+            </Text>
+          )}
+
           <View style={{ height: 120 }} />
         </ScrollView>
       </SafeAreaView>
+
+      <Modal visible={showTripModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                {editingTripId ? "Edit Trip Budget" : "Add Trip Budget"}
+              </Text>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={resetTripModalState}
+                disabled={submittingTrip}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Trip Name</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    backgroundColor: colors.surface,
+                  },
+                ]}
+                value={tripName}
+                onChangeText={setTripName}
+                placeholder="e.g. Japan Trip"
+                placeholderTextColor={colors.textSecondary}
+                editable={!submittingTrip}
+              />
+
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                Budget Amount
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    backgroundColor: colors.surface,
+                  },
+                ]}
+                value={tripAmount}
+                onChangeText={setTripAmount}
+                placeholder="Enter amount"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="decimal-pad"
+                editable={!submittingTrip}
+              />
+
+              <View style={styles.tripDateRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                    Start Date
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.border,
+                        color: colors.textPrimary,
+                        backgroundColor: colors.surface,
+                      },
+                    ]}
+                    value={tripStartDate}
+                    onChangeText={setTripStartDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textSecondary}
+                    editable={!submittingTrip}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>End Date</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.border,
+                        color: colors.textPrimary,
+                        backgroundColor: colors.surface,
+                      },
+                    ]}
+                    value={tripEndDate}
+                    onChangeText={setTripEndDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textSecondary}
+                    editable={!submittingTrip}
+                  />
+                </View>
+              </View>
+
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                Category (optional)
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.categoryPicker}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.categoryChip,
+                    { backgroundColor: colors.surfaceHover },
+                    tripCategoryId === null && [
+                      styles.categoryChipActive,
+                      { backgroundColor: colors.primary },
+                    ],
+                  ]}
+                  onPress={() => setTripCategoryId(null)}
+                  disabled={submittingTrip}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      { color: tripCategoryId === null ? colors.surface : colors.textPrimary },
+                    ]}
+                  >
+                    All categories
+                  </Text>
+                </TouchableOpacity>
+                {categories.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.category_id}
+                    style={[
+                      styles.categoryChip,
+                      { backgroundColor: colors.surfaceHover },
+                      tripCategoryId === cat.category_id && [
+                        styles.categoryChipActive,
+                        { backgroundColor: colors.primary },
+                      ],
+                    ]}
+                    onPress={() => setTripCategoryId(cat.category_id)}
+                    disabled={submittingTrip}
+                  >
+                    <View style={[styles.dot, { backgroundColor: cat.color }]} />
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        {
+                          color:
+                            tripCategoryId === cat.category_id
+                              ? colors.surface
+                              : colors.textPrimary,
+                        },
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: colors.primary },
+                  submittingTrip && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveTrip}
+                disabled={submittingTrip}
+              >
+                {submittingTrip ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    {editingTripId ? "Update Trip Budget" : "Save Trip Budget"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showBudgetModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -503,6 +880,8 @@ const styles = StyleSheet.create({
   categoryProgressBar: { height: "100%" },
   categoryFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
   categoryMeta: { fontSize: 13 },
+  tripMeta: { fontSize: 12, marginBottom: 8 },
+  tripDateRow: { flexDirection: "row", gap: 10 },
   hint: { fontSize: 14, marginVertical: 8 },
   secondaryHint: { fontSize: 12, marginTop: 8 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },

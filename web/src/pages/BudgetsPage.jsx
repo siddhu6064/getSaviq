@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Input, Modal, Spinner, Badge } from "../components/ui";
-import { Target, Plus, Edit2, Trash2 } from "lucide-react";
-import { formatCurrency, cn, getCategoryIcon } from "../lib/utils";
-import { budgetsAPI } from "../services/api";
+import { Target, Plus, Edit2, Trash2, Plane } from "lucide-react";
+import { formatCurrency, formatDate, cn, getCategoryIcon } from "../lib/utils";
+import { budgetsAPI, tripBudgetsAPI } from "../services/api";
 import { useIsMounted } from "../hooks/useIsMounted";
 import ProfileSelector from "../components/ProfileSelector";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+
+const EMPTY_TRIP_FORM = { name: "", amount: "", start_date: "", end_date: "", category_id: "" };
 
 export default function BudgetsPage() {
   const { profiles, categories, activeProfile, setActiveProfile, loading } = useAppData();
@@ -25,6 +27,13 @@ export default function BudgetsPage() {
     amount: "",
     period: "monthly",
   });
+
+  const [tripBudgets, setTripBudgets] = useState([]);
+  const [showTripModal, setShowTripModal] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
+  const [deleteTripConfirm, setDeleteTripConfirm] = useState(null);
+  const [isSubmittingTrip, setIsSubmittingTrip] = useState(false);
+  const [tripForm, setTripForm] = useState(EMPTY_TRIP_FORM);
 
   const loadBudgetProgress = useCallback(async () => {
     if (!activeProfile) return;
@@ -46,6 +55,23 @@ export default function BudgetsPage() {
   useEffect(() => {
     loadBudgetProgress();
   }, [loadBudgetProgress]);
+
+  const loadTripBudgets = useCallback(async () => {
+    if (!activeProfile) return;
+    try {
+      const response = await tripBudgetsAPI.getAll({ profile_id: activeProfile.profile_id });
+      if (isMounted.current) setTripBudgets(response.data);
+    } catch (error) {
+      console.error("trip_budgets.load_failed", {
+        message: error?.message,
+        status: error?.response?.status,
+      });
+    }
+  }, [activeProfile?.profile_id]);
+
+  useEffect(() => {
+    loadTripBudgets();
+  }, [loadTripBudgets]);
 
   const handleSaveBudget = useCallback(async () => {
     try {
@@ -104,6 +130,66 @@ export default function BudgetsPage() {
     setEditingBudget(null);
     setBudgetForm({ category_id: "", amount: "", period: "monthly" });
     setShowModal(true);
+  }, []);
+
+  const handleSaveTrip = useCallback(async () => {
+    try {
+      setIsSubmittingTrip(true);
+      const data = {
+        profile_id: activeProfile.profile_id,
+        name: tripForm.name,
+        amount: parseFloat(tripForm.amount),
+        start_date: new Date(tripForm.start_date).toISOString(),
+        end_date: new Date(tripForm.end_date).toISOString(),
+        category_id: tripForm.category_id || null,
+      };
+
+      if (editingTrip) {
+        await tripBudgetsAPI.update(editingTrip.trip_id, data);
+      } else {
+        await tripBudgetsAPI.create(data);
+      }
+
+      await loadTripBudgets();
+      setShowTripModal(false);
+      setEditingTrip(null);
+      setTripForm(EMPTY_TRIP_FORM);
+    } catch (error) {
+      console.error("Failed to save trip budget:", error);
+    } finally {
+      setIsSubmittingTrip(false);
+    }
+  }, [activeProfile?.profile_id, tripForm, editingTrip, loadTripBudgets]);
+
+  const handleDeleteTrip = useCallback(
+    async (tripId) => {
+      try {
+        await tripBudgetsAPI.delete(tripId);
+        await loadTripBudgets();
+        setDeleteTripConfirm(null);
+      } catch (error) {
+        console.error("Failed to delete trip budget:", error);
+      }
+    },
+    [loadTripBudgets],
+  );
+
+  const openEditTripModal = useCallback((trip) => {
+    setEditingTrip(trip);
+    setTripForm({
+      name: trip.name,
+      amount: trip.amount.toString(),
+      start_date: trip.start_date.slice(0, 10),
+      end_date: trip.end_date.slice(0, 10),
+      category_id: trip.category_id || "",
+    });
+    setShowTripModal(true);
+  }, []);
+
+  const openAddTripModal = useCallback(() => {
+    setEditingTrip(null);
+    setTripForm(EMPTY_TRIP_FORM);
+    setShowTripModal(true);
   }, []);
 
   if (loading) {
@@ -300,6 +386,213 @@ export default function BudgetsPage() {
           </Card>
         )}
       </div>
+
+      {/* Trip Budgets */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold font-heading text-text-primary">Trip Budgets</h2>
+          <Button
+            variant="secondary"
+            onClick={openAddTripModal}
+            data-testid="add-trip-budget-button"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Trip Budget
+          </Button>
+        </div>
+
+        {tripBudgets.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tripBudgets.map((trip) => {
+              const category = categories.find((c) => c.category_id === trip.category_id);
+              return (
+                <Card key={trip.trip_id} hover className="relative group">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-xl flex-shrink-0 bg-brand-primary/10">
+                      <Plane className="w-6 h-6 text-brand-primary" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-text-primary">{trip.name}</h3>
+                        <div className="flex items-center gap-2">
+                          {trip.is_over_budget ? (
+                            <Badge variant="expense">Over Budget</Badge>
+                          ) : trip.percentage > 80 ? (
+                            <Badge variant="warning">Almost Full</Badge>
+                          ) : null}
+                          <span className="text-sm font-semibold text-text-secondary">
+                            {trip.percentage}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-text-secondary mb-2">
+                        {formatDate(trip.start_date)} – {formatDate(trip.end_date)}
+                        {category ? ` · ${category.name}` : ""}
+                        {trip.days_remaining != null &&
+                          trip.days_remaining >= 0 &&
+                          ` · ${trip.days_remaining}d left`}
+                      </p>
+
+                      <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden mb-2">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-500",
+                            trip.is_over_budget
+                              ? "bg-expense"
+                              : trip.percentage > 80
+                                ? "bg-warning"
+                                : "bg-income",
+                          )}
+                          style={{ width: `${Math.min(trip.percentage, 100)}%` }}
+                        />
+                      </div>
+
+                      <div className="flex justify-between text-sm text-text-secondary">
+                        <span>{formatCurrency(trip.spent)} spent</span>
+                        <span>of {formatCurrency(trip.amount)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      aria-label="Edit trip budget"
+                      onClick={() => openEditTripModal(trip)}
+                      className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4 text-text-secondary" />
+                    </button>
+                    <button
+                      aria-label="Delete trip budget"
+                      onClick={() => setDeleteTripConfirm(trip)}
+                      className="p-2 hover:bg-expense-bg rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-expense" />
+                    </button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="text-center py-8">
+            <Plane className="w-12 h-12 text-brand-primary mx-auto mb-4" />
+            <p className="text-text-secondary">No trip budgets yet</p>
+            <p className="text-text-secondary text-sm mt-1">
+              Set a spend cap for a trip's date range — separate from your recurring budgets
+            </p>
+            <Button onClick={openAddTripModal} variant="secondary" className="mt-4">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Trip Budget
+            </Button>
+          </Card>
+        )}
+      </div>
+
+      {/* Add/Edit Trip Budget Modal */}
+      <Modal
+        isOpen={showTripModal}
+        onClose={() => {
+          setShowTripModal(false);
+          setEditingTrip(null);
+        }}
+        title={editingTrip ? "Edit Trip Budget" : "Add Trip Budget"}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Trip Name"
+            value={tripForm.name}
+            onChange={(e) => setTripForm({ ...tripForm, name: e.target.value })}
+            placeholder="e.g. Japan Trip"
+            data-testid="trip-name-input"
+          />
+
+          <Input
+            label="Budget Amount"
+            type="number"
+            value={tripForm.amount}
+            onChange={(e) => setTripForm({ ...tripForm, amount: e.target.value })}
+            placeholder="Enter amount"
+            data-testid="trip-amount-input"
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Start Date"
+              type="date"
+              value={tripForm.start_date}
+              onChange={(e) => setTripForm({ ...tripForm, start_date: e.target.value })}
+              data-testid="trip-start-date-input"
+            />
+            <Input
+              label="End Date"
+              type="date"
+              value={tripForm.end_date}
+              onChange={(e) => setTripForm({ ...tripForm, end_date: e.target.value })}
+              data-testid="trip-end-date-input"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Category (optional)
+            </label>
+            <select
+              value={tripForm.category_id}
+              onChange={(e) => setTripForm({ ...tripForm, category_id: e.target.value })}
+              className="w-full px-4 py-3 bg-white border border-border-color rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+              data-testid="trip-category-select"
+            >
+              <option value="">All categories</option>
+              {categories.map((cat) => (
+                <option key={cat.category_id} value={cat.category_id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowTripModal(false);
+                setEditingTrip(null);
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveTrip}
+              disabled={
+                !tripForm.name ||
+                !tripForm.amount ||
+                !tripForm.start_date ||
+                !tripForm.end_date ||
+                isSubmittingTrip
+              }
+              className="flex-1"
+              data-testid="save-trip-budget-button"
+            >
+              {isSubmittingTrip ? <Spinner size="sm" className="text-white" /> : "Save Trip Budget"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Trip Budget Confirmation */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTripConfirm}
+        onClose={() => setDeleteTripConfirm(null)}
+        onConfirm={() => handleDeleteTrip(deleteTripConfirm?.trip_id)}
+        title="Delete Trip Budget"
+        message="Are you sure you want to delete this trip budget? This action cannot be undone."
+        testId="confirm-delete-trip-budget"
+      />
 
       {/* Add/Edit Budget Modal */}
       <Modal

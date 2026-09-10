@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Paperclip,
   FileText as FileTextIcon,
+  Undo2,
 } from "lucide-react";
 import { formatCurrency, formatDate, cn } from "../lib/utils";
 import { getUserFriendlyError } from "../lib/errorMessages";
@@ -18,6 +19,7 @@ import { expensesAPI, exportAPI } from "../services/api";
 import AddTransactionModal from "../components/AddTransactionModal";
 import { useIsMounted } from "../hooks/useIsMounted";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import RefundModal from "../components/RefundModal";
 import { useDateRangeFilter } from "../hooks/useDateRangeFilter";
 
 export default function TransactionsPage() {
@@ -35,6 +37,7 @@ export default function TransactionsPage() {
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [refundingTx, setRefundingTx] = useState(null);
   const [editingTx, setEditingTx] = useState(null);
   const [viewingTx, setViewingTx] = useState(null);
   const [expandedTxId, setExpandedTxId] = useState(null);
@@ -451,6 +454,18 @@ export default function TransactionsPage() {
                       {formatCurrency(tx.amount)}
                     </span>
                     <div className="inline-flex items-center gap-1">
+                      {tx.type === "expense" && (
+                        <button
+                          aria-label="Record refund"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRefundingTx(tx);
+                          }}
+                          className="p-2 text-text-secondary hover:text-brand-primary hover:bg-surface-hover rounded-lg transition-all"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         aria-label="Edit transaction"
                         onClick={(e) => {
@@ -556,6 +571,19 @@ export default function TransactionsPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-1">
+                            {tx.type === "expense" && (
+                              <button
+                                aria-label="Record refund"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRefundingTx(tx);
+                                }}
+                                className="p-2 text-text-secondary hover:text-brand-primary hover:bg-surface-hover rounded-lg transition-all"
+                                data-testid={`refund-${tx.expense_id}`}
+                              >
+                                <Undo2 className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               aria-label="Edit transaction"
                               onClick={(e) => {
@@ -853,6 +881,13 @@ export default function TransactionsPage() {
         onConfirm={() => handleDelete(deleteConfirm?.expense_id)}
         title="Delete Transaction"
         message={`Are you sure you want to delete "${deleteConfirm?.description}"? This action cannot be undone.`}
+      />
+
+      <RefundModal
+        isOpen={!!refundingTx}
+        onClose={() => setRefundingTx(null)}
+        expense={refundingTx}
+        onRefunded={loadTransactions}
       />
     </div>
   );

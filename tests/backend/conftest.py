@@ -176,6 +176,7 @@ class FakeDB:
         self.notifications = FakeCollection()
         self.profile_members = FakeCollection()
         self.bills = FakeCollection()
+        self.trip_budgets = FakeCollection()
 
     async def command(self, command_name):
         if command_name == "ping":
@@ -187,7 +188,7 @@ class FakeDB:
 def fake_db(monkeypatch):
     import database
     from routers import auth, analytics, insights, budgets, expenses, profiles, categories, misc, savings_goals, forecast, ai, subscriptions, weekly_digest, dashboard_metrics
-    from routers import net_worth, push, notifications, invites, bills
+    from routers import net_worth, push, notifications, invites, bills, trip_budgets
     import deps
     import main
 
@@ -215,6 +216,7 @@ def fake_db(monkeypatch):
     monkeypatch.setattr(notifications, "db", db)
     monkeypatch.setattr(invites, "db", db)
     monkeypatch.setattr(bills, "db", db)
+    monkeypatch.setattr(trip_budgets, "db", db)
     monkeypatch.setattr(deps, "db", db)
 
     async def _noop():

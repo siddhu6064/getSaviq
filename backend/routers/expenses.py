@@ -16,7 +16,7 @@ from pymongo import ReturnDocument
 
 from database import db
 from deps import get_accessible_profile, get_current_user
-from models import Expense, ExpenseCreate, ExpenseUpdate, MessageResponse
+from models import Expense, ExpenseCreate, ExpenseUpdate, MessageResponse, RefundExpenseRequest
 
 router = APIRouter(tags=["expenses"])
 logger = logging.getLogger(__name__)
@@ -348,6 +348,7 @@ async def create_expense(data: ExpenseCreate, current_user: dict = Depends(get_c
         recurring_frequency=data.recurring_frequency,
         recurring_start_date=data.recurring_start_date,
         recurring_end_date=data.recurring_end_date,
+        refund_for_expense_id=data.refund_for_expense_id,
     )
     await db.expenses.insert_one(expense.model_dump())
 
@@ -381,6 +382,47 @@ async def create_expense(data: ExpenseCreate, current_user: dict = Depends(get_c
         )
 
     return expense.model_dump()
+
+
+@router.post("/expenses/{expense_id}/refund", response_model=Expense)
+async def refund_expense(
+    expense_id: str,
+    data: RefundExpenseRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Record a refund against an existing expense as a linked income transaction."""
+    original = await db.expenses.find_one(
+        {"expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
+    )
+    if not original:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    refund_data = ExpenseCreate(
+        profile_id=original["profile_id"],
+        type="income",
+        amount=data.amount if data.amount is not None else original["amount"],
+        category_id=original.get("category_id"),
+        payment_method_id=original["payment_method_id"],
+        description=f"Refund: {original['description']}",
+        merchant=original.get("merchant"),
+        date=data.date or datetime.now(timezone.utc),
+        notes=data.notes,
+        refund_for_expense_id=expense_id,
+    )
+    return await create_expense(refund_data, current_user)
+
+
+@router.get("/expenses/{expense_id}/refunds", response_model=list[Expense])
+async def get_expense_refunds(expense_id: str, current_user: dict = Depends(get_current_user)):
+    """List refund transactions linked back to a given expense."""
+    await _ensure_owned(
+        db.expenses, "expense_id", expense_id, current_user["user_id"], "Expense not found"
+    )
+    refunds = await db.expenses.find(
+        {"refund_for_expense_id": expense_id, "user_id": current_user["user_id"]}, {"_id": 0}
+    ).to_list(100)
+    refunds.sort(key=lambda x: x.get("date"), reverse=True)
+    return refunds
 
 
 @router.put("/expenses/{expense_id}", response_model=Expense)

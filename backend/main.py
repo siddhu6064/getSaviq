@@ -37,6 +37,7 @@ from routers.push import router as push_router
 from routers.notifications import router as notifications_router
 from routers.invites import router as invites_router
 from routers.bills import router as bills_router, check_bill_due_reminders
+from routers.trip_budgets import router as trip_budgets_router
 from services.push_service import send_weekly_digest_pushes
 from models import ApiRootResponse, StatusResponse
 
@@ -148,6 +149,7 @@ app.include_router(push_router,       prefix=PREFIX)
 app.include_router(notifications_router, prefix=PREFIX)
 app.include_router(invites_router,      prefix=PREFIX)
 app.include_router(bills_router,        prefix=PREFIX)
+app.include_router(trip_budgets_router, prefix=PREFIX)
 
 @app.get("/api", response_model=ApiRootResponse)
 async def root():

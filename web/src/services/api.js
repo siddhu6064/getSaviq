@@ -84,6 +84,8 @@ export const expensesAPI = {
   create: (data) => api.post("/expenses", data),
   update: (expenseId, data) => api.put(`/expenses/${expenseId}`, data),
   delete: (expenseId) => api.delete(`/expenses/${expenseId}`),
+  refund: (expenseId, data) => api.post(`/expenses/${expenseId}/refund`, data),
+  getRefunds: (expenseId) => api.get(`/expenses/${expenseId}/refunds`),
 };
 
 // Attachments API
@@ -132,6 +134,7 @@ export const insightsAPI = {
 export const aiAPI = {
   scanReceipt: (image) => api.post("/scan-receipt", { image }),
   chatInsights: (data) => api.post("/ai/chat-insights", data),
+  parseExpenseText: (text) => api.post("/ai/parse-expense-text", { text }),
 };
 
 // Budget API
@@ -172,6 +175,14 @@ export const savingsGoalsAPI = {
   create: (data) => api.post("/savings-goals", data),
   update: (goalId, data) => api.put(`/savings-goals/${goalId}`, data),
   delete: (goalId) => api.delete(`/savings-goals/${goalId}`),
+};
+
+// Trip Budgets API
+export const tripBudgetsAPI = {
+  getAll: (params) => api.get("/trip-budgets", { params }),
+  create: (data) => api.post("/trip-budgets", data),
+  update: (tripId, data) => api.put(`/trip-budgets/${tripId}`, data),
+  delete: (tripId) => api.delete(`/trip-budgets/${tripId}`),
 };
 
 // Net Worth API

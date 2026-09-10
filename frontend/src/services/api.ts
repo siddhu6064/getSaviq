@@ -64,6 +64,13 @@ api.interceptors.response.use(
   },
 );
 
+// Expenses API (beyond the appStore CRUD wrappers)
+export const expensesAPI = {
+  refund: (expenseId: string, data: { amount?: number; date?: string; notes?: string }) =>
+    api.post(`/expenses/${expenseId}/refund`, data),
+  getRefunds: (expenseId: string) => api.get(`/expenses/${expenseId}/refunds`),
+};
+
 // Budget API
 export const budgetsAPI = {
   create: (data: any) => api.post("/budgets", data),
@@ -71,6 +78,14 @@ export const budgetsAPI = {
   delete: (budgetId: string) => api.delete(`/budgets/${budgetId}`),
   getProgress: (profileId: string) =>
     api.get("/budgets/progress", { params: { profile_id: profileId } }),
+};
+
+// Trip Budgets API
+export const tripBudgetsAPI = {
+  getAll: (profileId: string) => api.get("/trip-budgets", { params: { profile_id: profileId } }),
+  create: (data: any) => api.post("/trip-budgets", data),
+  update: (tripId: string, data: any) => api.put(`/trip-budgets/${tripId}`, data),
+  delete: (tripId: string) => api.delete(`/trip-budgets/${tripId}`),
 };
 
 // Settings API
@@ -130,6 +145,7 @@ export const forecastAPI = {
 export const aiAPI = {
   chatInsights: (data: { profile_id: string; question: string; recent_days?: number }) =>
     api.post("/ai/chat-insights", data),
+  parseExpenseText: (text: string) => api.post("/ai/parse-expense-text", { text }),
 };
 
 // Attachments API

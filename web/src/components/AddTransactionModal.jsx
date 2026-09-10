@@ -14,6 +14,7 @@ import {
   Paperclip,
   Plus,
   X,
+  Mic,
 } from "lucide-react";
 import { expensesAPI, aiAPI, attachmentsAPI } from "../services/api";
 
@@ -52,6 +53,12 @@ export default function AddTransactionModal({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [attachmentError, setAttachmentError] = useState("");
+  const [quickAddText, setQuickAddText] = useState("");
+  const [isParsingQuickAdd, setIsParsingQuickAdd] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const SpeechRecognitionCtor =
+    typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const resetForm = () => {
     setType("expense");
@@ -74,6 +81,7 @@ export default function AddTransactionModal({
     setIsPending(false);
     setError("");
     setFieldErrors({});
+    setQuickAddText("");
   };
 
   useEffect(() => {
@@ -189,6 +197,48 @@ export default function AddTransactionModal({
     } catch (err) {
       setError("Failed to process image");
       setIsScanning(false);
+    }
+  };
+
+  const handleQuickAddMic = () => {
+    if (!SpeechRecognitionCtor) return;
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (e) => {
+      setQuickAddText(e.results[0][0].transcript);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+    setIsListening(true);
+  };
+
+  const handleQuickAddParse = async () => {
+    if (!quickAddText.trim()) return;
+    setIsParsingQuickAdd(true);
+    setError("");
+    try {
+      const response = await aiAPI.parseExpenseText(quickAddText.trim());
+      const result = response.data;
+      if (result.type === "income" || result.type === "expense") setType(result.type);
+      if (result.amount) setAmount(String(result.amount));
+      if (result.description) setDescription(result.description);
+      else if (result.merchant) setDescription(result.merchant);
+      if (result.merchant) setMerchant(result.merchant);
+      if (result.date) setDate(result.date);
+      if (result.category_suggestion) {
+        const matchedCategory = categories.find(
+          (c) => c.name.toLowerCase() === result.category_suggestion.toLowerCase(),
+        );
+        if (matchedCategory) setCategoryId(matchedCategory.category_id);
+      }
+      setQuickAddText("");
+    } catch {
+      setError("Couldn't parse that — please fill in the details manually.");
+    } finally {
+      setIsParsingQuickAdd(false);
     }
   };
 
@@ -394,6 +444,56 @@ export default function AddTransactionModal({
             </div>
           </label>
         </div>
+
+        {/* Quick Add: type or dictate a sentence, AI fills the form */}
+        {mode !== "edit" && (
+          <div className="p-4 bg-surface-hover rounded-xl">
+            <p className="text-sm font-medium text-text-primary flex items-center gap-2 mb-2">
+              <Mic className="w-4 h-4 text-brand-primary" />
+              Quick Add
+            </p>
+            <p className="text-xs text-text-secondary mb-2">
+              Type or dictate, e.g. "Spent $45 on lunch at Chipotle yesterday"
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={quickAddText}
+                onChange={(e) => setQuickAddText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleQuickAddParse();
+                  }
+                }}
+                placeholder="Spent $45 on lunch at Chipotle yesterday"
+                className="flex-1 min-w-0 px-4 py-2.5 bg-white border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+              />
+              {SpeechRecognitionCtor && (
+                <button
+                  type="button"
+                  onClick={handleQuickAddMic}
+                  aria-label="Dictate"
+                  className={`px-3 py-2.5 border border-border-color rounded-lg transition-colors ${
+                    isListening
+                      ? "bg-brand-primary text-white"
+                      : "bg-white text-text-secondary hover:bg-surface-hover"
+                  }`}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleQuickAddParse}
+                disabled={isParsingQuickAdd || !quickAddText.trim()}
+                className="px-4 py-2.5 bg-white border border-border-color rounded-lg hover:bg-surface-hover transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                {isParsingQuickAdd ? <Spinner size="sm" /> : "Parse"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && <div className="p-3 bg-expense-bg text-expense text-sm rounded-xl">{error}</div>}
 
