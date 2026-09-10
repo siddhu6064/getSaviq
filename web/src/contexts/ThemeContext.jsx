@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { settingsAPI } from "../services/api";
 import { useAuth } from "./AuthContext";
+import { setActiveCurrency } from "@shared/utils";
 
 const ThemeContext = createContext(null);
 
@@ -37,6 +38,7 @@ export function ThemeProvider({ children }) {
       if (isAuthenticated) {
         const response = await settingsAPI.get();
         setDarkMode(response.data.dark_mode || false);
+        setActiveCurrency(response.data.currency);
       }
     } catch (error) {
       console.log("Settings load error:", error);

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAppData } from "../contexts/AppDataContext";
 import { Card, Button, Spinner } from "../components/ui";
-import { Download, FileText, FileSpreadsheet, Calendar, Filter } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Calendar, Filter, Upload } from "lucide-react";
 import { formatCurrency, formatDate } from "../lib/utils";
 import { getUserFriendlyError } from "../lib/errorMessages";
-import { exportAPI } from "../services/api";
+import { exportAPI, importAPI } from "../services/api";
 import ProfileSelector from "../components/ProfileSelector";
 
 export default function ExportPage() {
@@ -13,6 +13,8 @@ export default function ExportPage() {
   const [exporting, setExporting] = useState(false);
   const [exportData, setExportData] = useState(null);
   const [error, setError] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0],
@@ -166,6 +168,28 @@ export default function ExportPage() {
       setExporting(false);
     }
   }, [activeProfile, dateRange, exportData]);
+
+  const handleImportCSV = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = ""; // allow re-selecting the same file later
+      if (!file || !activeProfile) return;
+      try {
+        setImporting(true);
+        setImportResult(null);
+        setError(null);
+        const response = await importAPI.importCSV(activeProfile.profile_id, file);
+        setImportResult(response.data);
+        loadExportPreview();
+      } catch (error) {
+        console.error("Failed to import CSV:", error);
+        setError(getUserFriendlyError(error, "Failed to import CSV. Please try again."));
+      } finally {
+        setImporting(false);
+      }
+    },
+    [activeProfile, loadExportPreview],
+  );
 
   if (loading) {
     return (
@@ -358,6 +382,54 @@ export default function ExportPage() {
           </div>
         </Card>
       </div>
+
+      {/* Import CSV */}
+      <Card>
+        <h2 className="text-lg font-bold font-heading text-text-primary mb-4 flex items-center gap-2">
+          <Upload className="w-5 h-5 text-brand-primary" />
+          Import CSV
+        </h2>
+        <p className="text-sm text-text-secondary mb-4">
+          Import transactions from a CSV file with columns: Date, Type, Description, Amount,
+          Category, Payment Method, Merchant, Notes (same format as Export as CSV above). Categories
+          and payment methods that don't already exist are created automatically.
+        </p>
+        <label
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity ${importing ? "opacity-60 pointer-events-none" : ""}`}
+        >
+          {importing ? <Spinner size="sm" /> : <Upload className="w-4 h-4" />}
+          Choose CSV File
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleImportCSV}
+            className="hidden"
+            disabled={importing}
+            data-testid="import-csv-input"
+          />
+        </label>
+        {importResult && (
+          <div className="mt-4 p-4 bg-surface-hover rounded-xl text-sm">
+            <p className="text-text-primary">
+              Imported <strong>{importResult.imported}</strong> transaction
+              {importResult.imported === 1 ? "" : "s"}
+              {importResult.skipped > 0 && (
+                <>
+                  , skipped <strong>{importResult.skipped}</strong>
+                </>
+              )}
+              .
+            </p>
+            {importResult.errors?.length > 0 && (
+              <ul className="mt-2 space-y-1 text-text-secondary list-disc list-inside">
+                {importResult.errors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

@@ -108,6 +108,24 @@ export const exportAPI = {
   },
 };
 
+// Import API
+export const importAPI = {
+  importCSV: (profileId: string, uri: string, filename: string) => {
+    const formData = new FormData();
+    formData.append("file", { uri, name: filename, type: "text/csv" } as any);
+    return api.post("/import/csv", formData, {
+      params: { profile_id: profileId },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+};
+
+// Forecast API
+export const forecastAPI = {
+  getCashFlow: (profileId: string, days: number = 30) =>
+    api.get("/forecast/cash-flow", { params: { profile_id: profileId, days } }),
+};
+
 // AI API
 export const aiAPI = {
   chatInsights: (data: { profile_id: string; question: string; recent_days?: number }) =>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { SavingsGoal } from "../../utils/goals";
+import { formatCurrency } from "@shared/utils";
 
 interface TopSavingsGoalCardProps {
   isLoading: boolean;
@@ -54,7 +55,7 @@ export function TopSavingsGoalCard({
             </View>
 
             <Text style={styles.amounts}>
-              $ {currentAmount.toFixed(2)} of $ {targetAmount.toFixed(2)}
+              {formatCurrency(currentAmount)} of {formatCurrency(targetAmount)}
             </Text>
             <Text style={styles.projection}>{projectionText}</Text>
           </>

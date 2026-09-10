@@ -37,6 +37,7 @@ import AddTransactionModal from "../components/AddTransactionModal";
 import SmartInsightsCard from "../components/SmartInsightsCard";
 import { buildGoalDisplayModel, selectTopPriorityGoal } from "../lib/goalsPresentation";
 import ForecastCard from "../components/ForecastCard";
+import CashFlowCard from "../components/CashFlowCard";
 import SubscriptionsCard from "../components/SubscriptionsCard";
 import WeeklyDigestCard from "../components/WeeklyDigestCard";
 import WeeklyDigestBanner from "../components/WeeklyDigestBanner";
@@ -1326,6 +1327,8 @@ export default function DashboardPage() {
             error={forecastError}
             onRetry={loadForecast}
           />
+
+          <CashFlowCard profileId={activeProfile?.profile_id} />
 
           <SubscriptionsCard
             summary={subscriptionsSummary}

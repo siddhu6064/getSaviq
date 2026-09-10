@@ -20,6 +20,7 @@ import {
   validateBudgetCategory,
 } from "../../src/utils/budgetFormState";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { formatCurrency } from "@shared/utils";
 import {
   createCategoryBudgetModalState,
   createTotalBudgetModalState,
@@ -234,7 +235,7 @@ export default function BudgetsScreen() {
                     Total Budget
                   </Text>
                   <Text style={[styles.totalAmount, { color: colors.textPrimary }]}>
-                    $ {totalBudget.amount.toFixed(2)}
+                    {formatCurrency(totalBudget.amount)}
                   </Text>
                 </View>
                 <Text
@@ -259,7 +260,7 @@ export default function BudgetsScreen() {
               </View>
               <View style={styles.totalFooter}>
                 <Text style={[styles.totalMeta, { color: colors.textSecondary }]}>
-                  Spent: ${totalBudget.spent.toFixed(2)}
+                  Spent: {formatCurrency(totalBudget.spent)}
                 </Text>
                 <Text
                   style={[
@@ -342,10 +343,10 @@ export default function BudgetsScreen() {
                   </View>
                   <View style={styles.categoryFooter}>
                     <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
-                      ${budget.spent.toFixed(0)}
+                      {formatCurrency(budget.spent)}
                     </Text>
                     <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
-                      of ${budget.amount.toFixed(0)}
+                      of {formatCurrency(budget.amount)}
                     </Text>
                   </View>
                 </TouchableOpacity>

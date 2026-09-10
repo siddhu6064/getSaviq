@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { lightTheme } from "../src/components/NeumorphicUI";
+import { AppLockGate } from "../src/components/AppLockGate";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as Notifications from "expo-notifications";
@@ -267,10 +268,12 @@ function RootLayoutNav() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <Slot />
-      <InAppBanner banner={banner} slideAnim={slideAnim} />
-    </View>
+    <AppLockGate isAuthenticated={isAuthenticated}>
+      <View style={{ flex: 1 }}>
+        <Slot />
+        <InAppBanner banner={banner} slideAnim={slideAnim} />
+      </View>
+    </AppLockGate>
   );
 }
 

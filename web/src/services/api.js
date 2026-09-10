@@ -145,6 +145,7 @@ export const budgetsAPI = {
 // Forecast API
 export const forecastAPI = {
   getOverview: (params) => api.get("/forecast", { params }),
+  getCashFlow: (params) => api.get("/forecast/cash-flow", { params }),
 };
 
 // Subscriptions API
@@ -230,6 +231,15 @@ export const exportAPI = {
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
     return api.get("/export/json", { params });
+  },
+};
+
+// Import API
+export const importAPI = {
+  importCSV: (profileId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/import/csv", formData, { params: { profile_id: profileId } });
   },
 };
 

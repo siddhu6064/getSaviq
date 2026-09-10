@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../src/store/appStore";
 import { buildNetBalanceSummary } from "../../src/utils/netBalance";
+import { formatCurrency } from "@shared/utils";
 
 export default function AccountsScreen() {
   const { paymentMethods, expenses, activeProfile, fetchExpenses, fetchPaymentMethods } =
@@ -48,21 +49,21 @@ export default function AccountsScreen() {
           <View style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>Net Balance</Text>
             <Text style={[styles.balanceAmount, totalBalance < 0 && { color: "#FF3B30" }]}>
-              $ {totalBalance.toFixed(2)}
+              {formatCurrency(totalBalance)}
             </Text>
             <View style={styles.balanceRow}>
               <View style={styles.balanceStat}>
                 <View style={[styles.dot, { backgroundColor: "#007AFF" }]} />
                 <Text style={styles.balanceStatLabel}>Income</Text>
                 <Text style={[styles.balanceStatValue, { color: "#007AFF" }]}>
-                  $ {totalIncome.toFixed(2)}
+                  {formatCurrency(totalIncome)}
                 </Text>
               </View>
               <View style={styles.balanceStat}>
                 <View style={[styles.dot, { backgroundColor: "#FF3B30" }]} />
                 <Text style={styles.balanceStatLabel}>Expense</Text>
                 <Text style={[styles.balanceStatValue, { color: "#FF3B30" }]}>
-                  $ {totalExpense.toFixed(2)}
+                  {formatCurrency(totalExpense)}
                 </Text>
               </View>
             </View>
@@ -95,13 +96,13 @@ export default function AccountsScreen() {
               </View>
               <View style={styles.accountRight}>
                 {account.income > 0 && (
-                  <Text style={styles.accountIncome}>+${account.income.toFixed(2)}</Text>
+                  <Text style={styles.accountIncome}>+{formatCurrency(account.income)}</Text>
                 )}
                 {account.expense > 0 && (
-                  <Text style={styles.accountExpense}>-${account.expense.toFixed(2)}</Text>
+                  <Text style={styles.accountExpense}>-{formatCurrency(account.expense)}</Text>
                 )}
                 {account.income === 0 && account.expense === 0 && (
-                  <Text style={styles.accountZero}>$0.00</Text>
+                  <Text style={styles.accountZero}>{formatCurrency(0)}</Text>
                 )}
               </View>
             </View>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "react-native";
 import { settingsAPI } from "../services/api";
+import { setActiveCurrency } from "@shared/utils";
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -53,15 +54,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const localDarkMode = await AsyncStorage.getItem("dark_mode");
       if (localDarkMode !== null) {
         setDarkMode(localDarkMode === "true");
+      } else {
+        // Try to load from API
+        const response = await settingsAPI.get();
+        setDarkMode(response.data.dark_mode || false);
+        setActiveCurrency(response.data.currency);
         return;
       }
-
-      // Try to load from API
-      const response = await settingsAPI.get();
-      setDarkMode(response.data.dark_mode || false);
     } catch (error) {
       // Use system preference as fallback
       setDarkMode(systemColorScheme === "dark");
+    }
+
+    // Currency preference isn't cached locally like dark mode — always fetch it.
+    try {
+      const response = await settingsAPI.get();
+      setActiveCurrency(response.data.currency);
+    } catch (error) {
+      // Keep default currency (USD) on failure
     }
   };
 

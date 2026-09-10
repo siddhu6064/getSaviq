@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { lightTheme, NeumorphicCard } from "../NeumorphicUI";
+import { formatCurrency } from "@shared/utils";
 
 interface NetBalanceCardProps {
   isLoading: boolean;
@@ -49,11 +50,11 @@ export function NetBalanceCard({
         ) : (
           <>
             <Text style={[styles.amount, totalBalance < 0 && styles.amountNegative]}>
-              $ {totalBalance.toFixed(2)}
+              {formatCurrency(totalBalance)}
             </Text>
             <View style={styles.metaRow}>
-              <Text style={styles.metaIncome}>Income $ {totalIncome.toFixed(2)}</Text>
-              <Text style={styles.metaExpense}>Expense $ {totalExpense.toFixed(2)}</Text>
+              <Text style={styles.metaIncome}>Income {formatCurrency(totalIncome)}</Text>
+              <Text style={styles.metaExpense}>Expense {formatCurrency(totalExpense)}</Text>
             </View>
           </>
         )}

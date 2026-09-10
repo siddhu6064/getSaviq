@@ -18,7 +18,27 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
-import { categoriesAPI, invitesAPI, paymentMethodsAPI, profilesAPI } from "../services/api";
+import {
+  categoriesAPI,
+  invitesAPI,
+  paymentMethodsAPI,
+  profilesAPI,
+  settingsAPI,
+} from "../services/api";
+import { getActiveCurrency, setActiveCurrency } from "@shared/utils";
+
+const CURRENCY_OPTIONS = [
+  { code: "USD", label: "USD ($) — US Dollar" },
+  { code: "EUR", label: "EUR (€) — Euro" },
+  { code: "GBP", label: "GBP (£) — British Pound" },
+  { code: "INR", label: "INR (₹) — Indian Rupee" },
+  { code: "CAD", label: "CAD ($) — Canadian Dollar" },
+  { code: "AUD", label: "AUD ($) — Australian Dollar" },
+  { code: "JPY", label: "JPY (¥) — Japanese Yen" },
+  { code: "CNY", label: "CNY (¥) — Chinese Yuan" },
+  { code: "MXN", label: "MXN ($) — Mexican Peso" },
+  { code: "BRL", label: "BRL (R$) — Brazilian Real" },
+];
 import { getUserFriendlyError } from "../lib/errorMessages";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
@@ -54,6 +74,22 @@ export default function SettingsPage() {
   const navigate = useNavigate();
 
   const [activeSection, setActiveSection] = useState("account");
+  const [currency, setCurrency] = useState(getActiveCurrency());
+  const [savingCurrency, setSavingCurrency] = useState(false);
+
+  const handleCurrencyChange = useCallback(async (e) => {
+    const value = e.target.value;
+    setCurrency(value);
+    setActiveCurrency(value);
+    setSavingCurrency(true);
+    try {
+      await settingsAPI.update({ currency: value });
+    } catch (error) {
+      console.error("Failed to save currency setting:", error);
+    } finally {
+      setSavingCurrency(false);
+    }
+  }, []);
 
   // Modal states
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -322,6 +358,31 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
+
+              <div className="border-t border-border-color pt-6 pb-6">
+                <h3 className="text-sm font-semibold text-text-primary mb-3">Preferences</h3>
+                <label className="block text-sm text-text-secondary mb-2" htmlFor="currency-select">
+                  Display Currency
+                </label>
+                <select
+                  id="currency-select"
+                  value={currency}
+                  onChange={handleCurrencyChange}
+                  disabled={savingCurrency}
+                  data-testid="settings-currency-select"
+                  className="w-full sm:w-72 px-4 py-2.5 rounded-xl border border-border-color bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  {CURRENCY_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-text-secondary mt-2">
+                  Changes how amounts are displayed. Doesn't convert existing amounts between
+                  currencies.
+                </p>
+              </div>
 
               <div className="border-t border-border-color pt-6">
                 <div className="flex flex-wrap gap-3">

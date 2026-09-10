@@ -23,6 +23,7 @@ import {
 } from "../../src/utils/goalsProjectionState";
 import { getGoalMilestone } from "../../src/utils/goalsMilestones";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { formatCurrency } from "@shared/utils";
 import {
   buildGoalFormFromGoal,
   defaultGoalFormState,
@@ -535,11 +536,11 @@ function GoalCard({
 
       <View style={styles.cardFooter}>
         <Text style={[styles.goalMoney, { color: colors.textPrimary }]}>
-          $ {Number(item.current_amount || 0).toFixed(2)} / ${" "}
-          {Number(item.target_amount || 0).toFixed(2)}
+          {formatCurrency(Number(item.current_amount || 0))} /{" "}
+          {formatCurrency(Number(item.target_amount || 0))}
         </Text>
         <Text style={[styles.goalRemaining, { color: colors.textSecondary }]}>
-          {progress.toFixed(0)}% · Remaining $ {remaining.toFixed(2)}
+          {progress.toFixed(0)}% · Remaining {formatCurrency(remaining)}
         </Text>
         <View style={styles.projectionRow}>
           <Ionicons name="time-outline" size={13} color={colors.textSecondary} />

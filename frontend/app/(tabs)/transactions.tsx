@@ -29,6 +29,7 @@ import {
   shouldResetTransactionDetailOnProfileChange,
 } from "../../src/utils/transactionFlowState";
 import { useTheme } from "../../src/contexts/ThemeContext";
+import { formatCurrency } from "@shared/utils";
 
 // ============ EMOJI CATEGORY MAP ============
 const CATEGORY_EMOJIS: Record<string, string> = {
@@ -583,7 +584,7 @@ export default function TransactionsScreen() {
                       },
                     ]}
                   >
-                    ${selectedExpense.amount.toFixed(2)}
+                    {formatCurrency(selectedExpense.amount)}
                   </Text>
                 </View>
                 <View style={modalStyles.details}>
@@ -895,10 +896,10 @@ function DailyView({
               </View>
               <View style={styles.dateHeaderRight}>
                 <Text style={[styles.dayIncome, { color: colors.primary }]}>
-                  $ {dayIncome.toFixed(2)}
+                  {formatCurrency(dayIncome)}
                 </Text>
                 <Text style={[styles.dayExpense, { color: colors.expense }]}>
-                  $ {dayExpense.toFixed(2)}
+                  {formatCurrency(dayExpense)}
                 </Text>
               </View>
             </View>
@@ -1004,7 +1005,7 @@ function TransactionRow({
           <Text style={[styles.txPayment, { color: colors.textSecondary }]}>{paymentName}</Text>
         </View>
         <Text style={[styles.txAmount, { color: isIncome ? colors.primary : colors.expense }]}>
-          $ {expense.amount.toFixed(2)}
+          {formatCurrency(expense.amount)}
         </Text>
       </TouchableOpacity>
     </Swipeable>
@@ -1156,7 +1157,7 @@ function MonthlyView({ expenses, getCategoryInfo }: any) {
               />
             </View>
             <Text style={[monthlyStyles.catAmount, { color: colors.expense }]}>
-              $ {cat.amount.toFixed(2)}
+              {formatCurrency(cat.amount)}
             </Text>
           </View>
         </View>
@@ -1268,7 +1269,7 @@ function SummaryView({
                   Total Budget
                 </Text>
                 <Text style={[summaryStyles.budgetAmount, { color: colors.textPrimary }]}>
-                  $ {totalBudget.amount.toFixed(2)}
+                  {formatCurrency(totalBudget.amount)}
                 </Text>
               </View>
               <View style={summaryStyles.budgetRight}>
@@ -1297,7 +1298,7 @@ function SummaryView({
             </View>
             <View style={summaryStyles.budgetFooter}>
               <Text style={[summaryStyles.budgetFooterText, { color: colors.expense }]}>
-                Spent: ${totalBudget.spent.toFixed(2)}
+                Spent: {formatCurrency(totalBudget.spent)}
               </Text>
               <Text
                 style={[
@@ -1382,7 +1383,7 @@ function DescriptionView({ expenses, getCategoryInfo }: any) {
           </Text>
           <Text style={[descStyles.count, { color: colors.textSecondary }]}>{item.count}</Text>
           <Text style={[descStyles.amount, { color: colors.expense }]}>
-            $ {item.amount.toFixed(2)}
+            {formatCurrency(item.amount)}
           </Text>
         </View>
       ))}

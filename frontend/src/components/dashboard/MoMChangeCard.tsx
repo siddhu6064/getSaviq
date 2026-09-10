@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { MoMSummary } from "../../utils/monthSpend";
+import { formatCurrency } from "@shared/utils";
 
 interface MoMChangeCardProps {
   isLoading: boolean;
@@ -69,14 +70,14 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
             <View style={styles.primaryRow}>
               <Ionicons name={iconName} size={20} color={accentColor} />
               <Text style={[styles.primaryText, { color: accentColor }]}>
-                $ {Math.abs(deltaAmount).toFixed(2)}
+                {formatCurrency(Math.abs(deltaAmount))}
               </Text>
             </View>
 
             <Text style={styles.headline}>{headline}</Text>
             <Text style={styles.subline}>
-              This month $ {currentMonthSpend.toFixed(2)} · Last month ${" "}
-              {previousMonthSpend.toFixed(2)}
+              This month {formatCurrency(currentMonthSpend)} · Last month{" "}
+              {formatCurrency(previousMonthSpend)}
             </Text>
           </>
         )}

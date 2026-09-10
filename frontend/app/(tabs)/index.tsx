@@ -29,6 +29,7 @@ import { PaymentBreakdownCard } from "../../src/components/dashboard/PaymentBrea
 import { BudgetProgressSummaryCard } from "../../src/components/dashboard/BudgetProgressSummaryCard";
 import { RecommendationsWidget } from "../../src/components/dashboard/RecommendationsWidget";
 import { SpendComparisonInsightCard } from "../../src/components/dashboard/SpendComparisonInsightCard";
+import { CashFlowCard } from "../../src/components/dashboard/CashFlowCard";
 import { useTheme } from "../../src/contexts/ThemeContext";
 import { NotificationBell } from "../../src/components/NotificationBell";
 import {
@@ -504,6 +505,8 @@ export default function DashboardScreen() {
               />
 
               <SpendComparisonInsightCard profileId={activeProfile?.profile_id} />
+
+              <CashFlowCard profileId={activeProfile?.profile_id} />
 
               <CategoryBreakdownCard
                 profileId={activeProfile?.profile_id}

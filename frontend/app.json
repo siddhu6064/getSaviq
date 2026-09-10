@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Scan receipts to track expenses",
         "NSPhotoLibraryUsageDescription": "Attach receipt photos to expenses",
-        "NSUserNotificationsUsageDescription": "Reminders to log your daily expenses"
+        "NSUserNotificationsUsageDescription": "Reminders to log your daily expenses",
+        "NSFaceIDUsageDescription": "Use Face ID to unlock SAVIQ"
       }
     },
     "android": {
@@ -57,7 +58,8 @@
       "@react-native-community/datetimepicker",
       "expo-secure-store",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-local-authentication"
     ],
     "experiments": {
       "typedRoutes": true

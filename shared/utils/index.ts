@@ -2,9 +2,27 @@
 // Used by both Web and Mobile apps
 
 /**
- * Format currency amount
+ * The user's preferred display currency (ISO 4217 code), set once from
+ * `/settings` on app load. This is a display/formatting preference only —
+ * amounts are not converted between currencies, just relabeled/reformatted.
  */
-export function formatCurrency(amount: number, currency: string = "USD"): string {
+let activeCurrency = "USD";
+
+export function setActiveCurrency(currency: string | undefined | null): void {
+  if (currency) activeCurrency = currency;
+}
+
+export function getActiveCurrency(): string {
+  return activeCurrency;
+}
+
+/**
+ * Format currency amount. Defaults to the app-wide preferred currency (see
+ * `setActiveCurrency`) rather than hardcoding USD, so every existing call
+ * site picks up the user's currency preference without needing to pass it
+ * explicitly.
+ */
+export function formatCurrency(amount: number, currency: string = activeCurrency): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency,

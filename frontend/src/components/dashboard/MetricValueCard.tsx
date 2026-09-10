@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { FloatingIcon } from "../FloatingIcon";
+import { formatCurrency } from "@shared/utils";
 
 interface MetricValueCardProps {
   title: string;
@@ -48,7 +49,7 @@ export function MetricValueCard({
         ) : !hasValue ? (
           <Text style={styles.helper}>{emptyLabel}</Text>
         ) : (
-          <Text style={[styles.amount, { color: accentColor }]}>$ {value.toFixed(2)}</Text>
+          <Text style={[styles.amount, { color: accentColor }]}>{formatCurrency(value)}</Text>
         )}
       </View>
     </NeumorphicCard>

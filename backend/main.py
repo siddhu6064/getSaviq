@@ -31,7 +31,7 @@ from routers.forecast import router as forecast_router
 from routers.subscriptions import router as subscriptions_router
 from routers.weekly_digest import router as weekly_digest_router
 from routers.dashboard_metrics import router as dashboard_metrics_router
-from routers.misc import settings_router, export_router
+from routers.misc import settings_router, export_router, import_router
 from routers.net_worth import router as net_worth_router, take_net_worth_snapshots
 from routers.push import router as push_router
 from routers.notifications import router as notifications_router
@@ -142,6 +142,7 @@ app.include_router(weekly_digest_router, prefix=PREFIX)
 app.include_router(dashboard_metrics_router, prefix=PREFIX)
 app.include_router(settings_router,   prefix=PREFIX)
 app.include_router(export_router,     prefix=PREFIX)
+app.include_router(import_router,     prefix=PREFIX)
 app.include_router(net_worth_router,  prefix=PREFIX)
 app.include_router(push_router,       prefix=PREFIX)
 app.include_router(notifications_router, prefix=PREFIX)

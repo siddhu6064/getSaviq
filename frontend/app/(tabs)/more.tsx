@@ -16,6 +16,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { APP_LOCK_ENABLED_KEY } from "../../src/components/AppLockGate";
+import { getActiveCurrency, setActiveCurrency } from "@shared/utils";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useAppStore } from "../../src/store/appStore";
 import * as Linking from "expo-linking";
@@ -32,7 +35,7 @@ import notificationService, {
 import { AutomationOnboardingModal } from "../../src/components/AutomationCard";
 import { ApplePaySetupGuide } from "../../src/components/ApplePaySetupGuide";
 import { GooglePaySetupGuide } from "../../src/components/GooglePaySetupGuide";
-import api, { settingsAPI, exportAPI, profilesAPI } from "../../src/services/api";
+import api, { settingsAPI, exportAPI, importAPI, profilesAPI } from "../../src/services/api";
 import {
   buildExportFileName,
   getExportErrorMessage,
@@ -40,6 +43,19 @@ import {
   shouldStartExport,
 } from "../../src/utils/exportState";
 import { deriveExportDatePreset } from "../../src/utils/exportDatePresets";
+
+const CURRENCY_OPTIONS = [
+  { code: "USD", label: "USD ($) — US Dollar" },
+  { code: "EUR", label: "EUR (€) — Euro" },
+  { code: "GBP", label: "GBP (£) — British Pound" },
+  { code: "INR", label: "INR (₹) — Indian Rupee" },
+  { code: "CAD", label: "CAD ($) — Canadian Dollar" },
+  { code: "AUD", label: "AUD ($) — Australian Dollar" },
+  { code: "JPY", label: "JPY (¥) — Japanese Yen" },
+  { code: "CNY", label: "CNY (¥) — Chinese Yuan" },
+  { code: "MXN", label: "MXN ($) — Mexican Peso" },
+  { code: "BRL", label: "BRL (R$) — Brazilian Real" },
+];
 
 const CATEGORY_COLORS = [
   "#ef4444",
@@ -140,6 +156,9 @@ export default function MoreScreen() {
 
   // Dark mode and export
   const [darkMode, setDarkMode] = useState(false);
+  const [appLockEnabled, setAppLockEnabled] = useState(false);
+  const [currency, setCurrency] = useState(getActiveCurrency());
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStartDate, setExportStartDate] = useState("");
@@ -160,6 +179,7 @@ export default function MoreScreen() {
     loadWeeklySettings();
     loadDarkModeSettings();
     loadPushPreferences();
+    AsyncStorage.getItem(APP_LOCK_ENABLED_KEY).then((v) => setAppLockEnabled(v === "true"));
   }, []);
 
   useEffect(() => {
@@ -208,8 +228,23 @@ export default function MoreScreen() {
     try {
       const response = await settingsAPI.get();
       setDarkMode(response.data.dark_mode || false);
+      if (response.data.currency) {
+        setActiveCurrency(response.data.currency);
+        setCurrency(response.data.currency);
+      }
     } catch (error) {
       console.log("Failed to load dark mode settings");
+    }
+  };
+
+  const handleSelectCurrency = async (code: string) => {
+    setCurrency(code);
+    setActiveCurrency(code);
+    setShowCurrencyModal(false);
+    try {
+      await settingsAPI.update({ currency: code });
+    } catch (error) {
+      console.log("Failed to save currency setting");
     }
   };
 
@@ -259,6 +294,23 @@ export default function MoreScreen() {
     } catch (error) {
       console.log("Failed to save dark mode setting");
     }
+  };
+
+  const handleToggleAppLock = async (value: boolean) => {
+    if (value) {
+      const LocalAuthentication = await import("expo-local-authentication");
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          "Not Available",
+          "No Face ID, Touch ID, or device passcode is set up on this device.",
+        );
+        return;
+      }
+    }
+    setAppLockEnabled(value);
+    await AsyncStorage.setItem(APP_LOCK_ENABLED_KEY, value ? "true" : "false");
   };
 
   const handleExportCSV = async () => {
@@ -421,6 +473,40 @@ export default function MoreScreen() {
       Alert.alert("Error", getExportErrorMessage(error, "pdf"));
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImportCSV = async () => {
+    if (!activeProfile || isImporting) return;
+    try {
+      const DocumentPicker = await import("expo-document-picker");
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["text/csv", "text/comma-separated-values", "public.comma-separated-values-text"],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const file = result.assets[0];
+      setIsImporting(true);
+      const response = await importAPI.importCSV(
+        activeProfile.profile_id,
+        file.uri,
+        file.name || "import.csv",
+      );
+      const { imported, skipped } = response.data;
+      Alert.alert(
+        "Import Complete",
+        `Imported ${imported} transaction${imported === 1 ? "" : "s"}${skipped > 0 ? `, skipped ${skipped}` : ""}.`,
+      );
+      setShowExportModal(false);
+      fetchExpenses();
+      fetchSummary();
+    } catch (error) {
+      Alert.alert("Error", "Could not import CSV. Check the file format and try again.");
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -1398,6 +1484,48 @@ export default function MoreScreen() {
                 thumbColor="#FFF"
               />
             </View>
+            {Platform.OS !== "web" && (
+              <>
+                <View style={styles.divider} />
+                {/* App Lock Toggle */}
+                <View style={styles.listRow}>
+                  <View style={styles.listRowLeft}>
+                    <View style={[automationStyles.iconBg, { backgroundColor: "#EFF6FF" }]}>
+                      <Ionicons name="lock-closed-outline" size={18} color="#007AFF" />
+                    </View>
+                    <View>
+                      <Text style={styles.listRowText}>Face ID / Touch ID Lock</Text>
+                      <Text style={automationStyles.subLabel}>
+                        Require unlock when opening the app
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={appLockEnabled}
+                    onValueChange={handleToggleAppLock}
+                    trackColor={{ false: "#E5E5EA", true: "#34C759" }}
+                    thumbColor="#FFF"
+                  />
+                </View>
+              </>
+            )}
+            <View style={styles.divider} />
+            {/* Currency */}
+            <TouchableOpacity style={styles.listRow} onPress={() => setShowCurrencyModal(true)}>
+              <View style={styles.listRowLeft}>
+                <View style={[automationStyles.iconBg, { backgroundColor: "#FEF3C7" }]}>
+                  <Ionicons name="cash-outline" size={18} color="#D97706" />
+                </View>
+                <View>
+                  <Text style={styles.listRowText}>Currency</Text>
+                  <Text style={automationStyles.subLabel}>How amounts are displayed</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={{ fontSize: 14, color: "#8E8E93" }}>{currency}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+              </View>
+            </TouchableOpacity>
             <View style={styles.divider} />
             {/* Export Data */}
             <TouchableOpacity style={styles.listRow} onPress={() => setShowExportModal(true)}>
@@ -1844,6 +1972,47 @@ export default function MoreScreen() {
         </View>
       </Modal>
 
+      {/* Currency Picker */}
+      <Modal visible={showCurrencyModal} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { padding: 0 }]}>
+            <View style={modalStyles.header}>
+              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
+                <Text style={{ color: "#8E8E93", fontSize: 16 }}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={modalStyles.title}>Currency</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <View style={{ paddingVertical: 8 }}>
+              {CURRENCY_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.code}
+                  style={[
+                    timePickerStyles.item,
+                    currency === opt.code && timePickerStyles.itemSelected,
+                    { marginHorizontal: 12 },
+                  ]}
+                  onPress={() => handleSelectCurrency(opt.code)}
+                >
+                  <Text
+                    style={[
+                      timePickerStyles.itemText,
+                      currency === opt.code && {
+                        ...timePickerStyles.itemTextSelected,
+                        color: "#D97706",
+                        fontWeight: "700",
+                      },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Weekly Summary Time Picker */}
       <Modal visible={showWeeklyTimeModal} animationType="slide" transparent>
         <View style={modalStyles.overlay}>
@@ -2002,141 +2171,173 @@ export default function MoreScreen() {
                 <Ionicons name="close" size={24} color="#8E8E93" />
               </TouchableOpacity>
             </View>
-            <Text style={{ color: "#8E8E93", fontSize: 14, marginBottom: 20 }}>
-              Export your expense data for {activeProfile?.name || "all profiles"}
-            </Text>
-            {!activeProfile ? (
-              <Text style={{ color: "#8E8E93", fontSize: 13, marginBottom: 20 }}>
-                Select a profile to enable export.
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={{ color: "#8E8E93", fontSize: 14, marginBottom: 20 }}>
+                Export your expense data for {activeProfile?.name || "all profiles"}
               </Text>
-            ) : (
-              <>
-                <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-                  {[
-                    { key: "this_month", label: "This Month" },
-                    { key: "this_year", label: "This Year" },
-                    { key: "last_month", label: "Last Month" },
-                  ].map((p) => (
-                    <TouchableOpacity
-                      key={p.key}
-                      onPress={() => applyExportPreset(p.key)}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: 14,
-                        backgroundColor: activeExportPreset === p.key ? "#000" : "#F8F8FA",
-                      }}
-                    >
-                      <Text
+              {!activeProfile ? (
+                <Text style={{ color: "#8E8E93", fontSize: 13, marginBottom: 20 }}>
+                  Select a profile to enable export.
+                </Text>
+              ) : (
+                <>
+                  <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+                    {[
+                      { key: "this_month", label: "This Month" },
+                      { key: "this_year", label: "This Year" },
+                      { key: "last_month", label: "Last Month" },
+                    ].map((p) => (
+                      <TouchableOpacity
+                        key={p.key}
+                        onPress={() => applyExportPreset(p.key)}
                         style={{
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color: activeExportPreset === p.key ? "#FFF" : "#666",
+                          paddingHorizontal: 12,
+                          paddingVertical: 7,
+                          borderRadius: 14,
+                          backgroundColor: activeExportPreset === p.key ? "#000" : "#F8F8FA",
                         }}
                       >
-                        {p.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                  {(exportStartDate || exportEndDate) && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setExportStartDate("");
-                        setExportEndDate("");
-                        setActiveExportPreset(null);
-                      }}
-                      style={{ paddingHorizontal: 8, paddingVertical: 7, justifyContent: "center" }}
-                    >
-                      <Ionicons name="close-circle-outline" size={18} color="#8E8E93" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {exportPreview?.summary && (
-                  <View
-                    style={{
-                      backgroundColor: "#F8F8FA",
-                      borderRadius: 12,
-                      padding: 12,
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, color: "#8E8E93", marginBottom: 6 }}>
-                      Preview{" "}
-                      {exportStartDate ? `(${exportStartDate} — ${exportEndDate})` : "(all time)"}
-                    </Text>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <Text style={{ fontSize: 12, color: "#34C759" }}>
-                        Income {_formatCurrency(exportPreview.summary.total_income)}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: "#FF3B30" }}>
-                        Expenses {_formatCurrency(exportPreview.summary.total_expense)}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: "#000", fontWeight: "700" }}>
-                        {exportPreview.summary.transaction_count} txns
-                      </Text>
-                    </View>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "600",
+                            color: activeExportPreset === p.key ? "#FFF" : "#666",
+                          }}
+                        >
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    {(exportStartDate || exportEndDate) && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setExportStartDate("");
+                          setExportEndDate("");
+                          setActiveExportPreset(null);
+                        }}
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 7,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons name="close-circle-outline" size={18} color="#8E8E93" />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                )}
-              </>
-            )}
 
-            <TouchableOpacity
-              style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
-              onPress={handleExportCSV}
-              disabled={!canStartExport}
-            >
-              <View style={[exportStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
-                <Ionicons name="document-text-outline" size={24} color="#34C759" />
-              </View>
-              <View style={exportStyles.optionInfo}>
-                <Text style={exportStyles.optionTitle}>Export as CSV</Text>
-                <Text style={exportStyles.optionDesc}>
-                  Spreadsheet format for Excel, Google Sheets
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-            </TouchableOpacity>
+                  {exportPreview?.summary && (
+                    <View
+                      style={{
+                        backgroundColor: "#F8F8FA",
+                        borderRadius: 12,
+                        padding: 12,
+                        marginBottom: 16,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, color: "#8E8E93", marginBottom: 6 }}>
+                        Preview{" "}
+                        {exportStartDate ? `(${exportStartDate} — ${exportEndDate})` : "(all time)"}
+                      </Text>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <Text style={{ fontSize: 12, color: "#34C759" }}>
+                          Income {_formatCurrency(exportPreview.summary.total_income)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: "#FF3B30" }}>
+                          Expenses {_formatCurrency(exportPreview.summary.total_expense)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: "#000", fontWeight: "700" }}>
+                          {exportPreview.summary.transaction_count} txns
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
 
-            <TouchableOpacity
-              style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
-              onPress={handleExportJSON}
-              disabled={!canStartExport}
-            >
-              <View style={[exportStyles.iconBg, { backgroundColor: "#FFF3E0" }]}>
-                <Ionicons name="code-slash-outline" size={24} color="#FF9500" />
-              </View>
-              <View style={exportStyles.optionInfo}>
-                <Text style={exportStyles.optionTitle}>Export as JSON</Text>
-                <Text style={exportStyles.optionDesc}>Raw data format with full details</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-            </TouchableOpacity>
-
-            {Platform.OS !== "web" && (
               <TouchableOpacity
                 style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
-                onPress={handleExportPDF}
+                onPress={handleExportCSV}
                 disabled={!canStartExport}
               >
-                <View style={[exportStyles.iconBg, { backgroundColor: "#FDE8E8" }]}>
-                  <Ionicons name="document-outline" size={24} color="#DC2626" />
+                <View style={[exportStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
+                  <Ionicons name="document-text-outline" size={24} color="#34C759" />
                 </View>
                 <View style={exportStyles.optionInfo}>
-                  <Text style={exportStyles.optionTitle}>Export as PDF</Text>
+                  <Text style={exportStyles.optionTitle}>Export as CSV</Text>
                   <Text style={exportStyles.optionDesc}>
-                    Formatted report with summary and transactions
+                    Spreadsheet format for Excel, Google Sheets
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
               </TouchableOpacity>
-            )}
 
-            {isExporting && (
-              <Text style={{ textAlign: "center", color: "#007AFF", marginTop: 16 }}>
-                Preparing export...
-              </Text>
-            )}
+              <TouchableOpacity
+                style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
+                onPress={handleExportJSON}
+                disabled={!canStartExport}
+              >
+                <View style={[exportStyles.iconBg, { backgroundColor: "#FFF3E0" }]}>
+                  <Ionicons name="code-slash-outline" size={24} color="#FF9500" />
+                </View>
+                <View style={exportStyles.optionInfo}>
+                  <Text style={exportStyles.optionTitle}>Export as JSON</Text>
+                  <Text style={exportStyles.optionDesc}>Raw data format with full details</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+              </TouchableOpacity>
+
+              {Platform.OS !== "web" && (
+                <TouchableOpacity
+                  style={[exportStyles.optionCard, !canStartExport && { opacity: 0.5 }]}
+                  onPress={handleExportPDF}
+                  disabled={!canStartExport}
+                >
+                  <View style={[exportStyles.iconBg, { backgroundColor: "#FDE8E8" }]}>
+                    <Ionicons name="document-outline" size={24} color="#DC2626" />
+                  </View>
+                  <View style={exportStyles.optionInfo}>
+                    <Text style={exportStyles.optionTitle}>Export as PDF</Text>
+                    <Text style={exportStyles.optionDesc}>
+                      Formatted report with summary and transactions
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                </TouchableOpacity>
+              )}
+
+              {isExporting && (
+                <Text style={{ textAlign: "center", color: "#007AFF", marginTop: 16 }}>
+                  Preparing export...
+                </Text>
+              )}
+
+              {Platform.OS !== "web" && (
+                <TouchableOpacity
+                  style={[
+                    exportStyles.optionCard,
+                    (!canStartExport || isImporting) && { opacity: 0.5 },
+                  ]}
+                  onPress={handleImportCSV}
+                  disabled={!canStartExport || isImporting}
+                >
+                  <View style={[exportStyles.iconBg, { backgroundColor: "#EFF6FF" }]}>
+                    <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
+                  </View>
+                  <View style={exportStyles.optionInfo}>
+                    <Text style={exportStyles.optionTitle}>Import CSV</Text>
+                    <Text style={exportStyles.optionDesc}>
+                      Add transactions from a CSV file (same format as Export CSV)
+                    </Text>
+                  </View>
+                  {isImporting ? (
+                    <ActivityIndicator size="small" color="#007AFF" />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                  )}
+                </TouchableOpacity>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>

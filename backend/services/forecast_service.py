@@ -4,6 +4,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 import math
 
+from services.bill_schedule import (
+    compute_bill_occurrences,
+    compute_recurring_expense_occurrences,
+)
 from utils.date_helpers import days_in_month as _days_in_month
 from utils.date_helpers import month_start as _month_start
 
@@ -317,4 +321,126 @@ async def generate_spend_forecast(
             },
         },
         "projections": projections,
+    }
+
+
+async def generate_cash_flow_forecast(
+    user_id: str,
+    profile_id: str,
+    *,
+    expenses_collection,
+    bills_collection=None,
+    now: Optional[datetime] = None,
+    days: int = 30,
+) -> dict:
+    """
+    Day-by-day projected balance for the next `days` days: current net
+    balance (all-time income - expense) plus upcoming bill due dates and
+    recurring-expense occurrences. Scoped down from a full year-ahead
+    calendar (see V1.5_QUICK_WINS_CHECKLIST.md #6) — this surfaces the same
+    "see a shortfall coming" value without a full calendar-grid UI.
+    """
+    current_now = now or datetime.now(timezone.utc)
+    if current_now.tzinfo is None:
+        current_now = current_now.replace(tzinfo=timezone.utc)
+    today = current_now.date()
+    window_end = today + timedelta(days=max(days, 1) - 1)
+
+    all_txs = await expenses_collection.find(
+        {"user_id": user_id, "profile_id": profile_id},
+        {"_id": 0, "amount": 1, "type": 1},
+    ).to_list(20000)
+    current_balance = round(
+        sum(
+            (float(tx.get("amount", 0.0)) if tx.get("type") == "income" else -float(tx.get("amount", 0.0)))
+            for tx in all_txs
+            if tx.get("type") in ("income", "expense")
+        ),
+        2,
+    )
+
+    recurring_txs = await expenses_collection.find(
+        {
+            "user_id": user_id,
+            "profile_id": profile_id,
+            "is_recurring": True,
+            "recurring_frequency": {"$ne": None},
+            "recurring_start_date": {"$ne": None},
+        },
+        {
+            "_id": 0,
+            "amount": 1,
+            "type": 1,
+            "description": 1,
+            "recurring_frequency": 1,
+            "recurring_start_date": 1,
+            "recurring_end_date": 1,
+        },
+    ).to_list(500)
+
+    bills = []
+    if bills_collection is not None:
+        bills = await bills_collection.find(
+            {"user_id": user_id, "profile_id": profile_id, "status": "active"},
+            {"_id": 0, "name": 1, "expected_amount": 1, "due_day": 1, "frequency": 1},
+        ).to_list(500)
+
+    events_by_date: dict = {}
+
+    def _add_event(occurrence_date, label: str, amount: float) -> None:
+        events_by_date.setdefault(occurrence_date, []).append(
+            {"label": label, "amount": round(amount, 2)}
+        )
+
+    for bill in bills:
+        frequency = bill.get("frequency")
+        due_day = bill.get("due_day")
+        if frequency not in ("monthly", "weekly", "annual") or due_day is None:
+            continue
+        for occurrence in compute_bill_occurrences(due_day, frequency, today, window_end):
+            _add_event(
+                occurrence,
+                bill.get("name") or "Bill",
+                -abs(float(bill.get("expected_amount", 0))),
+            )
+
+    for tx in recurring_txs:
+        start = tx.get("recurring_start_date")
+        end = tx.get("recurring_end_date")
+        frequency = tx.get("recurring_frequency")
+        if start is None or frequency is None:
+            continue
+        start_date = start.date() if hasattr(start, "date") else start
+        end_date = (end.date() if hasattr(end, "date") else end) if end else None
+        for occurrence in compute_recurring_expense_occurrences(
+            start_date, frequency, end_date, today, window_end
+        ):
+            amount = float(tx.get("amount", 0))
+            signed_amount = amount if tx.get("type") == "income" else -amount
+            _add_event(occurrence, tx.get("description") or "Recurring", signed_amount)
+
+    days_out = []
+    running_balance = current_balance
+    first_negative_date = None
+    cursor = today
+    while cursor <= window_end:
+        day_events = events_by_date.get(cursor, [])
+        running_balance = round(running_balance + sum(e["amount"] for e in day_events), 2)
+        if running_balance < 0 and first_negative_date is None:
+            first_negative_date = cursor.isoformat()
+        days_out.append(
+            {
+                "date": cursor.isoformat(),
+                "events": day_events,
+                "projected_balance": running_balance,
+            }
+        )
+        cursor += timedelta(days=1)
+
+    return {
+        "as_of": current_now,
+        "starting_balance": current_balance,
+        "days": days_out,
+        "will_go_negative": first_negative_date is not None,
+        "first_negative_date": first_negative_date,
     }
