@@ -449,10 +449,7 @@ The following bugs were patched during initial beta setup:
 - `forecast_service.py`, `dashboard_metrics.py`, `insights.py`, `analytics.py` — timezone-naive vs timezone-aware datetime comparison fixed across all date filter expressions (`.replace(tzinfo=timezone.utc)`)
 - `openai_client.py` — uses `responses.create()` (OpenAI Responses API); needs refactor to `chat.completions.create()` before switching to Gemini or DeepSeek
 - `frontend/app/(tabs)/more.tsx` — `expo-file-system`'s SDK 54 legacy API (`writeAsStringAsync`/`moveAsync`) started throwing unconditionally after a dependency version bump, silently breaking CSV/JSON/PDF export on mobile behind a misleading "check your connection" error; fixed by importing from `expo-file-system/legacy`.
-
-## Known Issues (Open)
-
-- **Web dashboard — "Top Category" Smart Metric and the Weekly Digest narrative display a raw `category_id` (e.g. `cat_4d1ba7e8483e`) instead of the category's name.** Found while capturing screenshots for this README. Likely a missing category-name join/lookup in the smart-metrics or digest-generation service — not yet root-caused or fixed.
+- Web dashboard "Top Category" Smart Metric and the Weekly Digest narrative displayed a raw `category_id` (e.g. `cat_4d1ba7e8483e`) instead of the category's name — the dashboard metric was already fixed by the audit pass below; the digest narrative was missing the same `category_id → name` lookup in `weekly_digest_service.py`, fixed by adding a `categories_collection` param and building the same map used in `dashboard_metrics.py`.
 
 ---
 

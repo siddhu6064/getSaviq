@@ -89,6 +89,7 @@ async def get_weekly_digest(
         week_start=start_dt,
         week_end=end_dt,
         expenses_collection=db.expenses,
+        categories_collection=db.categories,
     )
 
     await store_weekly_digest_payload(

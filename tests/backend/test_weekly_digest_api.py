@@ -70,6 +70,47 @@ def test_weekly_digest_success_for_valid_scope_and_week(client, fake_db):
     assert stored["digest_payload"]["summary"]["transaction_count"] == 2
 
 
+def test_weekly_digest_highlights_use_category_name_not_raw_id(client):
+    """Regression guard: top_category_name (and the narrative sentence that
+    interpolates it) must resolve to the actual category name, not the raw
+    `cat_...` id — see README known-issues entry this fixes."""
+    auth = _register(client)
+    headers = _auth_headers(auth["session_token"])
+    profile_id = _default_profile_id(client, headers)
+
+    categories = client.get("/api/categories", headers=headers).json()
+    target_category = categories[0]
+    payment_methods = client.get("/api/payment-methods", headers=headers).json()
+
+    for amount in (300, 250):
+        response = client.post(
+            "/api/expenses",
+            headers=headers,
+            json={
+                "profile_id": profile_id,
+                "amount": amount,
+                "category_id": target_category["category_id"],
+                "payment_method_id": payment_methods[0]["payment_id"],
+                "description": "Groceries",
+                "date": "2026-04-08T00:00:00+00:00",
+                "type": "expense",
+            },
+        )
+        assert response.status_code == 200
+
+    response = client.get(
+        f"/api/weekly-digest?profile_id={profile_id}&week_start=2026-04-06&week_end=2026-04-12",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["highlights"]["top_category_name"] == target_category["name"]
+    assert not body["highlights"]["top_category_name"].startswith("cat_")
+    assert target_category["name"] in body["narrative"]["summary"]
+    assert target_category["category_id"] not in body["narrative"]["summary"]
+
+
 def test_weekly_digest_persistence_repeated_generation_updates_existing_record(client, fake_db):
     auth = _register(client)
     headers = _auth_headers(auth["session_token"])

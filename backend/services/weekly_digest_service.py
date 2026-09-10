@@ -47,7 +47,10 @@ def _format_compact_currency(value: float) -> str:
     return f"${amount:,.2f}"
 
 
-def _build_top_expense_categories(expenses: list[dict]) -> list[dict]:
+def _build_top_expense_categories(
+    expenses: list[dict], category_map: dict[str, str] | None = None
+) -> list[dict]:
+    category_map = category_map or {}
     grouped: dict[str, dict] = {}
     for expense in expenses:
         category_id = str(expense.get("category_id") or "uncategorized")
@@ -67,6 +70,7 @@ def _build_top_expense_categories(expenses: list[dict]) -> list[dict]:
     return [
         {
             "category_id": item["category_id"],
+            "category_name": category_map.get(item["category_id"]),
             "total_amount": round(item["total_amount"], 2),
             "transaction_count": item["transaction_count"],
         }
@@ -389,6 +393,7 @@ async def build_weekly_financial_digest(
     week_start: datetime,
     week_end: datetime,
     expenses_collection,
+    categories_collection=None,
     forecast_overview: dict | None = None,
     subscriptions_summary: dict | None = None,
 ) -> dict:
@@ -422,7 +427,14 @@ async def build_weekly_financial_digest(
     current_summary = _summarize_transactions(transactions)
     previous_summary = _summarize_transactions(previous_transactions)
 
-    top_categories = _build_top_expense_categories(current_summary["expenses"])
+    category_map: dict[str, str] = {}
+    if categories_collection is not None:
+        categories = await categories_collection.find(
+            {"user_id": user_id}, {"_id": 0, "category_id": 1, "name": 1}
+        ).to_list(500)
+        category_map = {row.get("category_id"): row.get("name") for row in categories}
+
+    top_categories = _build_top_expense_categories(current_summary["expenses"], category_map)
     top_category = top_categories[0] if top_categories else None
     savings_rate = None
     if current_summary["income_total"] > 0:
@@ -461,7 +473,11 @@ async def build_weekly_financial_digest(
             ),
         },
         "highlights": {
-            "top_category_name": top_category["category_id"] if top_category else None,
+            "top_category_name": (
+                (top_category.get("category_name") or top_category.get("category_id"))
+                if top_category
+                else None
+            ),
             "top_category_amount": top_category["total_amount"] if top_category else 0.0,
             "savings_rate": savings_rate,
         },
