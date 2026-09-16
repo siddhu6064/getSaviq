@@ -79,6 +79,7 @@ SAVIQ exists to help users make confident financial decisions, not just log tran
 - **Push notifications:** budget alerts, goal milestones, large transaction warnings via Expo Push.
 - **Transaction notes + attachments:** notes and receipt attachments on any expense, not just AI-scanned ones.
 - **Recurring bill management:** bill tracker with due date alerts and subscription-to-bill promotion.
+- **Guest mode:** try the full app without an account — data is stored locally on-device (no backend calls), with a one-tap upgrade path to a real account later.
 
 ---
 
@@ -164,8 +165,9 @@ Mobile is now at full feature parity with web — every item below was audited a
 - Weekly Digest dismissible banner.
 - AI chat "Clear conversation" button.
 - **Apple Pay / Google Pay Auto-Detect** — an in-app setup guide walks the user through an iOS Shortcuts (or Android equivalent) automation that fires on a Pay transaction and deep-links straight into a pre-filled Add Expense screen (amount, merchant, category).
-- Mobile-first interaction patterns, dark mode support for primary flows, and profile switching restore behavior.
+- Mobile-first interaction patterns, app-wide dark mode (all NeumorphicUI surfaces), and profile switching restore behavior.
 - Push notification deep linking to relevant screens.
+- Guest mode — local-only data via on-device storage, with dashboard/goals/analytics screens skipping network calls entirely when signed in as a guest.
 
 See [`MOBILE_PARITY_CHECKLIST.md`](MOBILE_PARITY_CHECKLIST.md) for the full audit trail (14/14 items, 13/14 live click-tested).
 
@@ -212,20 +214,20 @@ Shared profiles now support **invite-based multi-user access** — a profile own
 
 ## Architecture Overview
 
-| Layer        | Stack                                                           | Notes                                                                                                            |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Backend API  | Python, FastAPI, Pydantic, Motor/PyMongo                        | Session/auth flows, profile-scoped data model, analytics/forecast/AI endpoints                                   |
-| Database     | MongoDB Atlas (cloud-hosted)                                    | 15+ collections + startup index initialization (including TTL on sessions). All indexes auto-created on startup. |
-| Web App      | React + Vite, Tailwind, Recharts                                | Runs on port 3000 in dev. Product UI, dashboards, goals, analytics, net worth, bills, exports, AI chat           |
-| Mobile App   | React Native (Expo)                                             | Cross-platform mobile experience with backend auth integration                                                   |
-| Shared Logic | `shared/` TypeScript package                                    | Shared constants/types/utils across app surfaces                                                                 |
-| AI           | Google Gemini 2.5 Flash (receipts) + Flash-Lite (insights/chat) | Via `google-genai` SDK + `litellm` routing                                                                       |
-| Email        | Resend                                                          | Transactional emails — 3,000/month free tier                                                                     |
-| Analytics    | PostHog                                                         | Product analytics + error tracking — 1M events/month free tier                                                   |
-| Storage      | Cloudflare R2                                                   | Receipt + attachment image storage — 10GB free, zero egress fees                                                 |
-| Cache        | Upstash Redis                                                   | Rate limiting persistence — 500K commands/month free tier                                                        |
-| Push         | Expo Push API                                                   | Free, unlimited push notifications for mobile                                                                    |
-| Testing      | `pytest`, `node:test`, Playwright                               | Backend coverage + web logic/E2E + mobile helper/orchestration tests                                             |
+| Layer        | Stack                                                           | Notes                                                                                                                                                      |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend API  | Python, FastAPI, Pydantic, Motor/PyMongo                        | Session/auth flows, profile-scoped data model, analytics/forecast/AI endpoints                                                                             |
+| Database     | MongoDB Atlas (cloud-hosted)                                    | 15+ collections + startup index initialization (including TTL on sessions). All indexes auto-created on startup.                                           |
+| Web App      | React + Vite, Tailwind, Recharts                                | Runs on port 3000 in dev. Product UI, dashboards, goals, analytics, net worth, bills, exports, AI chat                                                     |
+| Mobile App   | React Native (Expo)                                             | Cross-platform mobile experience with backend auth integration                                                                                             |
+| Shared Logic | `shared/` TypeScript package                                    | Shared constants/types/utils across app surfaces, including a canonical color palette (`shared/constants/colors.json`) that both web and mobile theme from |
+| AI           | Google Gemini 2.5 Flash (receipts) + Flash-Lite (insights/chat) | Via `google-genai` SDK + `litellm` routing                                                                                                                 |
+| Email        | Resend                                                          | Transactional emails — 3,000/month free tier                                                                                                               |
+| Analytics    | PostHog                                                         | Product analytics + error tracking — 1M events/month free tier                                                                                             |
+| Storage      | Cloudflare R2                                                   | Receipt + attachment image storage — 10GB free, zero egress fees                                                                                           |
+| Cache        | Upstash Redis                                                   | Rate limiting persistence — 500K commands/month free tier                                                                                                  |
+| Push         | Expo Push API                                                   | Free, unlimited push notifications for mobile                                                                                                              |
+| Testing      | `pytest`, `node:test`, Playwright                               | Backend coverage + web logic/E2E + mobile helper/orchestration tests                                                                                       |
 
 ---
 
@@ -450,6 +452,7 @@ The following bugs were patched during initial beta setup:
 - `openai_client.py` — uses `responses.create()` (OpenAI Responses API); needs refactor to `chat.completions.create()` before switching to Gemini or DeepSeek
 - `frontend/app/(tabs)/more.tsx` — `expo-file-system`'s SDK 54 legacy API (`writeAsStringAsync`/`moveAsync`) started throwing unconditionally after a dependency version bump, silently breaking CSV/JSON/PDF export on mobile behind a misleading "check your connection" error; fixed by importing from `expo-file-system/legacy`.
 - Web dashboard "Top Category" Smart Metric and the Weekly Digest narrative displayed a raw `category_id` (e.g. `cat_4d1ba7e8483e`) instead of the category's name — the dashboard metric was already fixed by the audit pass below; the digest narrative was missing the same `category_id → name` lookup in `weekly_digest_service.py`, fixed by adding a `categories_collection` param and building the same map used in `dashboard_metrics.py`.
+- Mobile guest mode fired unauthenticated requests against protected backend endpoints (401 storm on the dashboard, goals, and analytics screens) — `AuthContext`'s local guest-mode flag was never synced to the Zustand store's separate flag that gates local-vs-network data fetching; fixed by mirroring the flag at every call site and gating the remaining server-only widgets/screens that have no local data equivalent.
 
 ---
 
