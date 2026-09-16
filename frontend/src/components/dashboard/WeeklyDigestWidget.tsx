@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { deriveWeeklyDigestState } from "../../utils/aiIntelligenceState";
 import { useTheme } from "../../contexts/ThemeContext";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
@@ -33,6 +33,8 @@ function formatWeekRange(startDate?: string, endDate?: string) {
 
 export function WeeklyDigestWidget({ isLoading, error, digest }: WeeklyDigestWidgetProps) {
   const { colors } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const state = deriveWeeklyDigestState({ isLoading, error, digest });
   const weekLabel = formatWeekRange(state.weekStart, state.weekEnd);
 
@@ -84,24 +86,25 @@ export function WeeklyDigestWidget({ isLoading, error, digest }: WeeklyDigestWid
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: 8 },
-  header: { marginBottom: 8 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 16, fontWeight: "700", color: lightTheme.colors.text },
-  weekLabel: { marginTop: 4, fontSize: 12, color: lightTheme.colors.textSecondary },
-  helper: { fontSize: 14, color: lightTheme.colors.textTertiary },
-  content: { gap: 8 },
-  valueBlock: {
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  valueLabel: { fontSize: 11, color: lightTheme.colors.textSecondary, textTransform: "uppercase" },
-  valueText: { marginTop: 2, fontSize: 22, fontWeight: "800", color: lightTheme.colors.text },
-  metaText: { marginTop: 2, fontSize: 12, color: lightTheme.colors.textSecondary },
-  narrativeText: { fontSize: 13, lineHeight: 19, color: lightTheme.colors.textSecondary },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: { marginTop: 8 },
+    header: { marginBottom: 8 },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+    weekLabel: { marginTop: 4, fontSize: 12, color: theme.colors.textSecondary },
+    helper: { fontSize: 14, color: theme.colors.textTertiary },
+    content: { gap: 8 },
+    valueBlock: {
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    valueLabel: { fontSize: 11, color: theme.colors.textSecondary, textTransform: "uppercase" },
+    valueText: { marginTop: 2, fontSize: 22, fontWeight: "800", color: theme.colors.text },
+    metaText: { marginTop: 2, fontSize: 12, color: theme.colors.textSecondary },
+    narrativeText: { fontSize: 13, lineHeight: 19, color: theme.colors.textSecondary },
+  });

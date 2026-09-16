@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useTheme } from "../src/contexts/ThemeContext";
 import { useRouter } from "expo-router";
-import { lightTheme, NeumorphicCard } from "../src/components/NeumorphicUI";
+import { useNeumorphicTheme, NeumorphicCard } from "../src/components/NeumorphicUI";
 import canonicalColors from "@shared/constants/colors.json";
 
 // Required to properly close the browser session after OAuth redirect
@@ -32,6 +32,8 @@ type AuthMode = "main" | "login" | "register";
 
 export default function LoginScreen() {
   const { colors } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {
     signInWithGoogle,
     signInWithApple,
@@ -243,7 +245,7 @@ export default function LoginScreen() {
           }}
           disabled={isSigningIn}
         >
-          <Ionicons name="person-add-outline" size={20} color={lightTheme.colors.primary} />
+          <Ionicons name="person-add-outline" size={20} color={theme.colors.primary} />
           <Text style={styles.outlineBtnText}>Create Account</Text>
         </TouchableOpacity>
 
@@ -293,10 +295,10 @@ export default function LoginScreen() {
 
         <TouchableOpacity style={styles.guestBtn} onPress={handleGuestMode} disabled={isSigningIn}>
           {isSigningIn ? (
-            <ActivityIndicator color={lightTheme.colors.textTertiary} />
+            <ActivityIndicator color={theme.colors.textTertiary} />
           ) : (
             <>
-              <Ionicons name="flash-outline" size={18} color={lightTheme.colors.textTertiary} />
+              <Ionicons name="flash-outline" size={18} color={theme.colors.textTertiary} />
               <Text style={styles.guestBtnText}>Continue as Guest</Text>
             </>
           )}
@@ -309,7 +311,7 @@ export default function LoginScreen() {
   const renderLoginForm = () => (
     <>
       <TouchableOpacity style={styles.backBtn} onPress={() => setAuthMode("main")}>
-        <Ionicons name="chevron-back" size={24} color={lightTheme.colors.text} />
+        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
       </TouchableOpacity>
 
       <View style={styles.formHeader}>
@@ -319,13 +321,13 @@ export default function LoginScreen() {
 
       <NeumorphicCard style={styles.formCard}>
         <View style={styles.inputRow}>
-          <Ionicons name="mail-outline" size={20} color={lightTheme.colors.textTertiary} />
+          <Ionicons name="mail-outline" size={20} color={theme.colors.textTertiary} />
           <TextInput
             style={styles.textInput}
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor={lightTheme.colors.placeholder}
+            placeholderTextColor={theme.colors.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -333,20 +335,20 @@ export default function LoginScreen() {
         </View>
         <View style={styles.inputDivider} />
         <View style={styles.inputRow}>
-          <Ionicons name="lock-closed-outline" size={20} color={lightTheme.colors.textTertiary} />
+          <Ionicons name="lock-closed-outline" size={20} color={theme.colors.textTertiary} />
           <TextInput
             style={styles.textInput}
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
-            placeholderTextColor={lightTheme.colors.placeholder}
+            placeholderTextColor={theme.colors.placeholder}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
             <Ionicons
               name={showPassword ? "eye-off-outline" : "eye-outline"}
               size={20}
-              color={lightTheme.colors.textTertiary}
+              color={theme.colors.textTertiary}
             />
           </TouchableOpacity>
         </View>
@@ -385,7 +387,7 @@ export default function LoginScreen() {
   const renderRegisterForm = () => (
     <>
       <TouchableOpacity style={styles.backBtn} onPress={() => setAuthMode("main")}>
-        <Ionicons name="chevron-back" size={24} color={lightTheme.colors.text} />
+        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
       </TouchableOpacity>
 
       <View style={styles.formHeader}>
@@ -395,25 +397,25 @@ export default function LoginScreen() {
 
       <NeumorphicCard style={styles.formCard}>
         <View style={styles.inputRow}>
-          <Ionicons name="person-outline" size={20} color={lightTheme.colors.textTertiary} />
+          <Ionicons name="person-outline" size={20} color={theme.colors.textTertiary} />
           <TextInput
             style={styles.textInput}
             value={name}
             onChangeText={setName}
             placeholder="Full Name"
-            placeholderTextColor={lightTheme.colors.placeholder}
+            placeholderTextColor={theme.colors.placeholder}
             autoCapitalize="words"
           />
         </View>
         <View style={styles.inputDivider} />
         <View style={styles.inputRow}>
-          <Ionicons name="mail-outline" size={20} color={lightTheme.colors.textTertiary} />
+          <Ionicons name="mail-outline" size={20} color={theme.colors.textTertiary} />
           <TextInput
             style={styles.textInput}
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor={lightTheme.colors.placeholder}
+            placeholderTextColor={theme.colors.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -421,20 +423,20 @@ export default function LoginScreen() {
         </View>
         <View style={styles.inputDivider} />
         <View style={styles.inputRow}>
-          <Ionicons name="lock-closed-outline" size={20} color={lightTheme.colors.textTertiary} />
+          <Ionicons name="lock-closed-outline" size={20} color={theme.colors.textTertiary} />
           <TextInput
             style={styles.textInput}
             value={password}
             onChangeText={setPassword}
             placeholder="Password (min 8 characters)"
-            placeholderTextColor={lightTheme.colors.placeholder}
+            placeholderTextColor={theme.colors.placeholder}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
             <Ionicons
               name={showPassword ? "eye-off-outline" : "eye-outline"}
               size={20}
-              color={lightTheme.colors.textTertiary}
+              color={theme.colors.textTertiary}
             />
           </TouchableOpacity>
         </View>
@@ -472,7 +474,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={lightTheme.colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
@@ -494,143 +496,146 @@ export default function LoginScreen() {
 }
 
 function FeatureRow({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.featureRow}>
       <View style={styles.featureIcon}>
-        <Ionicons name={icon} size={20} color={lightTheme.colors.primary} />
+        <Ionicons name={icon} size={20} color={theme.colors.primary} />
       </View>
       <Text style={styles.featureText}>{text}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: lightTheme.colors.background },
-  safeArea: { flex: 1 },
-  keyboardView: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 20 },
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    safeArea: { flex: 1 },
+    keyboardView: { flex: 1 },
+    scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 20 },
 
-  // Logo
-  logoContainer: { alignItems: "center", marginTop: 20, marginBottom: 32 },
-  logoGradient: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-    shadowColor: canonicalColors.brand.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  appTitle: { fontSize: 28, fontWeight: "800", color: lightTheme.colors.text, marginBottom: 4 },
-  appSubtitle: { fontSize: 16, color: lightTheme.colors.textTertiary },
+    // Logo
+    logoContainer: { alignItems: "center", marginTop: 20, marginBottom: 32 },
+    logoGradient: {
+      width: 96,
+      height: 96,
+      borderRadius: 28,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+      shadowColor: canonicalColors.brand.primary,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    appTitle: { fontSize: 28, fontWeight: "800", color: theme.colors.text, marginBottom: 4 },
+    appSubtitle: { fontSize: 16, color: theme.colors.textTertiary },
 
-  // Features
-  featuresCard: { marginBottom: 32 },
-  featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: lightTheme.colors.primaryLight,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-  featureText: { fontSize: 15, color: lightTheme.colors.textSecondary, flex: 1 },
-  featureDivider: { height: 1, backgroundColor: lightTheme.colors.divider, marginLeft: 54 },
+    // Features
+    featuresCard: { marginBottom: 32 },
+    featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
+    featureIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.colors.primaryLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 14,
+    },
+    featureText: { fontSize: 15, color: theme.colors.textSecondary, flex: 1 },
+    featureDivider: { height: 1, backgroundColor: theme.colors.divider, marginLeft: 54 },
 
-  // Auth section
-  authSection: { gap: 12 },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 10,
-  },
-  primaryBtnText: { fontSize: 17, fontWeight: "600", color: "#FFFFFF" },
-  outlineBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 10,
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderWidth: 1.5,
-    borderColor: lightTheme.colors.primary,
-  },
-  outlineBtnText: { fontSize: 17, fontWeight: "600", color: lightTheme.colors.primary },
+    // Auth section
+    authSection: { gap: 12 },
+    primaryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      borderRadius: 14,
+      gap: 10,
+    },
+    primaryBtnText: { fontSize: 17, fontWeight: "600", color: "#FFFFFF" },
+    outlineBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      borderRadius: 14,
+      gap: 10,
+      backgroundColor: theme.colors.cardBackground,
+      borderWidth: 1.5,
+      borderColor: theme.colors.primary,
+    },
+    outlineBtnText: { fontSize: 17, fontWeight: "600", color: theme.colors.primary },
 
-  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: lightTheme.colors.divider },
-  dividerText: { color: lightTheme.colors.textTertiary, fontSize: 14, paddingHorizontal: 16 },
+    dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.divider },
+    dividerText: { color: theme.colors.textTertiary, fontSize: 14, paddingHorizontal: 16 },
 
-  socialRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 16 },
-  socialBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: lightTheme.colors.cardBackground,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  // Apple's own branded button
-  appleBtn: { width: 140, height: 56 },
+    socialRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 16 },
+    socialBtn: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      backgroundColor: theme.colors.cardBackground,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    // Apple's own branded button
+    appleBtn: { width: 140, height: 56 },
 
-  guestBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 8,
-  },
-  guestBtnText: { fontSize: 15, color: lightTheme.colors.textTertiary, fontWeight: "500" },
-  guestNote: { fontSize: 12, color: lightTheme.colors.placeholder, textAlign: "center" },
+    guestBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 14,
+      gap: 8,
+      marginTop: 8,
+    },
+    guestBtnText: { fontSize: 15, color: theme.colors.textTertiary, fontWeight: "500" },
+    guestNote: { fontSize: 12, color: theme.colors.placeholder, textAlign: "center" },
 
-  // Form
-  backBtn: {
-    alignSelf: "flex-start",
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: lightTheme.colors.cardBackground,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  formHeader: { marginBottom: 32 },
-  formTitle: { fontSize: 28, fontWeight: "800", color: lightTheme.colors.text, marginBottom: 4 },
-  formSubtitle: { fontSize: 16, color: lightTheme.colors.textTertiary },
-  formCard: { marginBottom: 24 },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  inputDivider: { height: 1, backgroundColor: lightTheme.colors.divider, marginLeft: 48 },
-  textInput: { flex: 1, fontSize: 16, color: lightTheme.colors.text },
-  submitBtnContainer: { marginBottom: 24 },
-  submitBtn: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  submitBtnText: { fontSize: 17, fontWeight: "600", color: "#FFFFFF" },
-  switchText: { fontSize: 15, color: lightTheme.colors.textTertiary, textAlign: "center" },
-  switchLink: { color: lightTheme.colors.primary, fontWeight: "600" },
-});
+    // Form
+    backBtn: {
+      alignSelf: "flex-start",
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.colors.cardBackground,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 24,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    formHeader: { marginBottom: 32 },
+    formTitle: { fontSize: 28, fontWeight: "800", color: theme.colors.text, marginBottom: 4 },
+    formSubtitle: { fontSize: 16, color: theme.colors.textTertiary },
+    formCard: { marginBottom: 24 },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      gap: 12,
+    },
+    inputDivider: { height: 1, backgroundColor: theme.colors.divider, marginLeft: 48 },
+    textInput: { flex: 1, fontSize: 16, color: theme.colors.text },
+    submitBtnContainer: { marginBottom: 24 },
+    submitBtn: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+    submitBtnText: { fontSize: 17, fontWeight: "600", color: "#FFFFFF" },
+    switchText: { fontSize: 15, color: theme.colors.textTertiary, textAlign: "center" },
+    switchLink: { color: theme.colors.primary, fontWeight: "600" },
+  });

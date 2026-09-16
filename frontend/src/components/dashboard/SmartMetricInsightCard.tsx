@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { FloatingIcon } from "../FloatingIcon";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -34,6 +34,8 @@ export function SmartMetricInsightCard({
   emptyLabel,
   entryDelay = 0,
 }: SmartMetricInsightCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { colors } = useTheme();
   const [showHelperText, setShowHelperText] = React.useState(false);
   const showEmpty = !metric || !metric.hasData;
@@ -91,65 +93,66 @@ export function SmartMetricInsightCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: 8 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  helperButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  content: {
-    minHeight: 56,
-    justifyContent: "center",
-  },
-  helper: {
-    fontSize: 14,
-    color: lightTheme.colors.textTertiary,
-  },
-  valueRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  value: {
-    fontSize: 27,
-    fontWeight: "800",
-  },
-  badge: {
-    fontSize: 11,
-    color: lightTheme.colors.textSecondary,
-    fontWeight: "700",
-  },
-  context: {
-    marginTop: 6,
-    fontSize: 12,
-    color: lightTheme.colors.textTertiary,
-  },
-  helperCaption: {
-    marginTop: 8,
-    fontSize: 12,
-    lineHeight: 18,
-    color: lightTheme.colors.textSecondary,
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: { marginTop: 8 },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    helperButton: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    content: {
+      minHeight: 56,
+      justifyContent: "center",
+    },
+    helper: {
+      fontSize: 14,
+      color: theme.colors.textTertiary,
+    },
+    valueRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    value: {
+      fontSize: 27,
+      fontWeight: "800",
+    },
+    badge: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontWeight: "700",
+    },
+    context: {
+      marginTop: 6,
+      fontSize: 12,
+      color: theme.colors.textTertiary,
+    },
+    helperCaption: {
+      marginTop: 8,
+      fontSize: 12,
+      lineHeight: 18,
+      color: theme.colors.textSecondary,
+    },
+  });

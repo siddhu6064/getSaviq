@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAppStore } from "../../store/appStore";
 import api from "../../services/api";
 
 interface NetWorthData {
@@ -17,12 +18,20 @@ interface NetWorthSummaryCardProps {
 }
 
 export function NetWorthSummaryCard({ profileId, onPress }: NetWorthSummaryCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { colors } = useTheme();
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
   const [data, setData] = useState<NetWorthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (isGuestMode) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     setIsLoading(true);
     setError("");
@@ -46,7 +55,7 @@ export function NetWorthSummaryCard({ profileId, onPress }: NetWorthSummaryCardP
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   const isPositive = (data?.net_worth ?? 0) >= 0;
   const netWorth = data?.net_worth ?? 0;
@@ -113,61 +122,62 @@ export function NetWorthSummaryCard({ profileId, onPress }: NetWorthSummaryCardP
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    minHeight: 48,
-  },
-  helperText: {
-    fontSize: 14,
-    color: lightTheme.colors.textSecondary,
-    minHeight: 48,
-    lineHeight: 48,
-  },
-  netWorthValue: {
-    fontSize: 30,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  pillRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-  },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  pillText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  pillLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    loadingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      minHeight: 48,
+    },
+    helperText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      minHeight: 48,
+      lineHeight: 48,
+    },
+    netWorthValue: {
+      fontSize: 30,
+      fontWeight: "800",
+      letterSpacing: -0.5,
+    },
+    pillRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 10,
+    },
+    pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    pillText: {
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    pillLabel: {
+      fontSize: 11,
+      fontWeight: "500",
+    },
+  });

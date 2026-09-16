@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { FloatingIcon } from "../FloatingIcon";
 import { formatCurrency } from "@shared/utils";
 
@@ -30,6 +30,8 @@ export function MetricValueCard({
   emptyLabel,
   entryDelay = 0,
 }: MetricValueCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <NeumorphicCard style={styles.card} entryDelay={entryDelay}>
       <View style={styles.header}>
@@ -56,36 +58,37 @@ export function MetricValueCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  amount: {
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  helper: {
-    fontSize: 14,
-    color: lightTheme.colors.textTertiary,
-  },
-  content: {
-    minHeight: 48,
-    justifyContent: "center",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    amount: {
+      fontSize: 28,
+      fontWeight: "800",
+    },
+    helper: {
+      fontSize: 14,
+      color: theme.colors.textTertiary,
+    },
+    content: {
+      minHeight: 48,
+      justifyContent: "center",
+    },
+  });

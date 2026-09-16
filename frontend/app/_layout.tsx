@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Slot, useRouter, useSegments, usePathname } from "expo-router";
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import { ThemeProvider } from "../src/contexts/ThemeContext";
@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { lightTheme } from "../src/components/NeumorphicUI";
+import { lightTheme, useNeumorphicTheme } from "../src/components/NeumorphicUI";
 import { AppLockGate } from "../src/components/AppLockGate";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
@@ -56,6 +56,8 @@ function InAppBanner({
 
 // ─── Root layout navigator ────────────────────────────────────────────────────
 function RootLayoutNav() {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { isLoading, isAuthenticated, signInWithGoogle } = useAuth();
   const router = useRouter();
   const segments = useSegments();
@@ -262,7 +264,7 @@ function RootLayoutNav() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={lightTheme.colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -290,14 +292,15 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: lightTheme.colors.background,
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.colors.background,
+    },
+  });
 
 const bannerStyles = StyleSheet.create({
   container: {

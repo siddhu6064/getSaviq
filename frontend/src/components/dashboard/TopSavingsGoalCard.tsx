@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { SavingsGoal } from "../../utils/goals";
 import { formatCurrency } from "@shared/utils";
 
@@ -20,6 +20,8 @@ export function TopSavingsGoalCard({
   projectionText,
   onPressGoals,
 }: TopSavingsGoalCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const progress = Math.max(0, Math.min(100, Number(goal?.progress_percentage || 0)));
   const currentAmount = Number(goal?.current_amount || 0);
   const targetAmount = Number(goal?.target_amount || 0);
@@ -28,7 +30,7 @@ export function TopSavingsGoalCard({
     <NeumorphicCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="flag-outline" size={18} color={lightTheme.colors.primary} />
+          <Ionicons name="flag-outline" size={18} color={theme.colors.primary} />
           <Text style={styles.title}>Top Savings Goal</Text>
         </View>
         <TouchableOpacity onPress={onPressGoals} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -65,69 +67,70 @@ export function TopSavingsGoalCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  link: {
-    fontSize: 13,
-    color: lightTheme.colors.primary,
-    fontWeight: "600",
-  },
-  helper: {
-    fontSize: 14,
-    color: lightTheme.colors.textTertiary,
-  },
-  goalTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  goalMeta: {
-    marginTop: 2,
-    fontSize: 13,
-    color: lightTheme.colors.textSecondary,
-  },
-  progressBg: {
-    marginTop: 8,
-    height: 8,
-    borderRadius: 4,
-    overflow: "hidden",
-    backgroundColor: lightTheme.colors.border,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: lightTheme.colors.primary,
-  },
-  amounts: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: "600",
-    color: lightTheme.colors.text,
-  },
-  projection: {
-    marginTop: 3,
-    fontSize: 12,
-    color: lightTheme.colors.textTertiary,
-  },
-  content: {
-    minHeight: 72,
-    justifyContent: "center",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    link: {
+      fontSize: 13,
+      color: theme.colors.primary,
+      fontWeight: "600",
+    },
+    helper: {
+      fontSize: 14,
+      color: theme.colors.textTertiary,
+    },
+    goalTitle: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    goalMeta: {
+      marginTop: 2,
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+    },
+    progressBg: {
+      marginTop: 8,
+      height: 8,
+      borderRadius: 4,
+      overflow: "hidden",
+      backgroundColor: theme.colors.border,
+    },
+    progressBar: {
+      height: "100%",
+      backgroundColor: theme.colors.primary,
+    },
+    amounts: {
+      marginTop: 8,
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.colors.text,
+    },
+    projection: {
+      marginTop: 3,
+      fontSize: 12,
+      color: theme.colors.textTertiary,
+    },
+    content: {
+      minHeight: 72,
+      justifyContent: "center",
+    },
+  });

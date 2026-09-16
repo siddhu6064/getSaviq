@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { deriveSmartInsightsState } from "../../utils/aiIntelligenceState";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -19,14 +19,17 @@ interface SmartInsightsWidgetProps {
   onPressAskAI?: () => void;
 }
 
-function getSeverityColor(severity?: string) {
+function getSeverityColor(
+  severity: string | undefined,
+  theme: ReturnType<typeof useNeumorphicTheme>,
+) {
   if (severity === "critical" || severity === "warning" || severity === "high") {
-    return lightTheme.colors.warning;
+    return theme.colors.warning;
   }
   if (severity === "positive") {
-    return lightTheme.colors.success;
+    return theme.colors.success;
   }
-  return lightTheme.colors.primary;
+  return theme.colors.primary;
 }
 
 export function SmartInsightsWidget({
@@ -36,6 +39,8 @@ export function SmartInsightsWidget({
   onPressAskAI,
 }: SmartInsightsWidgetProps) {
   const { colors } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const items = Array.isArray(insights) ? insights.slice(0, 2) : [];
   const viewState = deriveSmartInsightsState({ isLoading, error, insights });
 
@@ -71,7 +76,9 @@ export function SmartInsightsWidget({
         <View style={styles.items}>
           {items.map((item, index) => (
             <View key={`${item.type || "insight"}-${index}`} style={styles.itemRow}>
-              <View style={[styles.dot, { backgroundColor: getSeverityColor(item.severity) }]} />
+              <View
+                style={[styles.dot, { backgroundColor: getSeverityColor(item.severity, theme) }]}
+              />
               <View style={styles.itemText}>
                 <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
                   {item.title || "Insight"}
@@ -88,43 +95,44 @@ export function SmartInsightsWidget({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: 8 },
-  header: {
-    marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 16, fontWeight: "700", color: lightTheme.colors.text },
-  askAiButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  askAiButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: lightTheme.colors.primary,
-  },
-  helper: { fontSize: 14, color: lightTheme.colors.textTertiary },
-  items: { gap: 10 },
-  itemRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  itemText: { flex: 1 },
-  itemTitle: { fontSize: 13, fontWeight: "700", color: lightTheme.colors.text },
-  itemBody: { marginTop: 2, fontSize: 13, lineHeight: 18, color: lightTheme.colors.textSecondary },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: { marginTop: 8 },
+    header: {
+      marginBottom: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+    askAiButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 14,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    askAiButtonText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: theme.colors.primary,
+    },
+    helper: { fontSize: 14, color: theme.colors.textTertiary },
+    items: { gap: 10 },
+    itemRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginTop: 6,
+    },
+    itemText: { flex: 1 },
+    itemTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+    itemBody: { marginTop: 2, fontSize: 13, lineHeight: 18, color: theme.colors.textSecondary },
+  });

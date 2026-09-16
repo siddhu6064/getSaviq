@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { MoMSummary } from "../../utils/monthSpend";
 import { formatCurrency } from "@shared/utils";
 
@@ -12,6 +12,8 @@ interface MoMChangeCardProps {
 }
 
 export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {
     currentMonthSpend,
     previousMonthSpend,
@@ -27,10 +29,10 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
 
   const accentColor =
     direction === "up"
-      ? lightTheme.colors.danger
+      ? theme.colors.danger
       : direction === "down"
-        ? lightTheme.colors.success
-        : lightTheme.colors.textTertiary;
+        ? theme.colors.success
+        : theme.colors.textTertiary;
 
   const iconName: keyof typeof Ionicons.glyphMap =
     direction === "up"
@@ -55,7 +57,7 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
     <NeumorphicCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="swap-vertical-outline" size={18} color={lightTheme.colors.primary} />
+          <Ionicons name="swap-vertical-outline" size={18} color={theme.colors.primary} />
           <Text style={styles.title}>MoM Change</Text>
         </View>
       </View>
@@ -86,51 +88,52 @@ export function MoMChangeCard({ isLoading, error, summary }: MoMChangeCardProps)
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  helper: {
-    fontSize: 14,
-    color: lightTheme.colors.textTertiary,
-  },
-  primaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  primaryText: {
-    fontSize: 26,
-    fontWeight: "800",
-  },
-  headline: {
-    marginTop: 6,
-    fontSize: 13,
-    color: lightTheme.colors.textSecondary,
-  },
-  subline: {
-    marginTop: 4,
-    fontSize: 12,
-    color: lightTheme.colors.textTertiary,
-  },
-  content: {
-    minHeight: 68,
-    justifyContent: "center",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    helper: {
+      fontSize: 14,
+      color: theme.colors.textTertiary,
+    },
+    primaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    primaryText: {
+      fontSize: 26,
+      fontWeight: "800",
+    },
+    headline: {
+      marginTop: 6,
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+    },
+    subline: {
+      marginTop: 4,
+      fontSize: 12,
+      color: theme.colors.textTertiary,
+    },
+    content: {
+      minHeight: 68,
+      justifyContent: "center",
+    },
+  });

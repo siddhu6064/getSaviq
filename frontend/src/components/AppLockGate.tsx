@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, AppState, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
-import { lightTheme } from "./NeumorphicUI";
+import { useNeumorphicTheme } from "./NeumorphicUI";
 import { shouldRequireUnlock, isForegroundTransition } from "../utils/appLockState";
 
 export const APP_LOCK_ENABLED_KEY = "app_lock_enabled";
@@ -15,6 +15,8 @@ export function AppLockGate({
   children: React.ReactNode;
   isAuthenticated: boolean;
 }) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [enabled, setEnabled] = useState(false);
   const [locked, setLocked] = useState(false);
   const [checkingHardware, setCheckingHardware] = useState(true);
@@ -89,7 +91,7 @@ export function AppLockGate({
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>
-        <Ionicons name="lock-closed" size={36} color={lightTheme.colors.primary} />
+        <Ionicons name="lock-closed" size={36} color={theme.colors.primary} />
       </View>
       <Text style={styles.title}>SAVIQ Locked</Text>
       <Text style={styles.subtitle}>Unlock with Face ID or your passcode to continue</Text>
@@ -101,48 +103,49 @@ export function AppLockGate({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-    backgroundColor: lightTheme.colors.background,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: lightTheme.colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: lightTheme.colors.textSecondary,
-    textAlign: "center",
-    marginBottom: 28,
-  },
-  unlockBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: lightTheme.colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  unlockBtnText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 9999,
+      backgroundColor: theme.colors.background,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 32,
+    },
+    iconCircle: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: "#EFF6FF",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 28,
+    },
+    unlockBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 14,
+    },
+    unlockBtnText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#FFF",
+    },
+  });

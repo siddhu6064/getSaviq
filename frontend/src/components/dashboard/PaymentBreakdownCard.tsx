@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAppStore } from "../../store/appStore";
 import api from "../../services/api";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
 
@@ -19,12 +20,13 @@ interface Props {
 
 export function PaymentBreakdownCard({ profileId, onPressPaymentMethod }: Props) {
   const { colors } = useTheme();
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
   const [items, setItems] = useState<PaymentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!profileId) {
+    if (!profileId || isGuestMode) {
       setItems([]);
       setIsLoading(false);
       return;
@@ -47,7 +49,7 @@ export function PaymentBreakdownCard({ profileId, onPressPaymentMethod }: Props)
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   return (
     <NeumorphicCard style={styles.card}>

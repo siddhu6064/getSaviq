@@ -2,18 +2,19 @@ import React from "react";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, StyleSheet, Platform, StatusBar, TouchableOpacity } from "react-native";
-import { lightTheme } from "../../src/components/NeumorphicUI";
+import { useNeumorphicTheme } from "../../src/components/NeumorphicUI";
 import { useTheme } from "../../src/contexts/ThemeContext";
 import { useBillsStore } from "../../src/store/billsStore";
 
 export default function TabLayout() {
   const router = useRouter();
   const { colors } = useTheme();
+  const neumorphicTheme = useNeumorphicTheme();
   const billsDueSoonCount = useBillsStore((s) => s.dueSoonCount);
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={lightTheme.colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={neumorphicTheme.colors.background} />
       <Tabs
         screenOptions={{
           tabBarStyle: styles.tabBar,

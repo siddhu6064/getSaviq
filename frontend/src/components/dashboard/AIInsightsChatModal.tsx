@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { lightTheme } from "../NeumorphicUI";
+import { useNeumorphicTheme } from "../NeumorphicUI";
 import { aiAPI } from "../../services/api";
 import { useAppStore } from "../../store/appStore";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -67,6 +67,8 @@ export function AIInsightsChatModal({
   onClose,
 }: AIInsightsChatModalProps) {
   const { colors, darkMode } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const setAIChatSession = useAppStore((state) => state.setAIChatSession);
   const session = useAppStore((state) => (profileId ? state.aiChatSessions[profileId] : undefined));
   const messages = (session?.messages as ChatMessage[] | undefined) || [];
@@ -281,7 +283,7 @@ export function AIInsightsChatModal({
                     <Text
                       style={[
                         styles.suggestionChipText,
-                        { color: darkMode ? colors.primary : lightTheme.colors.primaryDark },
+                        { color: darkMode ? colors.primary : theme.colors.primaryDark },
                       ]}
                     >
                       {suggestion}
@@ -383,172 +385,173 @@ export function AIInsightsChatModal({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: lightTheme.colors.background,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: lightTheme.colors.border,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  titleWrap: { flex: 1, paddingRight: 8 },
-  title: { fontSize: 18, fontWeight: "800", color: lightTheme.colors.text },
-  subtitle: { marginTop: 2, fontSize: 12, color: lightTheme.colors.textSecondary },
-  clearButton: { paddingHorizontal: 10, paddingVertical: 8, marginRight: 4 },
-  clearButtonText: { fontSize: 13, fontWeight: "600" },
-  closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: lightTheme.colors.primaryLight,
-  },
-  threadContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 24,
-  },
-  emptyState: {
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 12,
-    backgroundColor: lightTheme.colors.cardBackground,
-    padding: 14,
-    gap: 6,
-  },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  emptyBody: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: lightTheme.colors.textSecondary,
-  },
-  suggestionsWrap: {
-    marginTop: 8,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  suggestionChip: {
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    backgroundColor: "#F6F2FF",
-    borderRadius: 999,
-    minHeight: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    justifyContent: "center",
-  },
-  suggestionChipText: {
-    fontSize: 12,
-    color: lightTheme.colors.primaryDark,
-    fontWeight: "600",
-  },
-  messageBubble: {
-    maxWidth: "88%",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  userBubble: {
-    alignSelf: "flex-end",
-    backgroundColor: lightTheme.colors.primary,
-  },
-  assistantBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-  },
-  userMessageText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  assistantMessageText: {
-    color: lightTheme.colors.text,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  generatedAtText: {
-    marginTop: 6,
-    fontSize: 11,
-    color: lightTheme.colors.textTertiary,
-  },
-  inlinePendingRow: {
-    marginTop: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  pendingMetaText: {
-    fontSize: 12,
-    color: lightTheme.colors.textSecondary,
-  },
-  retryButton: {
-    marginTop: 8,
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 36,
-    gap: 4,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  retryButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: lightTheme.colors.primary,
-  },
-  composer: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 12,
-    borderTopWidth: 0.5,
-    borderTopColor: lightTheme.colors.border,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 110,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: lightTheme.colors.text,
-    backgroundColor: lightTheme.colors.background,
-    fontSize: 14,
-  },
-  sendButton: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: lightTheme.colors.primary,
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: theme.colors.border,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: theme.colors.cardBackground,
+    },
+    titleWrap: { flex: 1, paddingRight: 8 },
+    title: { fontSize: 18, fontWeight: "800", color: theme.colors.text },
+    subtitle: { marginTop: 2, fontSize: 12, color: theme.colors.textSecondary },
+    clearButton: { paddingHorizontal: 10, paddingVertical: 8, marginRight: 4 },
+    clearButtonText: { fontSize: 13, fontWeight: "600" },
+    closeButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.colors.primaryLight,
+    },
+    threadContent: {
+      padding: 16,
+      gap: 12,
+      paddingBottom: 24,
+    },
+    emptyState: {
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 12,
+      backgroundColor: theme.colors.cardBackground,
+      padding: 14,
+      gap: 6,
+    },
+    emptyTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    emptyBody: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.colors.textSecondary,
+    },
+    suggestionsWrap: {
+      marginTop: 8,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    suggestionChip: {
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      backgroundColor: "#F6F2FF",
+      borderRadius: 999,
+      minHeight: 36,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      justifyContent: "center",
+    },
+    suggestionChipText: {
+      fontSize: 12,
+      color: theme.colors.primaryDark,
+      fontWeight: "600",
+    },
+    messageBubble: {
+      maxWidth: "88%",
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    userBubble: {
+      alignSelf: "flex-end",
+      backgroundColor: theme.colors.primary,
+    },
+    assistantBubble: {
+      alignSelf: "flex-start",
+      backgroundColor: theme.colors.cardBackground,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+    },
+    userMessageText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    assistantMessageText: {
+      color: theme.colors.text,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    generatedAtText: {
+      marginTop: 6,
+      fontSize: 11,
+      color: theme.colors.textTertiary,
+    },
+    inlinePendingRow: {
+      marginTop: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    pendingMetaText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    retryButton: {
+      marginTop: 8,
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: 36,
+      gap: 4,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 14,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    retryButtonText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: theme.colors.primary,
+    },
+    composer: {
+      paddingHorizontal: 12,
+      paddingTop: 8,
+      paddingBottom: 12,
+      borderTopWidth: 0.5,
+      borderTopColor: theme.colors.border,
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    input: {
+      flex: 1,
+      minHeight: 44,
+      maxHeight: 110,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.background,
+      fontSize: 14,
+    },
+    sendButton: {
+      height: 44,
+      width: 44,
+      borderRadius: 22,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.colors.primary,
+    },
+    sendButtonDisabled: {
+      opacity: 0.4,
+    },
+  });

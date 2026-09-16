@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAppStore } from "../../store/appStore";
 import { billsAPI } from "../../services/api";
 import { computeBillStatus, getEffectiveDueDay, Bill } from "../../utils/billsStatus";
 
@@ -12,12 +13,20 @@ interface Props {
 }
 
 export function UpcomingBillsCard({ profileId, onPress }: Props) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { colors } = useTheme();
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
 
   useEffect(() => {
+    if (isGuestMode) {
+      setBills([]);
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     setIsLoading(true);
     setError("");
@@ -41,7 +50,7 @@ export function UpcomingBillsCard({ profileId, onPress }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   const upcomingBills = useMemo(() => {
     return bills
@@ -136,36 +145,37 @@ export function UpcomingBillsCard({ profileId, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: 8 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 16, fontWeight: "700" },
-  loadingRow: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 40 },
-  helperText: { fontSize: 14, minHeight: 40, lineHeight: 40 },
-  allClear: { fontSize: 14, fontWeight: "600", paddingVertical: 8 },
-  billRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 5,
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  billName: { flex: 1, fontSize: 14, fontWeight: "500" },
-  billAmount: { fontSize: 14, fontWeight: "700" },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: lightTheme.colors.border,
-  },
-  footerText: { fontSize: 12 },
-  footerAmount: { fontSize: 12, fontWeight: "700" },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: { marginTop: 8 },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { fontSize: 16, fontWeight: "700" },
+    loadingRow: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 40 },
+    helperText: { fontSize: 14, minHeight: 40, lineHeight: 40 },
+    allClear: { fontSize: 14, fontWeight: "600", paddingVertical: 8 },
+    billRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 5,
+    },
+    statusDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+    billName: { flex: 1, fontSize: 14, fontWeight: "500" },
+    billAmount: { fontSize: 14, fontWeight: "700" },
+    footer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.border,
+    },
+    footerText: { fontSize: 12 },
+    footerAmount: { fontSize: 12, fontWeight: "700" },
+  });
