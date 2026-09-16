@@ -17,27 +17,29 @@ import Animated, {
   withSpring,
   FadeInDown,
 } from "react-native-reanimated";
+import { useTheme } from "../contexts/ThemeContext";
+import canonicalColors from "@shared/constants/colors.json";
 
 // Light Neumorphic Theme Colors
 export const lightTheme = {
   colors: {
-    background: "#F2F2F7",
-    cardBackground: "#FFFFFF",
-    primary: "#7F52FF",
-    primaryLight: "#EDE7FF",
-    primaryDark: "#6B42E0",
-    secondary: "#8E8E93",
-    success: "#34C759",
-    warning: "#FF9500",
-    danger: "#FF3B30",
-    text: "#000000",
-    textSecondary: "#3C3C43",
-    textTertiary: "#8E8E93",
+    background: canonicalColors.background.page,
+    cardBackground: canonicalColors.background.surface,
+    primary: canonicalColors.brand.primary,
+    primaryLight: canonicalColors.brand.tint,
+    primaryDark: canonicalColors.brand.primaryHover,
+    secondary: canonicalColors.text.secondary,
+    success: canonicalColors.semantic.income,
+    warning: canonicalColors.semantic.warning,
+    danger: canonicalColors.semantic.expense,
+    text: canonicalColors.text.primary,
+    textSecondary: canonicalColors.text.secondary,
+    textTertiary: canonicalColors.text.secondary,
     placeholder: "#C7C7CC",
-    border: "#E5E5EA",
-    divider: "#C6C6C8",
-    inputBackground: "#FFFFFF",
-    toggleInactive: "#E5E5EA",
+    border: canonicalColors.semantic.border,
+    divider: canonicalColors.semantic.border,
+    inputBackground: canonicalColors.background.surface,
+    toggleInactive: canonicalColors.semantic.border,
     // Category colors
     teal: "#5AC8FA",
     purple: "#AF52DE",
@@ -64,7 +66,7 @@ export const lightTheme = {
       elevation: 1,
     },
     button: {
-      shadowColor: "#7F52FF",
+      shadowColor: canonicalColors.brand.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -163,7 +165,10 @@ interface SegmentedControlProps {
 export function SegmentedControl({ options, selectedIndex, onSelect }: SegmentedControlProps) {
   return (
     <View style={styles.segmentedContainer}>
-      <LinearGradient colors={["#EDE7FF", "#F5F0FF"]} style={styles.segmentedBackground}>
+      <LinearGradient
+        colors={[canonicalColors.brand.tint, canonicalColors.background.surface]}
+        style={styles.segmentedBackground}
+      >
         {options.map((option, index) => (
           <TouchableOpacity
             key={option}
@@ -172,7 +177,10 @@ export function SegmentedControl({ options, selectedIndex, onSelect }: Segmented
             activeOpacity={0.7}
           >
             {selectedIndex === index ? (
-              <LinearGradient colors={["#7F52FF", "#9B7BFF"]} style={styles.segmentGradient}>
+              <LinearGradient
+                colors={[canonicalColors.brand.primary, canonicalColors.brand.onDark]}
+                style={styles.segmentGradient}
+              >
                 <Text style={styles.segmentTextSelected}>{option}</Text>
               </LinearGradient>
             ) : (
@@ -252,15 +260,16 @@ export function PrimaryButton({
   disabled = false,
   variant = "primary",
 }: PrimaryButtonProps) {
+  const { colors } = useTheme();
   const getColors = () => {
-    if (disabled) return ["#C7C7CC", "#B0B0B5"];
+    if (disabled) return [colors.border, colors.border];
     switch (variant) {
       case "danger":
-        return ["#FF3B30", "#E8352B"];
+        return [colors.expense, "#E8352B"];
       case "secondary":
-        return ["#E5E5EA", "#D1D1D6"];
+        return [colors.surfaceHover, colors.border];
       default:
-        return ["#7F52FF", "#6B42E0"];
+        return [colors.primary, colors.primaryHover];
     }
   };
 

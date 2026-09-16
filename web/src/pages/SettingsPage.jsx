@@ -65,7 +65,7 @@ const categoryColors = [
   "#8b5cf6",
   "#ec4899",
   "#6b7280",
-  "#4A6D5C",
+  "#10b981",
 ];
 
 export default function SettingsPage() {
@@ -113,7 +113,7 @@ export default function SettingsPage() {
   const [removeMemberConfirm, setRemoveMemberConfirm] = useState(null); // { profile, member }
 
   // Form states
-  const [categoryForm, setCategoryForm] = useState({ name: "", icon: "tag", color: "#4A6D5C" });
+  const [categoryForm, setCategoryForm] = useState({ name: "", icon: "tag", color: "#6b7280" });
   const [paymentForm, setPaymentForm] = useState({
     name: "",
     type: "cash",
@@ -160,7 +160,7 @@ export default function SettingsPage() {
       await refresh();
       setShowCategoryModal(false);
       setEditingItem(null);
-      setCategoryForm({ name: "", icon: "tag", color: "#4A6D5C" });
+      setCategoryForm({ name: "", icon: "tag", color: "#6b7280" });
     } catch (error) {
       console.error("Failed to save category:", error);
     } finally {
@@ -598,7 +598,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={() => {
                     setEditingItem(null);
-                    setCategoryForm({ name: "", icon: "tag", color: "#4A6D5C" });
+                    setCategoryForm({ name: "", icon: "tag", color: "#6b7280" });
                     setShowCategoryModal(true);
                   }}
                   size="sm"

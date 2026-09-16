@@ -1,6 +1,8 @@
 // Shared Constants for SAVIQ
 // Used by both Web and Mobile apps
 
+import colors from "./colors.json";
+
 // Category colors palette
 export const CATEGORY_COLORS = [
   "#ef4444", // Red
@@ -47,16 +49,16 @@ export const CATEGORY_ICON_MAP: Record<string, string> = {
 // Transaction type colors
 export const TRANSACTION_COLORS = {
   income: {
-    primary: "#3D8B61",
-    background: "#E9F5EF",
+    primary: colors.semantic.income,
+    background: colors.semantic.incomeBg,
   },
   expense: {
-    primary: "#E63946",
-    background: "#FBEAEC",
+    primary: colors.semantic.expense,
+    background: colors.semantic.expenseBg,
   },
   transfer: {
-    primary: "#457B9D",
-    background: "#EAF2F6",
+    primary: colors.semantic.transfer,
+    background: colors.semantic.transferBg,
   },
 };
 
@@ -74,26 +76,26 @@ export const WEEK_DAYS = [
 // Theme colors
 export const THEME = {
   light: {
-    background: "#F9F8F6",
-    surface: "#FFFFFF",
-    surfaceHover: "#F2EFEB",
-    textPrimary: "#2B2A28",
-    textSecondary: "#73716D",
-    border: "#E5E2DC",
-    brandPrimary: "#4A6D5C",
-    brandHover: "#3D594B",
-    brandAccent: "#E07A5F",
+    background: colors.background.page,
+    surface: colors.background.surface,
+    surfaceHover: colors.background.surfaceHover,
+    textPrimary: colors.text.primary,
+    textSecondary: colors.text.secondary,
+    border: colors.semantic.border,
+    brandPrimary: colors.brand.primary,
+    brandHover: colors.brand.primaryHover,
+    brandAccent: colors.brand.accent,
   },
   dark: {
-    background: "#1a1a1a",
-    surface: "#2d2d2d",
-    surfaceHover: "#3d3d3d",
-    textPrimary: "#f5f5f5",
-    textSecondary: "#a0a0a0",
-    border: "#444444",
-    brandPrimary: "#5A8D6C",
-    brandHover: "#4D7A5B",
-    brandAccent: "#E07A5F",
+    background: colors.dark.background,
+    surface: colors.dark.surface,
+    surfaceHover: colors.dark.surfaceHover,
+    textPrimary: colors.dark.textPrimary,
+    textSecondary: colors.dark.textSecondary,
+    border: colors.dark.border,
+    brandPrimary: colors.dark.brand,
+    brandHover: colors.dark.brand,
+    brandAccent: colors.brand.accent,
   },
 };
 

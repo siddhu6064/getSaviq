@@ -3,10 +3,12 @@ import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, StyleSheet, Platform, StatusBar, TouchableOpacity } from "react-native";
 import { lightTheme } from "../../src/components/NeumorphicUI";
+import { useTheme } from "../../src/contexts/ThemeContext";
 import { useBillsStore } from "../../src/store/billsStore";
 
 export default function TabLayout() {
   const router = useRouter();
+  const { colors } = useTheme();
   const billsDueSoonCount = useBillsStore((s) => s.dueSoonCount);
 
   return (
@@ -15,7 +17,7 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: "#FF3B30",
+          tabBarActiveTintColor: colors.expense,
           tabBarInactiveTintColor: "#8E8E93",
           tabBarShowLabel: true,
           tabBarLabelStyle: styles.tabLabel,

@@ -18,8 +18,8 @@ body {
 
 .dark body,
 html.dark body {
-  background-color: #1a1a1a;
-  color: #f5f5f5;
+  background-color: #1c1c1e;
+  color: #f2efeb;
 }
 
 h1,
@@ -40,7 +40,7 @@ h6 {
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #1c1c1e;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -49,7 +49,7 @@ h6 {
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #444;
+  background: #38383a;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -73,24 +73,24 @@ h6 {
 
 /* Dark mode overrides */
 .dark .bg-page {
-  background-color: #1a1a1a;
+  background-color: #1c1c1e;
 }
 .dark .bg-surface,
 .dark .bg-white {
-  background-color: #2d2d2d;
+  background-color: #2c2c2e;
 }
 .dark .bg-surface-hover {
-  background-color: #3d3d3d;
+  background-color: #3a3a3c;
 }
 .dark .text-text-primary {
-  color: #f5f5f5;
+  color: #f2efeb;
 }
 .dark .text-text-secondary {
-  color: #a0a0a0;
+  color: #9c9a95;
 }
 .dark .border-border-color {
-  border-color: #444;
+  border-color: #38383a;
 }
 .dark .bg-brand-primary\/10 {
-  background-color: rgba(74, 109, 92, 0.2);
+  background-color: rgba(30, 103, 66, 0.2);
 }

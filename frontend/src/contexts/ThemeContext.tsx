@@ -3,6 +3,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "react-native";
 import { settingsAPI } from "../services/api";
 import { setActiveCurrency } from "@shared/utils";
+import colors from "@shared/constants/colors.json";
+
+// Pre-launch decision: no dark palette exists outside ThemeContext's own tokens
+// yet (see the light-mode force below), so any dark-mode toggle UI should stay
+// hidden behind this until that work resumes.
+export const DARK_MODE_ENABLED = false;
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -11,31 +17,47 @@ interface ThemeContextType {
 }
 
 const lightColors = {
-  background: "#F8F8FA",
-  surface: "#FFFFFF",
-  surfaceHover: "#F0F0F4",
-  textPrimary: "#000000",
-  textSecondary: "#8E8E93",
-  border: "#E5E5EA",
-  primary: "#007AFF",
-  income: "#34C759",
-  expense: "#FF3B30",
-  transfer: "#5856D6",
-  warning: "#FF9500",
+  background: colors.background.page,
+  surface: colors.background.surface,
+  surfaceHover: colors.background.surfaceHover,
+  textPrimary: colors.text.primary,
+  textSecondary: colors.text.secondary,
+  border: colors.semantic.border,
+  primary: colors.brand.primary,
+  primaryHover: colors.brand.primaryHover,
+  accent: colors.brand.accent,
+  tint: colors.brand.tint,
+  onDark: colors.brand.onDark,
+  income: colors.semantic.income,
+  incomeBg: colors.semantic.incomeBg,
+  expense: colors.semantic.expense,
+  expenseBg: colors.semantic.expenseBg,
+  transfer: colors.semantic.transfer,
+  transferBg: colors.semantic.transferBg,
+  warning: colors.semantic.warning,
 };
 
-const darkColors = {
-  background: "#1C1C1E",
-  surface: "#2C2C2E",
-  surfaceHover: "#3A3A3C",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#8E8E93",
-  border: "#38383A",
-  primary: "#0A84FF",
-  income: "#30D158",
-  expense: "#FF453A",
-  transfer: "#5E5CE6",
-  warning: "#FF9F0A",
+export type ThemeColors = typeof lightColors;
+
+export const darkColors = {
+  background: colors.dark.background,
+  surface: colors.dark.surface,
+  surfaceHover: colors.dark.surfaceHover,
+  textPrimary: colors.dark.textPrimary,
+  textSecondary: colors.dark.textSecondary,
+  border: colors.dark.border,
+  primary: colors.dark.brand,
+  primaryHover: colors.dark.brand,
+  accent: colors.brand.accent,
+  tint: colors.brand.tint,
+  onDark: colors.brand.onDark,
+  income: colors.semantic.income,
+  incomeBg: colors.semantic.incomeBg,
+  expense: colors.semantic.expense,
+  expenseBg: colors.semantic.expenseBg,
+  transfer: colors.semantic.transfer,
+  transferBg: colors.semantic.transferBg,
+  warning: colors.semantic.warning,
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -87,7 +109,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const colors = darkMode ? darkColors : lightColors;
+  // Pre-launch decision: force light mode regardless of darkMode/system appearance.
+  // NeumorphicUI (login, app shell, Home, Add Transaction, App Lock) has no dark
+  // palette yet, so honoring dark here would render those screens broken.
+  // darkColors is kept intact and exported so dark-mode work can resume later.
+  const colors = lightColors;
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colors }}>
