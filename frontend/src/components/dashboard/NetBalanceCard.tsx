@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { lightTheme, NeumorphicCard } from "../NeumorphicUI";
+import { useNeumorphicTheme, NeumorphicCard } from "../NeumorphicUI";
 import { formatCurrency } from "@shared/utils";
 
 interface NetBalanceCardProps {
@@ -23,11 +23,13 @@ export function NetBalanceCard({
   totalExpense,
   onPressAccounts,
 }: NetBalanceCardProps) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <NeumorphicCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="wallet-outline" size={18} color={lightTheme.colors.primary} />
+          <Ionicons name="wallet-outline" size={18} color={theme.colors.primary} />
           <Text style={styles.title}>Net Balance</Text>
         </View>
         {onPressAccounts ? (
@@ -63,60 +65,61 @@ export function NetBalanceCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  link: {
-    fontSize: 13,
-    color: lightTheme.colors.primary,
-    fontWeight: "600",
-  },
-  amount: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: lightTheme.colors.text,
-    marginBottom: 6,
-  },
-  amountNegative: {
-    color: lightTheme.colors.danger,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  metaIncome: {
-    fontSize: 13,
-    color: lightTheme.colors.blue,
-    fontWeight: "600",
-  },
-  metaExpense: {
-    fontSize: 13,
-    color: lightTheme.colors.danger,
-    fontWeight: "600",
-  },
-  helper: {
-    fontSize: 14,
-    color: lightTheme.colors.textTertiary,
-  },
-  content: {
-    minHeight: 48,
-    justifyContent: "center",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    link: {
+      fontSize: 13,
+      color: theme.colors.primary,
+      fontWeight: "600",
+    },
+    amount: {
+      fontSize: 30,
+      fontWeight: "800",
+      color: theme.colors.text,
+      marginBottom: 6,
+    },
+    amountNegative: {
+      color: theme.colors.danger,
+    },
+    metaRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    metaIncome: {
+      fontSize: 13,
+      color: theme.colors.blue,
+      fontWeight: "600",
+    },
+    metaExpense: {
+      fontSize: 13,
+      color: theme.colors.danger,
+      fontWeight: "600",
+    },
+    helper: {
+      fontSize: 14,
+      color: theme.colors.textTertiary,
+    },
+    content: {
+      minHeight: 48,
+      justifyContent: "center",
+    },
+  });

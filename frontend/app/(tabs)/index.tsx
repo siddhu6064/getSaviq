@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { NeumorphicCard, lightTheme } from "../../src/components/NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../../src/components/NeumorphicUI";
 import { useAppStore } from "../../src/store/appStore";
 import api from "../../src/services/api";
 import { buildNetBalanceSummary } from "../../src/utils/netBalance";
@@ -39,6 +39,8 @@ import {
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const {
     activeProfile,
@@ -48,6 +50,7 @@ export default function DashboardScreen() {
     fetchExpenses,
     fetchPaymentMethods,
     fetchSummary,
+    isGuestMode,
   } = useAppStore();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -138,99 +141,118 @@ export default function DashboardScreen() {
           fetchSummary(activeProfile.profile_id, "month"),
         ]);
 
-        try {
-          const goalsResponse = await api.get("/savings-goals", {
-            params: { profile_id: activeProfile.profile_id },
-          });
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            setGoals(Array.isArray(goalsResponse.data) ? goalsResponse.data : []);
-            setGoalsError("");
-          }
-        } catch {
+        if (isGuestMode) {
           if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
             setGoals([]);
-            setGoalsError("Could not load top goal right now.");
-          }
-        }
-
-        try {
-          const smartMetricsResponse = await api.get("/dashboard/metrics", {
-            params: { profile_id: activeProfile.profile_id },
-          });
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            const payload = smartMetricsResponse?.data;
-            setSmartMetricsPayload(payload && typeof payload === "object" ? payload : null);
-            setSmartMetricsError("");
-          }
-        } catch {
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+            setGoalsError("");
             setSmartMetricsPayload(null);
-            setSmartMetricsError("Could not load smart metrics right now.");
-          }
-        }
-
-        try {
-          const insightsResponse = await api.get("/insights/overview", {
-            params: { profile_id: activeProfile.profile_id },
-          });
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            setSmartInsights(
-              Array.isArray(insightsResponse?.data?.insights) ? insightsResponse.data.insights : [],
-            );
-            setSmartInsightsError("");
-          }
-        } catch {
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+            setSmartMetricsError("");
             setSmartInsights([]);
-            setSmartInsightsError("Could not load smart insights right now.");
-          }
-        }
-
-        try {
-          const forecastResponse = await api.get("/forecast", {
-            params: { profile_id: activeProfile.profile_id, recent_days: 30 },
-          });
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            const payload = forecastResponse?.data;
-            setForecastPayload(payload && typeof payload === "object" ? payload : null);
-            setForecastError("");
-          }
-        } catch {
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+            setSmartInsightsError("");
             setForecastPayload(null);
-            setForecastError("Could not load forecast right now.");
-          }
-        }
-
-        try {
-          const digestResponse = await api.get("/weekly-digest/latest", {
-            params: { profile_id: activeProfile.profile_id },
-          });
-          if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
-            const payload = digestResponse?.data?.digest;
-            setWeeklyDigestPayload(payload && typeof payload === "object" ? payload : null);
-            setWeeklyDigestError("");
-          }
-        } catch {
-          if (requestId === dashboardRequestIdRef.current) {
+            setForecastError("");
             setWeeklyDigestPayload(null);
-            setWeeklyDigestError("Could not load weekly digest right now.");
-          }
-        }
-
-        try {
-          const subscriptionsResponse = await api.get("/subscriptions/summary", {
-            params: { profile_id: activeProfile.profile_id },
-          });
-          if (requestId === dashboardRequestIdRef.current) {
-            const payload = subscriptionsResponse?.data;
-            setSubscriptionsPayload(payload && typeof payload === "object" ? payload : null);
+            setWeeklyDigestError("");
+            setSubscriptionsPayload(null);
             setSubscriptionsError("");
           }
-        } catch {
-          if (requestId === dashboardRequestIdRef.current) {
-            setSubscriptionsPayload(null);
-            setSubscriptionsError("Could not load subscription detection right now.");
+        } else {
+          try {
+            const goalsResponse = await api.get("/savings-goals", {
+              params: { profile_id: activeProfile.profile_id },
+            });
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setGoals(Array.isArray(goalsResponse.data) ? goalsResponse.data : []);
+              setGoalsError("");
+            }
+          } catch {
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setGoals([]);
+              setGoalsError("Could not load top goal right now.");
+            }
+          }
+
+          try {
+            const smartMetricsResponse = await api.get("/dashboard/metrics", {
+              params: { profile_id: activeProfile.profile_id },
+            });
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              const payload = smartMetricsResponse?.data;
+              setSmartMetricsPayload(payload && typeof payload === "object" ? payload : null);
+              setSmartMetricsError("");
+            }
+          } catch {
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setSmartMetricsPayload(null);
+              setSmartMetricsError("Could not load smart metrics right now.");
+            }
+          }
+
+          try {
+            const insightsResponse = await api.get("/insights/overview", {
+              params: { profile_id: activeProfile.profile_id },
+            });
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setSmartInsights(
+                Array.isArray(insightsResponse?.data?.insights)
+                  ? insightsResponse.data.insights
+                  : [],
+              );
+              setSmartInsightsError("");
+            }
+          } catch {
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setSmartInsights([]);
+              setSmartInsightsError("Could not load smart insights right now.");
+            }
+          }
+
+          try {
+            const forecastResponse = await api.get("/forecast", {
+              params: { profile_id: activeProfile.profile_id, recent_days: 30 },
+            });
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              const payload = forecastResponse?.data;
+              setForecastPayload(payload && typeof payload === "object" ? payload : null);
+              setForecastError("");
+            }
+          } catch {
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              setForecastPayload(null);
+              setForecastError("Could not load forecast right now.");
+            }
+          }
+
+          try {
+            const digestResponse = await api.get("/weekly-digest/latest", {
+              params: { profile_id: activeProfile.profile_id },
+            });
+            if (isCurrentDashboardRequest(requestId, dashboardRequestIdRef.current)) {
+              const payload = digestResponse?.data?.digest;
+              setWeeklyDigestPayload(payload && typeof payload === "object" ? payload : null);
+              setWeeklyDigestError("");
+            }
+          } catch {
+            if (requestId === dashboardRequestIdRef.current) {
+              setWeeklyDigestPayload(null);
+              setWeeklyDigestError("Could not load weekly digest right now.");
+            }
+          }
+
+          try {
+            const subscriptionsResponse = await api.get("/subscriptions/summary", {
+              params: { profile_id: activeProfile.profile_id },
+            });
+            if (requestId === dashboardRequestIdRef.current) {
+              const payload = subscriptionsResponse?.data;
+              setSubscriptionsPayload(payload && typeof payload === "object" ? payload : null);
+              setSubscriptionsError("");
+            }
+          } catch {
+            if (requestId === dashboardRequestIdRef.current) {
+              setSubscriptionsPayload(null);
+              setSubscriptionsError("Could not load subscription detection right now.");
+            }
           }
         }
       } catch (e) {
@@ -250,7 +272,7 @@ export default function DashboardScreen() {
         }
       }
     },
-    [activeProfile?.profile_id, fetchExpenses, fetchPaymentMethods, fetchSummary],
+    [activeProfile?.profile_id, fetchExpenses, fetchPaymentMethods, fetchSummary, isGuestMode],
   );
 
   useEffect(() => {
@@ -340,7 +362,7 @@ export default function DashboardScreen() {
               <MetricValueCard
                 title="Income"
                 icon="trending-up-outline"
-                accentColor={lightTheme.colors.success}
+                accentColor={theme.colors.success}
                 isLoading={isLoading || isRefreshing}
                 error={error}
                 hasValue={hasIncomeData}
@@ -353,7 +375,7 @@ export default function DashboardScreen() {
               <MetricValueCard
                 title="Total Spend"
                 icon="trending-down-outline"
-                accentColor={lightTheme.colors.danger}
+                accentColor={theme.colors.danger}
                 isLoading={isLoading || isRefreshing}
                 error={error}
                 hasValue={hasSpendData}
@@ -366,7 +388,7 @@ export default function DashboardScreen() {
               <MetricValueCard
                 title="Current Month Spend"
                 icon="calendar-outline"
-                accentColor={lightTheme.colors.warning}
+                accentColor={theme.colors.warning}
                 isLoading={isLoading || isRefreshing}
                 error={error}
                 hasValue={hasCurrentMonthSpendData}
@@ -589,46 +611,49 @@ function ActionButton({
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
 }) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name={icon} size={18} color={lightTheme.colors.primary} />
+      <Ionicons name={icon} size={18} color={theme.colors.primary} />
       <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: lightTheme.colors.background },
-  safeArea: { flex: 1 },
-  content: { padding: 16, gap: 12, paddingBottom: 120 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 28, fontWeight: "800", color: lightTheme.colors.text },
-  subtitle: { fontSize: 13, color: lightTheme.colors.textSecondary, marginTop: 2 },
-  profileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 16,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  profileBtnText: { fontSize: 12, color: lightTheme.colors.primary, fontWeight: "600" },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: lightTheme.colors.text },
-  emptyBody: { marginTop: 6, fontSize: 14, lineHeight: 20, color: lightTheme.colors.textSecondary },
-  quickActions: { gap: 10, marginTop: 8 },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: lightTheme.colors.cardBackground,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-  },
-  actionLabel: { fontSize: 15, fontWeight: "600", color: lightTheme.colors.text },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    safeArea: { flex: 1 },
+    content: { padding: 16, gap: 12, paddingBottom: 120 },
+    headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    title: { fontSize: 28, fontWeight: "800", color: theme.colors.text },
+    subtitle: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
+    profileBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 16,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    profileBtnText: { fontSize: 12, color: theme.colors.primary, fontWeight: "600" },
+    emptyTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+    emptyBody: { marginTop: 6, fontSize: 14, lineHeight: 20, color: theme.colors.textSecondary },
+    quickActions: { gap: 10, marginTop: 8 },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: theme.colors.cardBackground,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+    },
+    actionLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.text },
+  });

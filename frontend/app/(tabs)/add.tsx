@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { useAppStore } from "../../src/store/appStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import {
-  lightTheme,
+  useNeumorphicTheme,
   NeumorphicCard,
   SegmentedControl,
   ListItemRow,
@@ -60,6 +60,8 @@ function DateTimePickerModal({
   onSelect: (value: Date) => void;
   onClose: () => void;
 }) {
+  const theme = useNeumorphicTheme();
+  const pickerStyles = useMemo(() => makePickerStyles(theme), [theme]);
   const [selectedYear, setSelectedYear] = useState(value.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(value.getMonth());
   const [selectedDay, setSelectedDay] = useState(value.getDate());
@@ -266,70 +268,74 @@ function DateTimePickerModal({
   );
 }
 
-const pickerStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  container: {
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: lightTheme.colors.divider,
-  },
-  title: { fontSize: 17, fontWeight: "600", color: lightTheme.colors.text },
-  cancelText: { fontSize: 16, color: lightTheme.colors.textTertiary },
-  doneText: { fontSize: 16, fontWeight: "600", color: lightTheme.colors.primary },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: lightTheme.colors.textTertiary,
-    marginLeft: 16,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  scrollRow: { paddingHorizontal: 12 },
-  option: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: lightTheme.colors.background,
-    marginHorizontal: 4,
-  },
-  optionSelected: { backgroundColor: lightTheme.colors.primary },
-  optionText: { fontSize: 15, fontWeight: "600", color: lightTheme.colors.textSecondary },
-  optionTextSelected: { color: "#FFF" },
-  dayOption: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: lightTheme.colors.background,
-    marginHorizontal: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  timeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  timeColumn: { alignItems: "center" },
-  timeLabel: { fontSize: 13, color: lightTheme.colors.textTertiary, marginBottom: 8 },
-  timeScroll: { height: 200 },
-  timeOption: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 },
-  timeOptionSelected: { backgroundColor: lightTheme.colors.primary },
-  timeOptionText: { fontSize: 20, color: lightTheme.colors.textSecondary },
-  timeOptionTextSelected: { color: "#FFF", fontWeight: "600" },
-  timeSeparator: { fontSize: 32, color: lightTheme.colors.text, marginHorizontal: 16 },
-});
+const makePickerStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+    container: {
+      backgroundColor: theme.colors.cardBackground,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingBottom: 40,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    },
+    title: { fontSize: 17, fontWeight: "600", color: theme.colors.text },
+    cancelText: { fontSize: 16, color: theme.colors.textTertiary },
+    doneText: { fontSize: 16, fontWeight: "600", color: theme.colors.primary },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.colors.textTertiary,
+      marginLeft: 16,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    scrollRow: { paddingHorizontal: 12 },
+    option: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: theme.colors.background,
+      marginHorizontal: 4,
+    },
+    optionSelected: { backgroundColor: theme.colors.primary },
+    optionText: { fontSize: 15, fontWeight: "600", color: theme.colors.textSecondary },
+    optionTextSelected: { color: "#FFF" },
+    dayOption: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.colors.background,
+      marginHorizontal: 4,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    timeContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    },
+    timeColumn: { alignItems: "center" },
+    timeLabel: { fontSize: 13, color: theme.colors.textTertiary, marginBottom: 8 },
+    timeScroll: { height: 200 },
+    timeOption: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 },
+    timeOptionSelected: { backgroundColor: theme.colors.primary },
+    timeOptionText: { fontSize: 20, color: theme.colors.textSecondary },
+    timeOptionTextSelected: { color: "#FFF", fontWeight: "600" },
+    timeSeparator: { fontSize: 32, color: theme.colors.text, marginHorizontal: 16 },
+  });
 
 export default function AddScreen() {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const modalStyles = useMemo(() => makeModalStyles(theme), [theme]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { activeProfile, categories, paymentMethods, expenses, createExpense, updateExpense } =
@@ -694,8 +700,7 @@ export default function AddScreen() {
   const getCategoryName = () =>
     categories.find((c) => c.category_id === selectedCategory)?.name || "No Category";
   const getCategoryColor = () =>
-    categories.find((c) => c.category_id === selectedCategory)?.color ||
-    lightTheme.colors.textTertiary;
+    categories.find((c) => c.category_id === selectedCategory)?.color || theme.colors.textTertiary;
   const getPaymentName = () =>
     paymentMethods.find((p) => p.payment_id === selectedPaymentMethod)?.name || "Select";
   const getToPaymentName = () =>
@@ -714,7 +719,7 @@ export default function AddScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
-            <Ionicons name="close" size={20} color={lightTheme.colors.text} />
+            <Ionicons name="close" size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Item</Text>
           <TouchableOpacity
@@ -746,7 +751,7 @@ export default function AddScreen() {
           {!editId && (
             <NeumorphicCard style={styles.quickAddCard}>
               <View style={styles.quickAddHeader}>
-                <Ionicons name="mic-outline" size={16} color={lightTheme.colors.primary} />
+                <Ionicons name="mic-outline" size={16} color={theme.colors.primary} />
                 <Text style={styles.quickAddLabel}>Quick Add</Text>
               </View>
               <View style={styles.quickAddRow}>
@@ -755,7 +760,7 @@ export default function AddScreen() {
                   value={quickAddText}
                   onChangeText={setQuickAddText}
                   placeholder="Spent $45 on lunch at Chipotle yesterday"
-                  placeholderTextColor={lightTheme.colors.placeholder}
+                  placeholderTextColor={theme.colors.placeholder}
                   returnKeyType="done"
                   onSubmitEditing={handleQuickAddParse}
                 />
@@ -781,14 +786,14 @@ export default function AddScreen() {
               <View style={styles.currencySelector}>
                 <Text style={styles.currencySymbol}>¢</Text>
                 <Text style={styles.currencyCode}>USD</Text>
-                <Ionicons name="chevron-forward" size={16} color={lightTheme.colors.textTertiary} />
+                <Ionicons name="chevron-forward" size={16} color={theme.colors.textTertiary} />
               </View>
               <TextInput
                 style={styles.amountInput}
                 value={amount ? `$${amount}` : ""}
                 onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
                 placeholder="$0.00"
-                placeholderTextColor={lightTheme.colors.placeholder}
+                placeholderTextColor={theme.colors.placeholder}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -797,7 +802,7 @@ export default function AddScreen() {
           {/* Notes — collapsible */}
           {!showNotes ? (
             <TouchableOpacity style={styles.addNoteBtn} onPress={() => setShowNotes(true)}>
-              <Ionicons name="add-circle-outline" size={20} color={lightTheme.colors.primary} />
+              <Ionicons name="add-circle-outline" size={20} color={theme.colors.primary} />
               <Text style={styles.addNoteText}>Add note</Text>
             </TouchableOpacity>
           ) : (
@@ -810,7 +815,7 @@ export default function AddScreen() {
                     setNotes("");
                   }}
                 >
-                  <Ionicons name="close-circle" size={18} color={lightTheme.colors.textTertiary} />
+                  <Ionicons name="close-circle" size={18} color={theme.colors.textTertiary} />
                 </TouchableOpacity>
               </View>
               <TextInput
@@ -818,7 +823,7 @@ export default function AddScreen() {
                 value={notes}
                 onChangeText={(t) => setNotes(t.slice(0, 500))}
                 placeholder="Add a note..."
-                placeholderTextColor={lightTheme.colors.placeholder}
+                placeholderTextColor={theme.colors.placeholder}
                 multiline
                 maxLength={500}
                 autoFocus
@@ -839,7 +844,7 @@ export default function AddScreen() {
                         style={styles.attachmentDelete}
                         onPress={() => handleDeleteAttachment(url)}
                       >
-                        <Ionicons name="close-circle" size={22} color={lightTheme.colors.danger} />
+                        <Ionicons name="close-circle" size={22} color={theme.colors.danger} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -849,7 +854,7 @@ export default function AddScreen() {
                 <NeumorphicCard style={styles.listCard} noPadding>
                   {isUploadingAttachment ? (
                     <View style={styles.uploadingRow}>
-                      <ActivityIndicator size="small" color={lightTheme.colors.primary} />
+                      <ActivityIndicator size="small" color={theme.colors.primary} />
                       <Text style={styles.uploadingText}>Uploading…</Text>
                     </View>
                   ) : (
@@ -858,7 +863,7 @@ export default function AddScreen() {
                         <Ionicons
                           name="camera-outline"
                           size={20}
-                          color={lightTheme.colors.textTertiary}
+                          color={theme.colors.textTertiary}
                         />
                       }
                       label="Attach receipt"
@@ -888,7 +893,7 @@ export default function AddScreen() {
                 <Ionicons
                   name="document-text-outline"
                   size={20}
-                  color={lightTheme.colors.textTertiary}
+                  color={theme.colors.textTertiary}
                 />
               }
               label="Sheet"
@@ -901,7 +906,7 @@ export default function AddScreen() {
           {transactionType === 2 && (
             <NeumorphicCard style={styles.listCard} noPadding>
               <ListItemRow
-                icon={<Ionicons name="arrow-forward" size={20} color={lightTheme.colors.success} />}
+                icon={<Ionicons name="arrow-forward" size={20} color={theme.colors.success} />}
                 label="To"
                 value={getToPaymentName()}
                 onPress={() => setShowToPaymentModal(true)}
@@ -923,7 +928,7 @@ export default function AddScreen() {
                 style={styles.removeReceiptBtn}
                 onPress={() => setReceiptImage(null)}
               >
-                <Ionicons name="close-circle" size={28} color={lightTheme.colors.danger} />
+                <Ionicons name="close-circle" size={28} color={theme.colors.danger} />
               </TouchableOpacity>
             </View>
           )}
@@ -939,7 +944,7 @@ export default function AddScreen() {
             <Ionicons
               name={showAdvanced ? "chevron-up" : "chevron-down"}
               size={18}
-              color={lightTheme.colors.textTertiary}
+              color={theme.colors.textTertiary}
             />
           </TouchableOpacity>
 
@@ -949,11 +954,7 @@ export default function AddScreen() {
               <NeumorphicCard style={styles.listCard} noPadding>
                 <ListItemRow
                   icon={
-                    <Ionicons
-                      name="calendar-outline"
-                      size={20}
-                      color={lightTheme.colors.textTertiary}
-                    />
+                    <Ionicons name="calendar-outline" size={20} color={theme.colors.textTertiary} />
                   }
                   label="Date"
                   value={formatDate(date)}
@@ -962,11 +963,7 @@ export default function AddScreen() {
                 <Divider />
                 <ListItemRow
                   icon={
-                    <Ionicons
-                      name="time-outline"
-                      size={20}
-                      color={lightTheme.colors.textTertiary}
-                    />
+                    <Ionicons name="time-outline" size={20} color={theme.colors.textTertiary} />
                   }
                   label="Time"
                   value={formatTime(time)}
@@ -981,7 +978,7 @@ export default function AddScreen() {
                     <Ionicons
                       name="hourglass-outline"
                       size={20}
-                      color={lightTheme.colors.textTertiary}
+                      color={theme.colors.textTertiary}
                     />
                   }
                   label="Pending"
@@ -993,7 +990,7 @@ export default function AddScreen() {
               {/* Repeat */}
               <NeumorphicCard style={styles.listCard} noPadding>
                 <ListItemRow
-                  icon={<Ionicons name="repeat" size={20} color={lightTheme.colors.textTertiary} />}
+                  icon={<Ionicons name="repeat" size={20} color={theme.colors.textTertiary} />}
                   label="Repeat"
                   value={getRepeatLabel()}
                   onPress={() => setShowRepeatModal(true)}
@@ -1008,7 +1005,7 @@ export default function AddScreen() {
                       <Ionicons
                         name="calendar-clear-outline"
                         size={20}
-                        color={lightTheme.colors.textTertiary}
+                        color={theme.colors.textTertiary}
                       />
                     }
                     label="End Date"
@@ -1023,7 +1020,7 @@ export default function AddScreen() {
                           <Ionicons
                             name="close-circle"
                             size={18}
-                            color={lightTheme.colors.textTertiary}
+                            color={theme.colors.textTertiary}
                           />
                         </TouchableOpacity>
                       ) : undefined
@@ -1038,7 +1035,7 @@ export default function AddScreen() {
                   style={styles.addImageBtn}
                   onPress={() => setShowImageOptions(true)}
                 >
-                  <Ionicons name="camera-outline" size={20} color={lightTheme.colors.primary} />
+                  <Ionicons name="camera-outline" size={20} color={theme.colors.primary} />
                   <Text style={styles.addImageText}>Add Image</Text>
                 </TouchableOpacity>
               )}
@@ -1081,7 +1078,7 @@ export default function AddScreen() {
             <View style={modalStyles.header}>
               <Text style={modalStyles.title}>Category</Text>
               <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
-                <Ionicons name="close" size={24} color={lightTheme.colors.textTertiary} />
+                <Ionicons name="close" size={24} color={theme.colors.textTertiary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={modalStyles.scroll} contentContainerStyle={{ paddingBottom: 20 }}>
@@ -1145,7 +1142,7 @@ export default function AddScreen() {
             <View style={modalStyles.header}>
               <Text style={modalStyles.title}>Select Payment Method</Text>
               <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
-                <Ionicons name="close" size={24} color={lightTheme.colors.textTertiary} />
+                <Ionicons name="close" size={24} color={theme.colors.textTertiary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={modalStyles.scroll}>
@@ -1164,11 +1161,11 @@ export default function AddScreen() {
                   <Ionicons
                     name={pm.type === "cash" ? "cash" : "card"}
                     size={20}
-                    color={lightTheme.colors.primary}
+                    color={theme.colors.primary}
                   />
                   <Text style={modalStyles.optionText}>{pm.name}</Text>
                   {selectedPaymentMethod === pm.payment_id && (
-                    <Ionicons name="checkmark" size={20} color={lightTheme.colors.primary} />
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1184,7 +1181,7 @@ export default function AddScreen() {
             <View style={modalStyles.header}>
               <Text style={modalStyles.title}>Transfer To</Text>
               <TouchableOpacity onPress={() => setShowToPaymentModal(false)}>
-                <Ionicons name="close" size={24} color={lightTheme.colors.textTertiary} />
+                <Ionicons name="close" size={24} color={theme.colors.textTertiary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={modalStyles.scroll}>
@@ -1205,11 +1202,11 @@ export default function AddScreen() {
                     <Ionicons
                       name={pm.type === "cash" ? "cash" : "card"}
                       size={20}
-                      color={lightTheme.colors.success}
+                      color={theme.colors.success}
                     />
                     <Text style={modalStyles.optionText}>{pm.name}</Text>
                     {toPaymentMethod === pm.payment_id && (
-                      <Ionicons name="checkmark" size={20} color={lightTheme.colors.primary} />
+                      <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -1225,7 +1222,7 @@ export default function AddScreen() {
             <View style={modalStyles.header}>
               <Text style={modalStyles.title}>Repeat</Text>
               <TouchableOpacity onPress={() => setShowRepeatModal(false)}>
-                <Ionicons name="close" size={24} color={lightTheme.colors.textTertiary} />
+                <Ionicons name="close" size={24} color={theme.colors.textTertiary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={modalStyles.scroll}>
@@ -1243,7 +1240,7 @@ export default function AddScreen() {
                 >
                   <Text style={modalStyles.optionText}>{freq.label}</Text>
                   {repeatFrequency === freq.value && (
-                    <Ionicons name="checkmark" size={20} color={lightTheme.colors.primary} />
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1264,7 +1261,7 @@ export default function AddScreen() {
               style={modalStyles.actionOption}
               onPress={() => handleImageOption("camera")}
             >
-              <Ionicons name="camera-outline" size={24} color={lightTheme.colors.text} />
+              <Ionicons name="camera-outline" size={24} color={theme.colors.text} />
               <Text style={modalStyles.actionText}>Take Photo</Text>
             </TouchableOpacity>
             <View style={modalStyles.actionDivider} />
@@ -1272,7 +1269,7 @@ export default function AddScreen() {
               style={modalStyles.actionOption}
               onPress={() => handleImageOption("library")}
             >
-              <Ionicons name="images-outline" size={24} color={lightTheme.colors.text} />
+              <Ionicons name="images-outline" size={24} color={theme.colors.text} />
               <Text style={modalStyles.actionText}>Photo Library</Text>
             </TouchableOpacity>
             <View style={modalStyles.actionDivider} />
@@ -1298,7 +1295,7 @@ export default function AddScreen() {
               style={modalStyles.actionOption}
               onPress={() => handleAttachmentOption("camera")}
             >
-              <Ionicons name="camera-outline" size={24} color={lightTheme.colors.text} />
+              <Ionicons name="camera-outline" size={24} color={theme.colors.text} />
               <Text style={modalStyles.actionText}>Take Photo</Text>
             </TouchableOpacity>
             <View style={modalStyles.actionDivider} />
@@ -1306,7 +1303,7 @@ export default function AddScreen() {
               style={modalStyles.actionOption}
               onPress={() => handleAttachmentOption("library")}
             >
-              <Ionicons name="images-outline" size={24} color={lightTheme.colors.text} />
+              <Ionicons name="images-outline" size={24} color={theme.colors.text} />
               <Text style={modalStyles.actionText}>Choose from Library</Text>
             </TouchableOpacity>
             <View style={modalStyles.actionDivider} />
@@ -1323,208 +1320,210 @@ export default function AddScreen() {
   );
 }
 
-const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  container: {
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "70%",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: lightTheme.colors.divider,
-  },
-  title: { fontSize: 18, fontWeight: "600", color: lightTheme.colors.text },
-  scroll: { padding: 12 },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    gap: 14,
-    marginBottom: 8,
-  },
-  optionSelected: { backgroundColor: lightTheme.colors.primaryLight },
-  optionText: { flex: 1, fontSize: 16, color: lightTheme.colors.text },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionSheet: {
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderRadius: 16,
-    margin: 16,
-    overflow: "hidden",
-  },
-  actionOption: { flexDirection: "row", alignItems: "center", padding: 18, gap: 14 },
-  actionText: { fontSize: 17, color: lightTheme.colors.text },
-  actionDivider: { height: 1, backgroundColor: lightTheme.colors.divider },
-  actionCancel: {
-    padding: 18,
-    alignItems: "center",
-    backgroundColor: lightTheme.colors.background,
-  },
-  actionCancelText: { fontSize: 17, fontWeight: "600", color: lightTheme.colors.danger },
-});
+const makeModalStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+    container: {
+      backgroundColor: theme.colors.cardBackground,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: "70%",
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    },
+    title: { fontSize: 18, fontWeight: "600", color: theme.colors.text },
+    scroll: { padding: 12 },
+    option: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+      borderRadius: 12,
+      gap: 14,
+      marginBottom: 8,
+    },
+    optionSelected: { backgroundColor: theme.colors.primaryLight },
+    optionText: { flex: 1, fontSize: 16, color: theme.colors.text },
+    categoryIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    actionSheet: {
+      backgroundColor: theme.colors.cardBackground,
+      borderRadius: 16,
+      margin: 16,
+      overflow: "hidden",
+    },
+    actionOption: { flexDirection: "row", alignItems: "center", padding: 18, gap: 14 },
+    actionText: { fontSize: 17, color: theme.colors.text },
+    actionDivider: { height: 1, backgroundColor: theme.colors.divider },
+    actionCancel: {
+      padding: 18,
+      alignItems: "center",
+      backgroundColor: theme.colors.background,
+    },
+    actionCancelText: { fontSize: 17, fontWeight: "600", color: theme.colors.danger },
+  });
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: lightTheme.colors.background },
-  safeArea: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: lightTheme.colors.cardBackground,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerBtnDone: { backgroundColor: lightTheme.colors.textTertiary },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: lightTheme.colors.text },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
-  quickAddCard: { marginTop: 12 },
-  quickAddHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
-  quickAddLabel: { fontSize: 13, fontWeight: "600", color: lightTheme.colors.textSecondary },
-  quickAddRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  quickAddInput: {
-    flex: 1,
-    fontSize: 14,
-    color: lightTheme.colors.text,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  quickAddBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: lightTheme.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  amountCard: { marginTop: 12 },
-  amountLabel: { fontSize: 14, color: lightTheme.colors.textTertiary, marginBottom: 8 },
-  amountRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  currencySelector: { flexDirection: "row", alignItems: "center", gap: 6 },
-  currencySymbol: { fontSize: 18, color: lightTheme.colors.textTertiary },
-  currencyCode: { fontSize: 16, color: lightTheme.colors.textSecondary },
-  amountInput: {
-    flex: 1,
-    fontSize: 32,
-    fontWeight: "600",
-    color: lightTheme.colors.text,
-    textAlign: "right",
-  },
-  notesCard: {},
-  notesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  notesLabel: { fontSize: 13, fontWeight: "600", color: lightTheme.colors.textTertiary },
-  notesInput: { fontSize: 16, color: lightTheme.colors.text, minHeight: 60 },
-  notesCount: {
-    fontSize: 12,
-    color: lightTheme.colors.textTertiary,
-    textAlign: "right",
-    marginTop: 4,
-  },
-  addNoteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-  },
-  addNoteText: { fontSize: 16, color: lightTheme.colors.primary, fontWeight: "500" },
-  attachmentsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  attachmentThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    overflow: "hidden",
-    position: "relative",
-  },
-  attachmentImg: { width: 80, height: 80 },
-  attachmentDelete: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    backgroundColor: "#FFF",
-    borderRadius: 11,
-  },
-  uploadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  uploadingText: { fontSize: 16, color: lightTheme.colors.textSecondary },
-  listCard: {},
-  receiptPreview: { borderRadius: 16, overflow: "hidden", position: "relative" },
-  receiptImage: { width: "100%", height: 200 },
-  scanningOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scanningText: { color: "#FFF", marginTop: 12, fontSize: 14 },
-  removeReceiptBtn: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "#FFF",
-    borderRadius: 14,
-  },
-  addImageBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    gap: 8,
-  },
-  addImageText: { fontSize: 16, fontWeight: "500", color: lightTheme.colors.primary },
-  advancedToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: lightTheme.colors.textTertiary,
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    safeArea: { flex: 1 },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    headerBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.colors.cardBackground,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    headerBtnDone: { backgroundColor: theme.colors.textTertiary },
+    headerTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text },
+    scrollView: { flex: 1 },
+    scrollContent: { padding: 16, paddingBottom: 40, gap: 12 },
+    quickAddCard: { marginTop: 12 },
+    quickAddHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+    quickAddLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary },
+    quickAddRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    quickAddInput: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.colors.text,
+      backgroundColor: "#F2F2F7",
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    quickAddBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: theme.colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    amountCard: { marginTop: 12 },
+    amountLabel: { fontSize: 14, color: theme.colors.textTertiary, marginBottom: 8 },
+    amountRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    currencySelector: { flexDirection: "row", alignItems: "center", gap: 6 },
+    currencySymbol: { fontSize: 18, color: theme.colors.textTertiary },
+    currencyCode: { fontSize: 16, color: theme.colors.textSecondary },
+    amountInput: {
+      flex: 1,
+      fontSize: 32,
+      fontWeight: "600",
+      color: theme.colors.text,
+      textAlign: "right",
+    },
+    notesCard: {},
+    notesHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 6,
+    },
+    notesLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
+    notesInput: { fontSize: 16, color: theme.colors.text, minHeight: 60 },
+    notesCount: {
+      fontSize: 12,
+      color: theme.colors.textTertiary,
+      textAlign: "right",
+      marginTop: 4,
+    },
+    addNoteBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+    },
+    addNoteText: { fontSize: 16, color: theme.colors.primary, fontWeight: "500" },
+    attachmentsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    attachmentThumb: {
+      width: 80,
+      height: 80,
+      borderRadius: 10,
+      overflow: "hidden",
+      position: "relative",
+    },
+    attachmentImg: { width: 80, height: 80 },
+    attachmentDelete: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      backgroundColor: "#FFF",
+      borderRadius: 11,
+    },
+    uploadingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    uploadingText: { fontSize: 16, color: theme.colors.textSecondary },
+    listCard: {},
+    receiptPreview: { borderRadius: 16, overflow: "hidden", position: "relative" },
+    receiptImage: { width: "100%", height: 200 },
+    scanningOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    scanningText: { color: "#FFF", marginTop: 12, fontSize: 14 },
+    removeReceiptBtn: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      backgroundColor: "#FFF",
+      borderRadius: 14,
+    },
+    addImageBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      gap: 8,
+    },
+    addImageText: { fontSize: 16, fontWeight: "500", color: theme.colors.primary },
+    advancedToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 12,
+    },
+    advancedToggleText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.colors.textTertiary,
+    },
+  });
 
 const catGridStyles = StyleSheet.create({
   grid: {

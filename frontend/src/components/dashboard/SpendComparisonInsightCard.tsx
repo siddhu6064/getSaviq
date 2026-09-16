@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAppStore } from "../../store/appStore";
 import api from "../../services/api";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
 import { deriveSpendComparisonInsight } from "../../utils/spendComparisonInsight";
@@ -19,12 +20,13 @@ function severityColor(severity: string | undefined, colors: any) {
 
 export function SpendComparisonInsightCard({ profileId }: Props) {
   const { colors } = useTheme();
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
   const [payload, setPayload] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!profileId) {
+    if (!profileId || isGuestMode) {
       setPayload(null);
       setIsLoading(false);
       return;
@@ -47,7 +49,7 @@ export function SpendComparisonInsightCard({ profileId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   const insight = payload ? deriveSpendComparisonInsight(payload) : null;
 

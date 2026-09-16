@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAppStore } from "../../store/appStore";
 import { budgetsAPI } from "../../services/api";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
 import { deriveBudgetProgressSummary } from "../../utils/budgetProgressSummary";
@@ -14,12 +15,13 @@ interface Props {
 
 export function BudgetProgressSummaryCard({ profileId, categoryNameById = {} }: Props) {
   const { colors } = useTheme();
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
   const [budgetProgress, setBudgetProgress] = useState<any>({ budgets: [], total_budget: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!profileId) {
+    if (!profileId || isGuestMode) {
       setBudgetProgress({ budgets: [], total_budget: null });
       setIsLoading(false);
       return;
@@ -42,7 +44,7 @@ export function BudgetProgressSummaryCard({ profileId, categoryNameById = {} }: 
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   const summary = deriveBudgetProgressSummary(budgetProgress);
 

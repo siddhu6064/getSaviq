@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { lightTheme } from "../NeumorphicUI";
+import { useNeumorphicTheme } from "../NeumorphicUI";
+import { useAppStore } from "../../store/appStore";
 import { forecastAPI } from "../../services/api";
 import { formatCurrency } from "@shared/utils";
 
@@ -12,15 +13,21 @@ interface CashFlowDay {
 }
 
 export function CashFlowCard({ profileId }: { profileId?: string }) {
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [data, setData] = useState<{
     days: CashFlowDay[];
     will_go_negative: boolean;
     first_negative_date: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const isGuestMode = useAppStore((s) => s.isGuestMode);
 
   useEffect(() => {
-    if (!profileId) return;
+    if (!profileId || isGuestMode) {
+      setData(null);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     forecastAPI
@@ -37,12 +44,12 @@ export function CashFlowCard({ profileId }: { profileId?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, isGuestMode]);
 
   if (loading) {
     return (
       <View style={styles.card}>
-        <ActivityIndicator color={lightTheme.colors.primary} />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
@@ -54,7 +61,7 @@ export function CashFlowCard({ profileId }: { profileId?: string }) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="calendar-outline" size={18} color={lightTheme.colors.primary} />
+        <Ionicons name="calendar-outline" size={18} color={theme.colors.primary} />
         <Text style={styles.title}>30-Day Cash Flow</Text>
       </View>
 
@@ -101,66 +108,67 @@ export function CashFlowCard({ profileId }: { profileId?: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: lightTheme.colors.cardBackground,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  warningBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#DC2626",
-  },
-  emptyText: {
-    fontSize: 13,
-    color: lightTheme.colors.textSecondary,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderTopWidth: 0.5,
-    borderTopColor: lightTheme.colors.border,
-  },
-  rowDate: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: lightTheme.colors.text,
-  },
-  rowEvents: {
-    fontSize: 12,
-    color: lightTheme.colors.textSecondary,
-    marginTop: 1,
-  },
-  rowBalance: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: lightTheme.colors.text,
-  },
-  rowBalanceNegative: {
-    color: "#DC2626",
-  },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.cardBackground,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+    },
+    title: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    warningBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: "#FEF2F2",
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 12,
+    },
+    warningText: {
+      flex: 1,
+      fontSize: 12,
+      color: "#DC2626",
+    },
+    emptyText: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      borderTopWidth: 0.5,
+      borderTopColor: theme.colors.border,
+    },
+    rowDate: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.colors.text,
+    },
+    rowEvents: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginTop: 1,
+    },
+    rowBalance: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    rowBalanceNegative: {
+      color: "#DC2626",
+    },
+  });

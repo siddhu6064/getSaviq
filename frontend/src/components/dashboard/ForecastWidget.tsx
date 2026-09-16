@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { NeumorphicCard, lightTheme } from "../NeumorphicUI";
+import { NeumorphicCard, useNeumorphicTheme } from "../NeumorphicUI";
 import { deriveForecastState } from "../../utils/aiIntelligenceState";
 import { useTheme } from "../../contexts/ThemeContext";
 import { formatCurrency as _formatCurrency } from "@shared/utils";
@@ -25,6 +25,8 @@ function riskLabel(level?: string) {
 
 export function ForecastWidget({ isLoading, error, forecast }: ForecastWidgetProps) {
   const { colors } = useTheme();
+  const theme = useNeumorphicTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const state = deriveForecastState({ isLoading, error, forecast });
 
   return (
@@ -79,24 +81,25 @@ export function ForecastWidget({ isLoading, error, forecast }: ForecastWidgetPro
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: 8 },
-  header: { marginBottom: 8 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 16, fontWeight: "700", color: lightTheme.colors.text },
-  helper: { fontSize: 14, color: lightTheme.colors.textTertiary },
-  content: { gap: 8 },
-  valueBlock: {
-    borderWidth: 0.5,
-    borderColor: lightTheme.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: lightTheme.colors.cardBackground,
-  },
-  valueLabel: { fontSize: 11, color: lightTheme.colors.textSecondary, textTransform: "uppercase" },
-  valueText: { marginTop: 2, fontSize: 24, fontWeight: "800", color: lightTheme.colors.text },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
-  metaItem: { fontSize: 12, color: lightTheme.colors.textSecondary },
-  riskText: { fontSize: 12, color: lightTheme.colors.textTertiary },
-});
+const makeStyles = (theme: ReturnType<typeof useNeumorphicTheme>) =>
+  StyleSheet.create({
+    card: { marginTop: 8 },
+    header: { marginBottom: 8 },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+    helper: { fontSize: 14, color: theme.colors.textTertiary },
+    content: { gap: 8 },
+    valueBlock: {
+      borderWidth: 0.5,
+      borderColor: theme.colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    valueLabel: { fontSize: 11, color: theme.colors.textSecondary, textTransform: "uppercase" },
+    valueText: { marginTop: 2, fontSize: 24, fontWeight: "800", color: theme.colors.text },
+    metaRow: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+    metaItem: { fontSize: 12, color: theme.colors.textSecondary },
+    riskText: { fontSize: 12, color: theme.colors.textTertiary },
+  });

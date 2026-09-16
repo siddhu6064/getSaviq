@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPaymentMethods,
     setActiveProfile,
     hydrateAIChatSessions,
+    setGuestMode,
   } = useAppStore();
 
   const loadUserData = async () => {
@@ -257,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if in guest mode
       const guestMode = await storage.getItem("guest_mode");
       if (guestMode === "true") {
+        setGuestMode(true);
         setIsGuestMode(true);
         setUser(GUEST_USER as any);
         setAuthenticated(true);
@@ -293,6 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSessionExpired = useCallback(async () => {
     await storage.removeItem("session_token");
     await storage.removeItem("guest_mode");
+    setGuestMode(false);
     setIsGuestMode(false);
     logout();
   }, [logout]);
@@ -324,6 +327,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (token) await storage.setItem("session_token", token);
       }
       await storage.removeItem("guest_mode");
+      setGuestMode(false);
       setIsGuestMode(false);
       setUser(user);
       setAuthenticated(true);
@@ -352,6 +356,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (token) await storage.setItem("session_token", token);
       }
       await storage.removeItem("guest_mode");
+      setGuestMode(false);
       setIsGuestMode(false);
       setUser(user);
       setAuthenticated(true);
@@ -375,6 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (token) await storage.setItem("session_token", token);
       }
       await storage.removeItem("guest_mode");
+      setGuestMode(false);
       setIsGuestMode(false);
       setUser(user);
       setAuthenticated(true);
@@ -398,6 +404,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (token) await storage.setItem("session_token", token);
       }
       await storage.removeItem("guest_mode");
+      setGuestMode(false);
       setIsGuestMode(false);
       setUser(user);
       setAuthenticated(true);
@@ -414,6 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       await storage.setItem("guest_mode", "true");
+      setGuestMode(true);
       setIsGuestMode(true);
       setUser(GUEST_USER as any);
       setAuthenticated(true);
@@ -436,6 +444,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       await storage.removeItem("session_token");
       await storage.removeItem("guest_mode");
+      setGuestMode(false);
       setIsGuestMode(false);
       logout();
     }
@@ -445,6 +454,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await api.delete("/auth/account", { data: { confirmation: "DELETE" } });
     await storage.removeItem("session_token");
     await storage.removeItem("guest_mode");
+    setGuestMode(false);
     setIsGuestMode(false);
     logout();
   };

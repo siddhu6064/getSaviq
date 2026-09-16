@@ -5,10 +5,9 @@ import { settingsAPI } from "../services/api";
 import { setActiveCurrency } from "@shared/utils";
 import colors from "@shared/constants/colors.json";
 
-// Pre-launch decision: no dark palette exists outside ThemeContext's own tokens
-// yet (see the light-mode force below), so any dark-mode toggle UI should stay
-// hidden behind this until that work resumes.
-export const DARK_MODE_ENABLED = false;
+// Dark mode is fully wired: ThemeContext's own darkColors, plus NeumorphicUI's
+// darkTheme and all 25 of its consumers, all resolve from darkMode below.
+export const DARK_MODE_ENABLED = true;
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -109,11 +108,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Pre-launch decision: force light mode regardless of darkMode/system appearance.
-  // NeumorphicUI (login, app shell, Home, Add Transaction, App Lock) has no dark
-  // palette yet, so honoring dark here would render those screens broken.
-  // darkColors is kept intact and exported so dark-mode work can resume later.
-  const colors = lightColors;
+  const colors = darkMode ? darkColors : lightColors;
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colors }}>
