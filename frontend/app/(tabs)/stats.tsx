@@ -36,7 +36,7 @@ function formatCurrency(value: unknown) {
 export default function AnalyticsScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const { activeProfile } = useAppStore();
+  const { activeProfile, isGuestMode } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -51,7 +51,7 @@ export default function AnalyticsScreen() {
     async (refresh = false) => {
       const requestId = ++requestIdRef.current;
 
-      if (!activeProfile?.profile_id) {
+      if (!activeProfile?.profile_id || isGuestMode) {
         setSummary(null);
         setCategoryBreakdown([]);
         setPaymentBreakdown([]);
@@ -117,7 +117,7 @@ export default function AnalyticsScreen() {
         }
       }
     },
-    [activeProfile?.profile_id, period],
+    [activeProfile?.profile_id, period, isGuestMode],
   );
 
   useEffect(() => {
