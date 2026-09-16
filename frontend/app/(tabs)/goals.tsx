@@ -56,7 +56,7 @@ const STATUS_OPTIONS = ["active", "paused", "completed", "cancelled"];
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
-  const { activeProfile } = useAppStore();
+  const { activeProfile, isGuestMode } = useAppStore();
   const [goals, setGoals] = useState<SavingsGoalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -77,7 +77,7 @@ export default function GoalsScreen() {
 
   const loadGoals = useCallback(
     async (refresh = false) => {
-      if (!activeProfile?.profile_id) {
+      if (!activeProfile?.profile_id || isGuestMode) {
         setGoals([]);
         setError("");
         setSuccess("");
@@ -103,7 +103,7 @@ export default function GoalsScreen() {
         setIsRefreshing(false);
       }
     },
-    [activeProfile?.profile_id],
+    [activeProfile?.profile_id, isGuestMode],
   );
 
   useEffect(() => {
@@ -153,6 +153,11 @@ export default function GoalsScreen() {
   const handleSubmitGoal = async () => {
     if (!activeProfile?.profile_id || isSubmitting) return;
 
+    if (isGuestMode) {
+      Alert.alert("Sign in required", "Create an account to save goals.");
+      return;
+    }
+
     const errors = validateGoalForm(goalForm);
     if (Object.keys(errors).length > 0) {
       Alert.alert("Invalid goal", Object.values(errors)[0]);
@@ -182,6 +187,10 @@ export default function GoalsScreen() {
   };
 
   const handleDeleteGoal = (goal: SavingsGoalItem) => {
+    if (isGuestMode) {
+      Alert.alert("Sign in required", "Create an account to manage goals.");
+      return;
+    }
     Alert.alert("Delete Goal", `Delete "${goal.title}"?`, [
       { text: "Cancel", style: "cancel" },
       {
