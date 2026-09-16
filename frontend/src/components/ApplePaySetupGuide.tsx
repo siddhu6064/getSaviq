@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../contexts/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -66,6 +67,7 @@ const STEPS = [
 ];
 
 export function ApplePaySetupGuide({ visible, onClose, deepLinkURL }: ApplePaySetupGuideProps) {
+  const { colors } = useTheme();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -140,7 +142,7 @@ export function ApplePaySetupGuide({ visible, onClose, deepLinkURL }: ApplePaySe
           {/* URL to copy */}
           <View style={styles.urlCard}>
             <View style={styles.urlCardHeader}>
-              <Ionicons name="link" size={16} color="#007AFF" />
+              <Ionicons name="link" size={16} color={colors.primary} />
               <Text style={styles.urlCardTitle}>Your Shortcut URL</Text>
             </View>
             <Text style={styles.urlText} numberOfLines={2}>

@@ -31,6 +31,8 @@ import {
 import { useTheme } from "../../src/contexts/ThemeContext";
 import { formatCurrency } from "@shared/utils";
 
+type ThemeColors = ReturnType<typeof useTheme>["colors"];
+
 // ============ EMOJI CATEGORY MAP ============
 const CATEGORY_EMOJIS: Record<string, string> = {
   "Food & Dining": "🍔",
@@ -99,6 +101,8 @@ const TX_TYPE_FILTERS: Array<{ key: TransactionTypeFilter; label: string }> = [
 // ============ MAIN COMPONENT ============
 export default function TransactionsScreen() {
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const modalStyles = useMemo(() => makeModalStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams<{ category_id?: string; payment_method_id?: string }>();
   const {
@@ -924,6 +928,7 @@ export default function TransactionsScreen() {
 // ============ DETAIL ROW ============
 function DetailRow({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
+  const modalStyles = useMemo(() => makeModalStyles(colors), [colors]);
   return (
     <View style={[modalStyles.detailRow, { borderBottomColor: colors.border }]}>
       <Text style={[modalStyles.detailLabel, { color: colors.textSecondary }]}>{label}</Text>
@@ -944,6 +949,7 @@ function DailyView({
   onDelete,
 }: any) {
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const emptyState = deriveTransactionEmptyState({
     hasFiltersApplied,
     filteredCount: expenses.length,
@@ -1083,6 +1089,7 @@ function TransactionRow({
   onDelete: () => void;
 }) {
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const renderRightActions = () => (
     <View
       style={[styles.swipeActions, { backgroundColor: colors.surface }]}
@@ -1153,6 +1160,7 @@ function CalendarView({
   year: number;
 }) {
   const { colors } = useTheme();
+  const calStyles = useMemo(() => makeCalStyles(colors), [colors]);
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
   const today = new Date();
@@ -1243,6 +1251,8 @@ function CalendarView({
 // ============ MONTHLY VIEW ============
 function MonthlyView({ expenses, getCategoryInfo }: any) {
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const monthlyStyles = useMemo(() => makeMonthlyStyles(colors), [colors]);
   // Group by category
   const catTotals = useMemo(() => {
     const totals: Record<string, { name: string; amount: number; count: number }> = {};
@@ -1311,6 +1321,7 @@ function SummaryView({
   activeProfile,
 }: any) {
   const { colors } = useTheme();
+  const summaryStyles = useMemo(() => makeSummaryStyles(colors), [colors]);
   const [budgetProgress, setBudgetProgress] = useState<any>({ budgets: [], total_budget: null });
   const router = useRouter();
 
@@ -1485,6 +1496,8 @@ function SummaryView({
 // ============ DESCRIPTION VIEW ============
 function DescriptionView({ expenses, getCategoryInfo }: any) {
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const descStyles = useMemo(() => makeDescStyles(colors), [colors]);
   const grouped = useMemo(() => {
     const groups: Record<string, { description: string; count: number; amount: number }> = {};
     expenses.forEach((e: Expense) => {
@@ -1527,434 +1540,446 @@ function DescriptionView({ expenses, getCategoryInfo }: any) {
 }
 
 // ============ STYLES ============
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F8FA" },
-  safeArea: { flex: 1 },
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    backgroundColor: "#F0F0F4",
-    marginHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 4,
-  },
-  searchInput: { flex: 1, fontSize: 15, color: "#000" },
-  typeFiltersRow: { paddingHorizontal: 12, gap: 8, paddingBottom: 6 },
-  typeFilterChip: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minHeight: 30,
-    justifyContent: "center",
-  },
-  typeFilterText: { fontSize: 12, fontWeight: "600" },
-  filterOptionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E5EA",
-  },
-  filterOptionText: { fontSize: 15, fontWeight: "500" },
-  clearFiltersBtn: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  clearFiltersBtnText: { fontSize: 12, fontWeight: "600" },
-  headerIcon: {
-    padding: 6,
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#000" },
-  headerRight: { flexDirection: "row", gap: 8 },
-  // Month Nav
-  monthNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-  },
-  monthArrow: {
-    padding: 8,
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  monthText: { fontSize: 16, fontWeight: "600", color: "#000", minWidth: 120, textAlign: "center" },
-  // Sub-tabs
-  subTabsScroll: { borderBottomWidth: 0.5, borderBottomColor: "#E5E5EA" },
-  subTabsContent: { paddingHorizontal: 8, gap: 0 },
-  subTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 44,
-    justifyContent: "center",
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  subTabActive: { borderBottomColor: "#000" },
-  subTabText: { fontSize: 14, color: "#8E8E93", fontWeight: "500" },
-  subTabTextActive: { color: "#000", fontWeight: "600" },
-  // Summary bar
-  summaryBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E5E5EA",
-  },
-  summaryItem: { alignItems: "center" },
-  summaryLabel: { fontSize: 12, color: "#8E8E93" },
-  summaryValue: { fontSize: 14, fontWeight: "700" },
-  // Content
-  content: { flex: 1 },
-  // Daily View
-  dateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#F0F0F4",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E5E5EA",
-  },
-  dateHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  dateNumber: { fontSize: 22, fontWeight: "800", color: "#000" },
-  dayBadge: {
-    backgroundColor: "#E5E5EA",
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  dayBadgeText: { fontSize: 12, fontWeight: "600", color: "#555" },
-  dateHeaderRight: { flexDirection: "row", gap: 20 },
-  dayIncome: { fontSize: 13, color: "#007AFF", fontWeight: "600" },
-  dayExpense: { fontSize: 13, color: "#FF3B30", fontWeight: "600" },
-  // Transaction row
-  txRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#F0F0F4",
-    backgroundColor: "#FFF",
-  },
-  txLeft: { width: 80, flexDirection: "row", alignItems: "center", gap: 4 },
-  txEmoji: { fontSize: 18 },
-  txCategory: { fontSize: 13, color: "#555", maxWidth: 55 },
-  txCenter: { flex: 1, paddingHorizontal: 8 },
-  txMerchant: { fontSize: 15, fontWeight: "600", color: "#000" },
-  txPayment: { fontSize: 12, color: "#8E8E93" },
-  txAmount: { fontSize: 15, fontWeight: "700", color: "#FF3B30" },
-  swipeActions: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    justifyContent: "flex-end",
-    backgroundColor: "#FFF",
-  },
-  quickEditBtn: {
-    width: 78,
-    minHeight: 64,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    backgroundColor: "#007AFF",
-  },
-  quickDeleteBtn: {
-    width: 82,
-    minHeight: 64,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    backgroundColor: "#FF3B30",
-  },
-  quickActionText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  // Empty
-  emptyState: { alignItems: "center", paddingVertical: 60 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 16, fontWeight: "600", color: "#555" },
-  emptySubtext: { fontSize: 14, color: "#8E8E93", marginTop: 4, textAlign: "center" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    safeArea: { flex: 1 },
+    // Header
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      gap: 8,
+      backgroundColor: "#F0F0F4",
+      marginHorizontal: 12,
+      borderRadius: 10,
+      marginBottom: 4,
+    },
+    searchInput: { flex: 1, fontSize: 15, color: "#000" },
+    typeFiltersRow: { paddingHorizontal: 12, gap: 8, paddingBottom: 6 },
+    typeFilterChip: {
+      borderWidth: 1,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      minHeight: 30,
+      justifyContent: "center",
+    },
+    typeFilterText: { fontSize: 12, fontWeight: "600" },
+    filterOptionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: "#E5E5EA",
+    },
+    filterOptionText: { fontSize: 15, fontWeight: "500" },
+    clearFiltersBtn: {
+      marginTop: 10,
+      borderWidth: 1,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    clearFiltersBtnText: { fontSize: 12, fontWeight: "600" },
+    headerIcon: {
+      padding: 6,
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: { fontSize: 18, fontWeight: "700", color: "#000" },
+    headerRight: { flexDirection: "row", gap: 8 },
+    // Month Nav
+    monthNav: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 8,
+    },
+    monthArrow: {
+      padding: 8,
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    monthText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#000",
+      minWidth: 120,
+      textAlign: "center",
+    },
+    // Sub-tabs
+    subTabsScroll: { borderBottomWidth: 0.5, borderBottomColor: "#E5E5EA" },
+    subTabsContent: { paddingHorizontal: 8, gap: 0 },
+    subTab: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      minHeight: 44,
+      justifyContent: "center",
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
+    },
+    subTabActive: { borderBottomColor: "#000" },
+    subTabText: { fontSize: 14, color: "#8E8E93", fontWeight: "500" },
+    subTabTextActive: { color: "#000", fontWeight: "600" },
+    // Summary bar
+    summaryBar: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      paddingVertical: 8,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#E5E5EA",
+    },
+    summaryItem: { alignItems: "center" },
+    summaryLabel: { fontSize: 12, color: "#8E8E93" },
+    summaryValue: { fontSize: 14, fontWeight: "700" },
+    // Content
+    content: { flex: 1 },
+    // Daily View
+    dateHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: "#F0F0F4",
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#E5E5EA",
+    },
+    dateHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+    dateNumber: { fontSize: 22, fontWeight: "800", color: "#000" },
+    dayBadge: {
+      backgroundColor: "#E5E5EA",
+      borderRadius: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    dayBadgeText: { fontSize: 12, fontWeight: "600", color: "#555" },
+    dateHeaderRight: { flexDirection: "row", gap: 20 },
+    dayIncome: { fontSize: 13, color: c.primary, fontWeight: "600" },
+    dayExpense: { fontSize: 13, color: c.expense, fontWeight: "600" },
+    // Transaction row
+    txRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#F0F0F4",
+      backgroundColor: "#FFF",
+    },
+    txLeft: { width: 80, flexDirection: "row", alignItems: "center", gap: 4 },
+    txEmoji: { fontSize: 18 },
+    txCategory: { fontSize: 13, color: "#555", maxWidth: 55 },
+    txCenter: { flex: 1, paddingHorizontal: 8 },
+    txMerchant: { fontSize: 15, fontWeight: "600", color: "#000" },
+    txPayment: { fontSize: 12, color: "#8E8E93" },
+    txAmount: { fontSize: 15, fontWeight: "700", color: c.expense },
+    swipeActions: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      justifyContent: "flex-end",
+      backgroundColor: "#FFF",
+    },
+    quickEditBtn: {
+      width: 78,
+      minHeight: 64,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      backgroundColor: c.primary,
+    },
+    quickDeleteBtn: {
+      width: 82,
+      minHeight: 64,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      backgroundColor: c.expense,
+    },
+    quickActionText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: "#FFF",
+    },
+    // Empty
+    emptyState: { alignItems: "center", paddingVertical: 60 },
+    emptyIcon: { fontSize: 40, marginBottom: 12 },
+    emptyText: { fontSize: 16, fontWeight: "600", color: "#555" },
+    emptySubtext: { fontSize: 14, color: "#8E8E93", marginTop: 4, textAlign: "center" },
+  });
 
 // Calendar styles
-const calStyles = StyleSheet.create({
-  container: { paddingHorizontal: 4 },
-  dayHeaderRow: { flexDirection: "row" },
-  dayHeaderCell: { flex: 1, alignItems: "center", paddingVertical: 8 },
-  dayHeaderText: { fontSize: 12, fontWeight: "600", color: "#555" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: "14.28%", alignItems: "center", paddingVertical: 8, minHeight: 60 },
-  dateCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  todayCircle: { backgroundColor: "#2C3E50" },
-  dateText: { fontSize: 14, color: "#000" },
-  todayText: { color: "#FFF", fontWeight: "700" },
-  spendText: { fontSize: 10, color: "#FF3B30", fontWeight: "600", marginTop: 2 },
-});
+const makeCalStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { paddingHorizontal: 4 },
+    dayHeaderRow: { flexDirection: "row" },
+    dayHeaderCell: { flex: 1, alignItems: "center", paddingVertical: 8 },
+    dayHeaderText: { fontSize: 12, fontWeight: "600", color: "#555" },
+    grid: { flexDirection: "row", flexWrap: "wrap" },
+    cell: { width: "14.28%", alignItems: "center", paddingVertical: 8, minHeight: 60 },
+    dateCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    todayCircle: { backgroundColor: "#2C3E50" },
+    dateText: { fontSize: 14, color: "#000" },
+    todayText: { color: "#FFF", fontWeight: "700" },
+    spendText: { fontSize: 10, color: c.expense, fontWeight: "600", marginTop: 2 },
+  });
 
 // Monthly styles
-const monthlyStyles = StyleSheet.create({
-  container: { padding: 16 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E5E5EA",
-  },
-  headerLabel: { fontSize: 13, color: "#8E8E93", fontWeight: "600" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#F0F0F4",
-  },
-  rowLeft: { flexDirection: "row", alignItems: "center", gap: 8, width: 120 },
-  emoji: { fontSize: 18 },
-  catName: { fontSize: 14, color: "#000", fontWeight: "500" },
-  rowRight: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    justifyContent: "flex-end",
-  },
-  progressBg: { flex: 1, height: 6, backgroundColor: "#F0F0F4", borderRadius: 3 },
-  progressBar: { height: "100%", backgroundColor: "#FF3B30", borderRadius: 3 },
-  catAmount: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FF3B30",
-    minWidth: 80,
-    textAlign: "right",
-  },
-});
+const makeMonthlyStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { padding: 16 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingBottom: 8,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#E5E5EA",
+    },
+    headerLabel: { fontSize: 13, color: "#8E8E93", fontWeight: "600" },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#F0F0F4",
+    },
+    rowLeft: { flexDirection: "row", alignItems: "center", gap: 8, width: 120 },
+    emoji: { fontSize: 18 },
+    catName: { fontSize: 14, color: "#000", fontWeight: "500" },
+    rowRight: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      justifyContent: "flex-end",
+    },
+    progressBg: { flex: 1, height: 6, backgroundColor: "#F0F0F4", borderRadius: 3 },
+    progressBar: { height: "100%", backgroundColor: c.expense, borderRadius: 3 },
+    catAmount: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.expense,
+      minWidth: 80,
+      textAlign: "right",
+    },
+  });
 
 // Summary styles
-const summaryStyles = StyleSheet.create({
-  container: { padding: 16 },
-  section: { marginBottom: 20 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  sectionIcon: { fontSize: 20 },
-  sectionTitle: { fontSize: 17, fontWeight: "700", color: "#000" },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-  },
-  accRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
-  accLabel: { fontSize: 14, color: "#555" },
-  accAmount: { fontSize: 14, fontWeight: "600", color: "#000" },
-  emptyText: { color: "#8E8E93", fontSize: 14 },
-  budgetRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  budgetLabel: { fontSize: 13, color: "#8E8E93" },
-  budgetAmount: { fontSize: 18, fontWeight: "700", color: "#000" },
-  budgetRight: { alignItems: "flex-end" },
-  budgetPercent: { fontSize: 16, fontWeight: "700", color: "#000" },
-  progressContainer: { marginVertical: 10 },
-  todayMarker: {
-    backgroundColor: "#C7C7CC",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-    marginBottom: 4,
-  },
-  todayMarkerText: { fontSize: 11, color: "#FFF", fontWeight: "600" },
-  progressBg: { height: 8, backgroundColor: "#F0F0F4", borderRadius: 4 },
-  progressBar: { height: "100%", backgroundColor: "#FF3B30", borderRadius: 4 },
-  budgetFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-  budgetFooterText: { fontSize: 12, color: "#8E8E93" },
-  exportBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-    gap: 8,
-  },
-  exportIcon: { fontSize: 18 },
-  exportText: { fontSize: 15, fontWeight: "500", color: "#000" },
-});
+const makeSummaryStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { padding: 16 },
+    section: { marginBottom: 20 },
+    sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+    sectionIcon: { fontSize: 20 },
+    sectionTitle: { fontSize: 17, fontWeight: "700", color: "#000" },
+    card: {
+      backgroundColor: "#FFF",
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+    },
+    accRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
+    accLabel: { fontSize: 14, color: "#555" },
+    accAmount: { fontSize: 14, fontWeight: "600", color: "#000" },
+    emptyText: { color: "#8E8E93", fontSize: 14 },
+    budgetRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    budgetLabel: { fontSize: 13, color: "#8E8E93" },
+    budgetAmount: { fontSize: 18, fontWeight: "700", color: "#000" },
+    budgetRight: { alignItems: "flex-end" },
+    budgetPercent: { fontSize: 16, fontWeight: "700", color: "#000" },
+    progressContainer: { marginVertical: 10 },
+    todayMarker: {
+      backgroundColor: "#C7C7CC",
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      alignSelf: "flex-start",
+      marginBottom: 4,
+    },
+    todayMarkerText: { fontSize: 11, color: "#FFF", fontWeight: "600" },
+    progressBg: { height: 8, backgroundColor: "#F0F0F4", borderRadius: 4 },
+    progressBar: { height: "100%", backgroundColor: c.expense, borderRadius: 4 },
+    budgetFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    budgetFooterText: { fontSize: 12, color: "#8E8E93" },
+    exportBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFF",
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+      gap: 8,
+    },
+    exportIcon: { fontSize: 18 },
+    exportText: { fontSize: 15, fontWeight: "500", color: "#000" },
+  });
 
 // Description styles
-const descStyles = StyleSheet.create({
-  container: { padding: 16 },
-  header: {
-    flexDirection: "row",
-    paddingBottom: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E5E5EA",
-  },
-  headerCol: { flex: 1, fontSize: 13, color: "#8E8E93", fontWeight: "600" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#F0F0F4",
-  },
-  desc: { flex: 2, fontSize: 14, fontWeight: "500", color: "#000" },
-  count: { flex: 1, fontSize: 14, color: "#555", textAlign: "center" },
-  amount: { flex: 1, fontSize: 14, fontWeight: "700", color: "#FF3B30", textAlign: "right" },
-});
+const makeDescStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { padding: 16 },
+    header: {
+      flexDirection: "row",
+      paddingBottom: 8,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#E5E5EA",
+    },
+    headerCol: { flex: 1, fontSize: 13, color: "#8E8E93", fontWeight: "600" },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#F0F0F4",
+    },
+    desc: { flex: 2, fontSize: 14, fontWeight: "500", color: "#000" },
+    count: { flex: 1, fontSize: 14, color: "#555", textAlign: "center" },
+    amount: { flex: 1, fontSize: 14, fontWeight: "700", color: c.expense, textAlign: "right" },
+  });
 
 // Modal styles
-const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" },
-  content: {
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    maxHeight: "80%",
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#E5E5EA",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  title: { fontSize: 20, fontWeight: "700", color: "#000" },
-  amountSection: { alignItems: "center", paddingVertical: 20 },
-  amountLabel: { fontSize: 14, color: "#8E8E93", marginBottom: 4 },
-  amount: { fontSize: 36, fontWeight: "800", color: "#FF3B30" },
-  details: { marginBottom: 20 },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#F0F0F4",
-  },
-  detailLabel: { fontSize: 14, color: "#8E8E93" },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#000",
-    flex: 1,
-    textAlign: "right",
-    marginLeft: 16,
-  },
-  actions: { flexDirection: "row", gap: 12 },
-  editBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  editBtnText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
-  deleteBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FF3B30",
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  deleteBtnText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
-  refundBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0F0F4",
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 12,
-  },
-  refundBtnText: { fontSize: 15, fontWeight: "600" },
-  refundInputLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6, marginTop: 12 },
-  refundInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  // Attachments section
-  attachmentsSection: { marginBottom: 16, paddingHorizontal: 4 },
-  attachmentsLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#8E8E93",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  attachmentsRow: { gap: 10, paddingBottom: 4 },
-  attachmentThumb: {
-    width: 72,
-    height: 72,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#F0F0F4",
-  },
-  attachmentImg: { width: 72, height: 72 },
-  pdfThumb: {
-    width: 72,
-    height: 72,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 2,
-    padding: 4,
-  },
-  pdfIcon: { fontSize: 26 },
-  pdfLabel: { fontSize: 9, textAlign: "center", color: "#8E8E93" },
-  attachmentsHint: { fontSize: 11, color: "#C7C7CC", marginTop: 6 },
-});
+const makeModalStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" },
+    content: {
+      backgroundColor: "#FFF",
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+      maxHeight: "80%",
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      backgroundColor: "#E5E5EA",
+      borderRadius: 2,
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    title: { fontSize: 20, fontWeight: "700", color: "#000" },
+    amountSection: { alignItems: "center", paddingVertical: 20 },
+    amountLabel: { fontSize: 14, color: "#8E8E93", marginBottom: 4 },
+    amount: { fontSize: 36, fontWeight: "800", color: c.expense },
+    details: { marginBottom: 20 },
+    detailRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#F0F0F4",
+    },
+    detailLabel: { fontSize: 14, color: "#8E8E93" },
+    detailValue: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: "#000",
+      flex: 1,
+      textAlign: "right",
+      marginLeft: 16,
+    },
+    actions: { flexDirection: "row", gap: 12 },
+    editBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.primary,
+      paddingVertical: 14,
+      borderRadius: 12,
+      gap: 8,
+    },
+    editBtnText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
+    deleteBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.expense,
+      paddingVertical: 14,
+      borderRadius: 12,
+      gap: 8,
+    },
+    deleteBtnText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
+    refundBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#F0F0F4",
+      paddingVertical: 12,
+      borderRadius: 12,
+      gap: 8,
+      marginBottom: 12,
+    },
+    refundBtnText: { fontSize: 15, fontWeight: "600" },
+    refundInputLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6, marginTop: 12 },
+    refundInput: {
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 16,
+    },
+    // Attachments section
+    attachmentsSection: { marginBottom: 16, paddingHorizontal: 4 },
+    attachmentsLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: "#8E8E93",
+      marginBottom: 10,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    attachmentsRow: { gap: 10, paddingBottom: 4 },
+    attachmentThumb: {
+      width: 72,
+      height: 72,
+      borderRadius: 10,
+      overflow: "hidden",
+      backgroundColor: "#F0F0F4",
+    },
+    attachmentImg: { width: 72, height: 72 },
+    pdfThumb: {
+      width: 72,
+      height: 72,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 2,
+      padding: 4,
+    },
+    pdfIcon: { fontSize: 26 },
+    pdfLabel: { fontSize: 9, textAlign: "center", color: "#8E8E93" },
+    attachmentsHint: { fontSize: 11, color: "#C7C7CC", marginTop: 6 },
+  });
 
 const imageViewerStyles = StyleSheet.create({
   overlay: {

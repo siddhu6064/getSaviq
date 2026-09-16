@@ -28,8 +28,10 @@
       "hover": "#1F1E1D"
     },
     "brand": {
-      "primary": "#4A6D5C",
-      "primary_hover": "#3D594B",
+      "primary": "#1E6742",
+      "primary_hover": "#174F33",
+      "on_dark": "#5EBA8C",
+      "tint": "#E7F1EB",
       "accent": "#E07A5F"
     },
     "semantic": {
@@ -41,6 +43,15 @@
       "transfer_bg": "#EAF2F6",
       "warning": "#F4A261",
       "border": "#E5E2DC"
+    },
+    "dark": {
+      "background": "#1C1C1E",
+      "surface": "#2C2C2E",
+      "surface_hover": "#3A3A3C",
+      "text_primary": "#F2EFEB",
+      "text_secondary": "#9C9A95",
+      "border": "#38383A",
+      "brand": "#5EBA8C"
     }
   },
   "layout_and_spacing": {
@@ -77,8 +88,8 @@
     "chart_animations": "Smooth drawing transitions on load."
   },
   "components_strategy": {
-    "buttons": "Shadcn based. Primary buttons use #4A6D5C background with white text. Rounded full.",
-    "inputs": "Shadcn based. bg-white border-[#E5E2DC] focus:ring-2 focus:ring-[#4A6D5C]/20 focus:border-[#4A6D5C].",
+    "buttons": "Shadcn based. Primary buttons use #1E6742 background with white text. Rounded full.",
+    "inputs": "Shadcn based. bg-white border-[#E5E2DC] focus:ring-2 focus:ring-[#1E6742]/20 focus:border-[#1E6742].",
     "tables": "Go cardless for raw data rows or use a clean border-bottom for each row. Use Shadcn Table.",
     "charts": "Shadcn charts or Recharts. Use brand and semantic colors (Income: #3D8B61, Expense: #E63946).",
     "dialogs": "Shadcn dialogs for Add Transaction, rounded-2xl with p-6.",

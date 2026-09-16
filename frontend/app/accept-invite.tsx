@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,8 +12,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "../src/contexts/AuthContext";
+import { useTheme } from "../src/contexts/ThemeContext";
 import { useAppStore } from "../src/store/appStore";
 import { invitesAPI } from "../src/services/api";
+
+type ThemeColors = ReturnType<typeof useTheme>["colors"];
 
 interface InviteInfo {
   status: string;
@@ -32,19 +35,21 @@ type ErrorType =
   | "email_mismatch"
   | "error";
 
-const ERROR_CONFIGS: Record<
+const makeErrorConfigs = (
+  c: ThemeColors,
+): Record<
   ErrorType,
   { icon: keyof typeof Ionicons.glyphMap; color: string; title: string; desc: string }
-> = {
+> => ({
   not_found: {
     icon: "close-circle",
-    color: "#FF3B30",
+    color: c.expense,
     title: "Invalid invite",
     desc: "This invite link is not valid or doesn't exist. Please check the link and try again.",
   },
   expired: {
     icon: "time",
-    color: "#FF9500",
+    color: c.warning,
     title: "Invite expired",
     desc: "This invite link has expired. Ask the sender to send a new one.",
   },
@@ -56,28 +61,31 @@ const ERROR_CONFIGS: Record<
   },
   already_accepted: {
     icon: "checkmark-circle",
-    color: "#34C759",
+    color: c.income,
     title: "Already a member",
     desc: "This invite has already been accepted. You're already a member of this profile.",
   },
   email_mismatch: {
     icon: "alert-circle",
-    color: "#FF3B30",
+    color: c.expense,
     title: "Wrong account",
     desc: "This invite was sent to a different email address.",
   },
   error: {
     icon: "close-circle",
-    color: "#FF3B30",
+    color: c.expense,
     title: "Something went wrong",
     desc: "We couldn't process this invite. Please try again later.",
   },
-};
+});
 
 export default function AcceptInviteScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const errorConfigs = useMemo(() => makeErrorConfigs(colors), [colors]);
   const { fetchProfiles, setActiveProfile, profiles } = useAppStore();
 
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
@@ -163,7 +171,7 @@ export default function AcceptInviteScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -173,8 +181,8 @@ export default function AcceptInviteScreen() {
   if (done === "accepted") {
     return (
       <View style={styles.centered}>
-        <View style={[styles.iconCircle, { backgroundColor: "#E8F5E9" }]}>
-          <Ionicons name="checkmark-circle" size={48} color="#34C759" />
+        <View style={[styles.iconCircle, { backgroundColor: colors.incomeBg }]}>
+          <Ionicons name="checkmark-circle" size={48} color={colors.income} />
         </View>
         <Text style={styles.doneTitle}>Welcome aboard!</Text>
         <Text style={styles.doneDesc}>
@@ -184,7 +192,7 @@ export default function AcceptInviteScreen() {
           </Text>
           .
         </Text>
-        <ActivityIndicator size="small" color="#007AFF" style={{ marginTop: 16 }} />
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 16 }} />
       </View>
     );
   }
@@ -203,7 +211,7 @@ export default function AcceptInviteScreen() {
   // ── Error ──────────────────────────────────────────────────────────────────
 
   if (inviteError) {
-    const cfg = ERROR_CONFIGS[inviteError];
+    const cfg = errorConfigs[inviteError];
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <View style={styles.card}>
@@ -230,7 +238,7 @@ export default function AcceptInviteScreen() {
       <View style={styles.card}>
         {/* Icon */}
         <View style={[styles.iconCircle, { backgroundColor: "#EFF6FF" }]}>
-          <Ionicons name="people" size={40} color="#007AFF" />
+          <Ionicons name="people" size={40} color={colors.primary} />
         </View>
 
         <Text style={styles.inviteTitle}>You're invited!</Text>
@@ -288,128 +296,129 @@ export default function AcceptInviteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F8FA",
-    justifyContent: "center",
-    padding: 16,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: "#F8F8FA",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 28,
-    alignItems: "center",
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  inviteTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#000",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  inviteDesc: {
-    fontSize: 15,
-    color: "#555",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  infoBox: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
-    width: "100%",
-  },
-  infoText: {
-    fontSize: 13,
-    color: "#1D4ED8",
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  emailHint: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginBottom: 20,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-  },
-  declineBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  declineBtnText: {
-    fontSize: 15,
-    color: "#8E8E93",
-    fontWeight: "600",
-  },
-  acceptBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  acceptBtnText: {
-    fontSize: 15,
-    color: "#FFF",
-    fontWeight: "700",
-  },
-  doneTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#000",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  doneDesc: {
-    fontSize: 15,
-    color: "#555",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  primaryBtn: {
-    backgroundColor: "#007AFF",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    marginTop: 20,
-  },
-  primaryBtnText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+      justifyContent: "center",
+      padding: 16,
+    },
+    centered: {
+      flex: 1,
+      backgroundColor: c.background,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    card: {
+      backgroundColor: "#FFF",
+      borderRadius: 20,
+      padding: 28,
+      alignItems: "center",
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    iconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    inviteTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: "#000",
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    inviteDesc: {
+      fontSize: 15,
+      color: "#555",
+      textAlign: "center",
+      lineHeight: 22,
+      marginBottom: 16,
+    },
+    infoBox: {
+      backgroundColor: "#EFF6FF",
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 14,
+      width: "100%",
+    },
+    infoText: {
+      fontSize: 13,
+      color: "#1D4ED8",
+      textAlign: "center",
+      lineHeight: 18,
+    },
+    emailHint: {
+      fontSize: 12,
+      color: "#8E8E93",
+      marginBottom: 20,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: 10,
+      width: "100%",
+    },
+    declineBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: "#E5E5EA",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    declineBtnText: {
+      fontSize: 15,
+      color: "#8E8E93",
+      fontWeight: "600",
+    },
+    acceptBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      backgroundColor: c.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    acceptBtnText: {
+      fontSize: 15,
+      color: "#FFF",
+      fontWeight: "700",
+    },
+    doneTitle: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: "#000",
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    doneDesc: {
+      fontSize: 15,
+      color: "#555",
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    primaryBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 28,
+      marginTop: 20,
+    },
+    primaryBtnText: {
+      color: "#FFF",
+      fontSize: 16,
+      fontWeight: "700",
+    },
+  });

@@ -1,3 +1,12 @@
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const colors = JSON.parse(
+  readFileSync(path.resolve(__dirname, "../shared/constants/colors.json"), "utf-8"),
+);
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -5,22 +14,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        page: "#F9F8F6",
-        surface: "#FFFFFF",
-        "surface-hover": "#F2EFEB",
-        "text-primary": "#2B2A28",
-        "text-secondary": "#73716D",
-        "brand-primary": "#4A6D5C",
-        "brand-hover": "#3D594B",
-        "brand-accent": "#E07A5F",
-        income: "#3D8B61",
-        "income-bg": "#E9F5EF",
-        expense: "#E63946",
-        "expense-bg": "#FBEAEC",
-        transfer: "#457B9D",
-        "transfer-bg": "#EAF2F6",
-        warning: "#F4A261",
-        "border-color": "#E5E2DC",
+        page: colors.background.page,
+        surface: colors.background.surface,
+        "surface-hover": colors.background.surfaceHover,
+        "text-primary": colors.text.primary,
+        "text-secondary": colors.text.secondary,
+        "brand-primary": colors.brand.primary,
+        "brand-hover": colors.brand.primaryHover,
+        "brand-accent": colors.brand.accent,
+        income: colors.semantic.income,
+        "income-bg": colors.semantic.incomeBg,
+        expense: colors.semantic.expense,
+        "expense-bg": colors.semantic.expenseBg,
+        transfer: colors.semantic.transfer,
+        "transfer-bg": colors.semantic.transferBg,
+        warning: colors.semantic.warning,
+        "border-color": colors.semantic.border,
       },
       fontFamily: {
         heading: ["Manrope", "sans-serif"],

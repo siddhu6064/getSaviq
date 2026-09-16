@@ -1,0 +1,38 @@
+{
+  "brand": {
+    "primary": "#1E6742",
+    "primaryHover": "#174F33",
+    "onDark": "#5EBA8C",
+    "tint": "#E7F1EB",
+    "accent": "#E07A5F"
+  },
+  "background": {
+    "page": "#F9F8F6",
+    "surface": "#FFFFFF",
+    "surfaceHover": "#F2EFEB"
+  },
+  "text": {
+    "primary": "#2B2A28",
+    "secondary": "#73716D",
+    "inverse": "#FFFFFF"
+  },
+  "semantic": {
+    "border": "#E5E2DC",
+    "income": "#3D8B61",
+    "incomeBg": "#E9F5EF",
+    "expense": "#E63946",
+    "expenseBg": "#FBEAEC",
+    "transfer": "#457B9D",
+    "transferBg": "#EAF2F6",
+    "warning": "#F4A261"
+  },
+  "dark": {
+    "background": "#1C1C1E",
+    "surface": "#2C2C2E",
+    "surfaceHover": "#3A3A3C",
+    "textPrimary": "#F2EFEB",
+    "textSecondary": "#9C9A95",
+    "border": "#38383A",
+    "brand": "#5EBA8C"
+  }
+}

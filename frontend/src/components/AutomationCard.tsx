@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface AutomationOnboardingModalProps {
   visible: boolean;
@@ -17,6 +18,7 @@ interface AutomationOnboardingModalProps {
 }
 
 export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboardingModalProps) {
+  const { colors } = useTheme();
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <View style={modalStyles.overlay}>
@@ -30,7 +32,7 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
                   <View style={[modalStyles.mockBtn, { backgroundColor: "#3A3A3C" }]}>
                     <Text style={modalStyles.mockBtnText}>Cancel</Text>
                   </View>
-                  <View style={[modalStyles.mockBtn, { backgroundColor: "#007AFF" }]}>
+                  <View style={[modalStyles.mockBtn, { backgroundColor: colors.primary }]}>
                     <Text style={[modalStyles.mockBtnText, { color: "#FFF" }]}>Done</Text>
                   </View>
                 </View>
@@ -57,7 +59,10 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
                     {row.map((key) => (
                       <View
                         key={key}
-                        style={[modalStyles.mockKey, key === "✓" && { backgroundColor: "#007AFF" }]}
+                        style={[
+                          modalStyles.mockKey,
+                          key === "✓" && { backgroundColor: colors.primary },
+                        ]}
                       >
                         <Text style={modalStyles.mockKeyText}>{key}</Text>
                       </View>
@@ -79,7 +84,9 @@ export function AutomationOnboardingModal({ visible, onClose }: AutomationOnboar
             <View style={modalStyles.breadcrumb}>
               <Text style={modalStyles.breadcrumbText}>More</Text>
               <Ionicons name="chevron-forward" size={14} color="#8E8E93" />
-              <Text style={[modalStyles.breadcrumbText, { color: "#007AFF" }]}>Automation</Text>
+              <Text style={[modalStyles.breadcrumbText, { color: colors.primary }]}>
+                Automation
+              </Text>
             </View>
           </LinearGradient>
 

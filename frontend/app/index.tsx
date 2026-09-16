@@ -20,8 +20,10 @@ import * as Google from "expo-auth-session/providers/google";
 import { ResponseType } from "expo-auth-session";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "../src/contexts/AuthContext";
+import { useTheme } from "../src/contexts/ThemeContext";
 import { useRouter } from "expo-router";
 import { lightTheme, NeumorphicCard } from "../src/components/NeumorphicUI";
+import canonicalColors from "@shared/constants/colors.json";
 
 // Required to properly close the browser session after OAuth redirect
 WebBrowser.maybeCompleteAuthSession();
@@ -29,6 +31,7 @@ WebBrowser.maybeCompleteAuthSession();
 type AuthMode = "main" | "login" | "register";
 
 export default function LoginScreen() {
+  const { colors } = useTheme();
   const {
     signInWithGoogle,
     signInWithApple,
@@ -196,7 +199,10 @@ export default function LoginScreen() {
     <>
       {/* Logo */}
       <View style={styles.logoContainer}>
-        <LinearGradient colors={["#7F52FF", "#9B7BFF"]} style={styles.logoGradient}>
+        <LinearGradient
+          colors={[colors.primary, canonicalColors.brand.onDark]}
+          style={styles.logoGradient}
+        >
           <Ionicons name="wallet" size={48} color="#FFFFFF" />
         </LinearGradient>
         <Text style={styles.appTitle}>SAVIQ</Text>
@@ -223,7 +229,7 @@ export default function LoginScreen() {
           }}
           disabled={isSigningIn}
         >
-          <LinearGradient colors={["#7F52FF", "#6B42E0"]} style={styles.primaryBtn}>
+          <LinearGradient colors={[colors.primary, colors.primaryHover]} style={styles.primaryBtn}>
             <Ionicons name="mail-outline" size={20} color="#FFF" />
             <Text style={styles.primaryBtnText}>Sign in with Email</Text>
           </LinearGradient>
@@ -352,7 +358,7 @@ export default function LoginScreen() {
         style={styles.submitBtnContainer}
       >
         <LinearGradient
-          colors={isSigningIn ? ["#C7C7CC", "#B0B0B5"] : ["#7F52FF", "#6B42E0"]}
+          colors={isSigningIn ? ["#C7C7CC", "#B0B0B5"] : [colors.primary, colors.primaryHover]}
           style={styles.submitBtn}
         >
           {isSigningIn ? (
@@ -440,7 +446,7 @@ export default function LoginScreen() {
         style={styles.submitBtnContainer}
       >
         <LinearGradient
-          colors={isSigningIn ? ["#C7C7CC", "#B0B0B5"] : ["#34C759", "#2DB14F"]}
+          colors={isSigningIn ? ["#C7C7CC", "#B0B0B5"] : [colors.income, "#2DB14F"]}
           style={styles.submitBtn}
         >
           {isSigningIn ? (
@@ -513,7 +519,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
-    shadowColor: "#7F52FF",
+    shadowColor: canonicalColors.brand.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,

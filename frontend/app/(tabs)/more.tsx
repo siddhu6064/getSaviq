@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -20,6 +20,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { APP_LOCK_ENABLED_KEY } from "../../src/components/AppLockGate";
 import { getActiveCurrency, setActiveCurrency } from "@shared/utils";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useTheme, DARK_MODE_ENABLED } from "../../src/contexts/ThemeContext";
+
+type ThemeColors = ReturnType<typeof useTheme>["colors"];
 import { useAppStore } from "../../src/store/appStore";
 import * as Linking from "expo-linking";
 import * as Clipboard from "expo-clipboard";
@@ -79,6 +82,13 @@ const PAYMENT_TYPES = [
 
 export default function MoreScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const timePickerStyles = useMemo(() => makeTimePickerStyles(colors), [colors]);
+  const automationStyles = useMemo(() => makeAutomationStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const modalStyles = useMemo(() => makeModalStyles(colors), [colors]);
+  const inviteStyles = useMemo(() => makeInviteStyles(colors), [colors]);
+  const exportStyles = useMemo(() => makeExportStyles(colors), [colors]);
   const { user, signOut, deleteAccount, isGuestMode } = useAuth();
   const {
     profiles,
@@ -933,7 +943,7 @@ export default function MoreScreen() {
               <Ionicons
                 name={isGuestMode ? "person-outline" : "person"}
                 size={28}
-                color="#007AFF"
+                color={colors.primary}
               />
             </View>
             <View style={styles.userInfo}>
@@ -955,7 +965,7 @@ export default function MoreScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Profile</Text>
             <TouchableOpacity onPress={() => setShowProfileCreateModal(true)} style={styles.addBtn}>
-              <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
               <Text style={styles.addBtnText}>Add</Text>
             </TouchableOpacity>
           </View>
@@ -987,7 +997,7 @@ export default function MoreScreen() {
                               : "person"
                         }
                         size={20}
-                        color={isActive ? "#007AFF" : "#8E8E93"}
+                        color={isActive ? colors.primary : "#8E8E93"}
                       />
                       <Text style={[styles.profileName, isActive && styles.profileNameActive]}>
                         {profile.name}
@@ -1009,11 +1019,13 @@ export default function MoreScreen() {
                           onPress={() => openInviteModal(profile)}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                          <Ionicons name="person-add-outline" size={15} color="#007AFF" />
+                          <Ionicons name="person-add-outline" size={15} color={colors.primary} />
                           <Text style={inviteStyles.inviteBtnText}>Invite</Text>
                         </TouchableOpacity>
                       )}
-                      {isActive && <Ionicons name="checkmark-circle" size={22} color="#007AFF" />}
+                      {isActive && (
+                        <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                      )}
                     </View>
                   </TouchableOpacity>
 
@@ -1025,10 +1037,10 @@ export default function MoreScreen() {
                         const avatarColor = getAvatarColor(member.invited_email);
                         const statusColor =
                           member.status === "accepted"
-                            ? "#34C759"
+                            ? colors.income
                             : member.status === "declined"
-                              ? "#FF3B30"
-                              : "#FF9500";
+                              ? colors.expense
+                              : colors.warning;
                         const statusLabel =
                           member.status === "accepted"
                             ? "Joined"
@@ -1068,7 +1080,11 @@ export default function MoreScreen() {
                                 }
                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                               >
-                                <Ionicons name="close-circle-outline" size={20} color="#FF3B30" />
+                                <Ionicons
+                                  name="close-circle-outline"
+                                  size={20}
+                                  color={colors.expense}
+                                />
                               </TouchableOpacity>
                             )}
                           </View>
@@ -1104,7 +1120,7 @@ export default function MoreScreen() {
                   onPress={() => router.push(link.route as any)}
                 >
                   <View style={styles.listRowLeft}>
-                    <Ionicons name={link.icon as any} size={18} color="#007AFF" />
+                    <Ionicons name={link.icon as any} size={18} color={colors.primary} />
                     <Text style={styles.listRowText}>{link.label}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
@@ -1118,7 +1134,7 @@ export default function MoreScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categories</Text>
             <TouchableOpacity onPress={() => setShowCategoryModal(true)} style={styles.addBtn}>
-              <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
               <Text style={styles.addBtnText}>Add</Text>
             </TouchableOpacity>
           </View>
@@ -1141,7 +1157,7 @@ export default function MoreScreen() {
                     <Ionicons
                       name="trash-outline"
                       size={18}
-                      color={cat.is_default ? "#C7C7CC" : "#FF3B30"}
+                      color={cat.is_default ? "#C7C7CC" : colors.expense}
                     />
                   </TouchableOpacity>
                 </View>
@@ -1154,7 +1170,7 @@ export default function MoreScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Automation</Text>
             <TouchableOpacity onPress={() => setShowOnboardingModal(true)} style={styles.addBtn}>
-              <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
+              <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
               <Text style={styles.addBtnText}>How it works</Text>
             </TouchableOpacity>
           </View>
@@ -1208,7 +1224,7 @@ export default function MoreScreen() {
             activeOpacity={0.85}
           >
             <View style={automationStyles.promoLeft}>
-              <View style={[automationStyles.promoIconBg, { backgroundColor: "#E8F5E9" }]}>
+              <View style={[automationStyles.promoIconBg, { backgroundColor: colors.incomeBg }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
                   <View
                     style={{
@@ -1235,7 +1251,7 @@ export default function MoreScreen() {
             <View
               style={[
                 automationStyles.setupBadge,
-                { backgroundColor: "#E8F5E9", borderColor: "#BBF7D0" },
+                { backgroundColor: colors.incomeBg, borderColor: "#BBF7D0" },
               ]}
             >
               <Text style={[automationStyles.setupBadgeText, { color: "#166534" }]}>Set Up</Text>
@@ -1320,7 +1336,7 @@ export default function MoreScreen() {
             <View style={styles.listRow}>
               <View style={styles.listRowLeft}>
                 <View style={automationStyles.iconBg}>
-                  <Ionicons name="alarm-outline" size={18} color="#FF9500" />
+                  <Ionicons name="alarm-outline" size={18} color={colors.warning} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Daily Reminder</Text>
@@ -1330,7 +1346,7 @@ export default function MoreScreen() {
               <Switch
                 value={notifEnabled}
                 onValueChange={handleToggleReminder}
-                trackColor={{ false: "#E5E5EA", true: "#34C759" }}
+                trackColor={{ false: "#E5E5EA", true: colors.income }}
                 thumbColor="#FFF"
               />
             </View>
@@ -1341,7 +1357,7 @@ export default function MoreScreen() {
                 <TouchableOpacity style={styles.listRow} onPress={() => setShowTimeModal(true)}>
                   <View style={styles.listRowLeft}>
                     <View style={[automationStyles.iconBg, { backgroundColor: "#E3F2FD" }]}>
-                      <Ionicons name="time-outline" size={18} color="#007AFF" />
+                      <Ionicons name="time-outline" size={18} color={colors.primary} />
                     </View>
                     <Text style={styles.listRowText}>Reminder Time</Text>
                   </View>
@@ -1364,8 +1380,8 @@ export default function MoreScreen() {
               disabled={isSendingQuickAdd}
             >
               <View style={styles.listRowLeft}>
-                <View style={[automationStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
-                  <Ionicons name="flash-outline" size={18} color="#34C759" />
+                <View style={[automationStyles.iconBg, { backgroundColor: colors.incomeBg }]}>
+                  <Ionicons name="flash-outline" size={18} color={colors.income} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Send Quick Add Now</Text>
@@ -1426,7 +1442,7 @@ export default function MoreScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Payment Methods</Text>
             <TouchableOpacity onPress={() => setShowPaymentModal(true)} style={styles.addBtn}>
-              <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
               <Text style={styles.addBtnText}>Add</Text>
             </TouchableOpacity>
           </View>
@@ -1440,13 +1456,13 @@ export default function MoreScreen() {
                         pm.type === "cash" ? "cash" : pm.type.includes("card") ? "card" : "wallet"
                       }
                       size={18}
-                      color="#007AFF"
+                      color={colors.primary}
                     />
                     <Text style={styles.listRowText}>{pm.name}</Text>
                     {pm.last_four && <Text style={styles.lastFour}>•••• {pm.last_four}</Text>}
                   </View>
                   <TouchableOpacity onPress={() => handleDeletePaymentMethod(pm.payment_id)}>
-                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                    <Ionicons name="trash-outline" size={18} color={colors.expense} />
                   </TouchableOpacity>
                 </View>
                 {i < paymentMethods.length - 1 && <View style={styles.divider} />}
@@ -1458,32 +1474,36 @@ export default function MoreScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.card}>
             {/* Dark Mode Toggle */}
-            <View style={styles.listRow}>
-              <View style={styles.listRowLeft}>
-                <View
-                  style={[
-                    automationStyles.iconBg,
-                    { backgroundColor: darkMode ? "#2C2C2E" : "#F5F5F7" },
-                  ]}
-                >
-                  <Ionicons
-                    name={darkMode ? "moon" : "sunny"}
-                    size={18}
-                    color={darkMode ? "#FFD60A" : "#FF9500"}
-                  />
+            {DARK_MODE_ENABLED && (
+              <View style={styles.listRow}>
+                <View style={styles.listRowLeft}>
+                  <View
+                    style={[
+                      automationStyles.iconBg,
+                      { backgroundColor: darkMode ? "#2C2C2E" : "#F5F5F7" },
+                    ]}
+                  >
+                    <Ionicons
+                      name={darkMode ? "moon" : "sunny"}
+                      size={18}
+                      color={darkMode ? "#FFD60A" : colors.warning}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.listRowText}>Dark Mode</Text>
+                    <Text style={automationStyles.subLabel}>
+                      Switch between light and dark theme
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.listRowText}>Dark Mode</Text>
-                  <Text style={automationStyles.subLabel}>Switch between light and dark theme</Text>
-                </View>
+                <Switch
+                  value={darkMode}
+                  onValueChange={handleToggleDarkMode}
+                  trackColor={{ false: "#E5E5EA", true: colors.income }}
+                  thumbColor="#FFF"
+                />
               </View>
-              <Switch
-                value={darkMode}
-                onValueChange={handleToggleDarkMode}
-                trackColor={{ false: "#E5E5EA", true: "#34C759" }}
-                thumbColor="#FFF"
-              />
-            </View>
+            )}
             {Platform.OS !== "web" && (
               <>
                 <View style={styles.divider} />
@@ -1491,7 +1511,7 @@ export default function MoreScreen() {
                 <View style={styles.listRow}>
                   <View style={styles.listRowLeft}>
                     <View style={[automationStyles.iconBg, { backgroundColor: "#EFF6FF" }]}>
-                      <Ionicons name="lock-closed-outline" size={18} color="#007AFF" />
+                      <Ionicons name="lock-closed-outline" size={18} color={colors.primary} />
                     </View>
                     <View>
                       <Text style={styles.listRowText}>Face ID / Touch ID Lock</Text>
@@ -1503,7 +1523,7 @@ export default function MoreScreen() {
                   <Switch
                     value={appLockEnabled}
                     onValueChange={handleToggleAppLock}
-                    trackColor={{ false: "#E5E5EA", true: "#34C759" }}
+                    trackColor={{ false: "#E5E5EA", true: colors.income }}
                     thumbColor="#FFF"
                   />
                 </View>
@@ -1530,8 +1550,8 @@ export default function MoreScreen() {
             {/* Export Data */}
             <TouchableOpacity style={styles.listRow} onPress={() => setShowExportModal(true)}>
               <View style={styles.listRowLeft}>
-                <View style={[automationStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
-                  <Ionicons name="download-outline" size={18} color="#34C759" />
+                <View style={[automationStyles.iconBg, { backgroundColor: colors.incomeBg }]}>
+                  <Ionicons name="download-outline" size={18} color={colors.income} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Export Data</Text>
@@ -1545,12 +1565,12 @@ export default function MoreScreen() {
           {/* ====== PUSH NOTIFICATION PREFERENCES ====== */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Notifications</Text>
-            {isSavingPush && <ActivityIndicator size="small" color="#007AFF" />}
+            {isSavingPush && <ActivityIndicator size="small" color={colors.primary} />}
             {!isSavingPush && pushSaveStatus === "saved" && (
-              <Text style={{ fontSize: 13, color: "#34C759", fontWeight: "600" }}>Saved</Text>
+              <Text style={{ fontSize: 13, color: colors.income, fontWeight: "600" }}>Saved</Text>
             )}
             {!isSavingPush && pushSaveStatus === "error" && (
-              <Text style={{ fontSize: 13, color: "#FF3B30", fontWeight: "600" }}>Error</Text>
+              <Text style={{ fontSize: 13, color: colors.expense, fontWeight: "600" }}>Error</Text>
             )}
           </View>
           <View style={styles.card}>
@@ -1558,7 +1578,7 @@ export default function MoreScreen() {
             <View style={styles.listRow}>
               <View style={styles.listRowLeft}>
                 <View style={[automationStyles.iconBg, { backgroundColor: "#FFF3E0" }]}>
-                  <Ionicons name="wallet-outline" size={18} color="#FF9500" />
+                  <Ionicons name="wallet-outline" size={18} color={colors.warning} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Budget Alerts</Text>
@@ -1570,7 +1590,7 @@ export default function MoreScreen() {
                 onValueChange={(v) =>
                   handleTogglePushPref("push_budget_alerts", v, setPushBudgetAlerts)
                 }
-                trackColor={{ false: "#E5E5EA", true: "#007AFF" }}
+                trackColor={{ false: "#E5E5EA", true: colors.primary }}
                 thumbColor="#FFF"
                 disabled={isSavingPush}
               />
@@ -1580,8 +1600,8 @@ export default function MoreScreen() {
             {/* Goal Milestones */}
             <View style={styles.listRow}>
               <View style={styles.listRowLeft}>
-                <View style={[automationStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
-                  <Ionicons name="flag-outline" size={18} color="#34C759" />
+                <View style={[automationStyles.iconBg, { backgroundColor: colors.incomeBg }]}>
+                  <Ionicons name="flag-outline" size={18} color={colors.income} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Goal Milestones</Text>
@@ -1593,7 +1613,7 @@ export default function MoreScreen() {
                 onValueChange={(v) =>
                   handleTogglePushPref("push_goal_milestones", v, setPushGoalMilestones)
                 }
-                trackColor={{ false: "#E5E5EA", true: "#34C759" }}
+                trackColor={{ false: "#E5E5EA", true: colors.income }}
                 thumbColor="#FFF"
                 disabled={isSavingPush}
               />
@@ -1604,7 +1624,7 @@ export default function MoreScreen() {
             <View style={styles.listRow}>
               <View style={styles.listRowLeft}>
                 <View style={[automationStyles.iconBg, { backgroundColor: "#FCE4EC" }]}>
-                  <Ionicons name="alert-circle-outline" size={18} color="#FF3B30" />
+                  <Ionicons name="alert-circle-outline" size={18} color={colors.expense} />
                 </View>
                 <View>
                   <Text style={styles.listRowText}>Large Transactions</Text>
@@ -1616,7 +1636,7 @@ export default function MoreScreen() {
                 onValueChange={(v) =>
                   handleTogglePushPref("push_large_transactions", v, setPushLargeTransactions)
                 }
-                trackColor={{ false: "#E5E5EA", true: "#FF3B30" }}
+                trackColor={{ false: "#E5E5EA", true: colors.expense }}
                 thumbColor="#FFF"
                 disabled={isSavingPush}
               />
@@ -1648,7 +1668,7 @@ export default function MoreScreen() {
 
           {/* Sign Out */}
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-            <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+            <Ionicons name="log-out-outline" size={20} color={colors.expense} />
             <Text style={styles.signOutText}>{isGuestMode ? "Exit Guest Mode" : "Sign Out"}</Text>
           </TouchableOpacity>
 
@@ -1661,7 +1681,7 @@ export default function MoreScreen() {
                 setShowDeleteAccountModal(true);
               }}
             >
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+              <Ionicons name="trash-outline" size={20} color={colors.expense} />
               <Text style={styles.signOutText}>Delete Account</Text>
             </TouchableOpacity>
           )}
@@ -1707,7 +1727,7 @@ export default function MoreScreen() {
                       paddingVertical: 10,
                       borderRadius: 10,
                       borderWidth: 1,
-                      borderColor: newProfileType === t ? "#007AFF" : "#E5E5EA",
+                      borderColor: newProfileType === t ? colors.primary : "#E5E5EA",
                       backgroundColor: newProfileType === t ? "#EFF6FF" : "#FFF",
                       alignItems: "center",
                     }}
@@ -1716,7 +1736,7 @@ export default function MoreScreen() {
                       style={{
                         fontSize: 13,
                         fontWeight: "600",
-                        color: newProfileType === t ? "#007AFF" : "#3C3C43",
+                        color: newProfileType === t ? colors.primary : "#3C3C43",
                       }}
                     >
                       {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -1813,7 +1833,7 @@ export default function MoreScreen() {
                     <Ionicons
                       name={pt.icon as any}
                       size={18}
-                      color={newPaymentType === pt.type ? "#FFF" : "#007AFF"}
+                      color={newPaymentType === pt.type ? "#FFF" : colors.primary}
                     />
                     <Text
                       style={[
@@ -1854,7 +1874,7 @@ export default function MoreScreen() {
               </TouchableOpacity>
               <Text style={modalStyles.title}>Reminder Time</Text>
               <TouchableOpacity onPress={() => handleTimeChange(notifHour, notifMinute)}>
-                <Text style={{ color: "#007AFF", fontSize: 16, fontWeight: "600" }}>Done</Text>
+                <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}>Done</Text>
               </TouchableOpacity>
             </View>
             <View style={timePickerStyles.container}>
@@ -2094,10 +2114,10 @@ export default function MoreScreen() {
                   <View
                     style={[
                       inviteStyles.memberAvatar,
-                      { width: 56, height: 56, borderRadius: 28, backgroundColor: "#E8F5E9" },
+                      { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.incomeBg },
                     ]}
                   >
-                    <Ionicons name="checkmark-circle" size={32} color="#34C759" />
+                    <Ionicons name="checkmark-circle" size={32} color={colors.income} />
                   </View>
                   <Text style={{ fontSize: 17, fontWeight: "700", color: "#000", marginTop: 14 }}>
                     Invite sent!
@@ -2116,10 +2136,13 @@ export default function MoreScreen() {
                     <Text style={modalStyles.saveBtnText}>Invite Another</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[modalStyles.saveBtn, { marginTop: 10, backgroundColor: "#F8F8FA" }]}
+                    style={[
+                      modalStyles.saveBtn,
+                      { marginTop: 10, backgroundColor: colors.background },
+                    ]}
                     onPress={closeInviteModal}
                   >
-                    <Text style={[modalStyles.saveBtnText, { color: "#007AFF" }]}>Done</Text>
+                    <Text style={[modalStyles.saveBtnText, { color: colors.primary }]}>Done</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -2139,7 +2162,7 @@ export default function MoreScreen() {
                     autoCorrect={false}
                   />
                   {inviteError ? (
-                    <Text style={{ color: "#FF3B30", fontSize: 13, marginTop: 8 }}>
+                    <Text style={{ color: colors.expense, fontSize: 13, marginTop: 8 }}>
                       {inviteError}
                     </Text>
                   ) : null}
@@ -2194,7 +2217,8 @@ export default function MoreScreen() {
                           paddingHorizontal: 12,
                           paddingVertical: 7,
                           borderRadius: 14,
-                          backgroundColor: activeExportPreset === p.key ? "#000" : "#F8F8FA",
+                          backgroundColor:
+                            activeExportPreset === p.key ? "#000" : colors.background,
                         }}
                       >
                         <Text
@@ -2229,7 +2253,7 @@ export default function MoreScreen() {
                   {exportPreview?.summary && (
                     <View
                       style={{
-                        backgroundColor: "#F8F8FA",
+                        backgroundColor: colors.background,
                         borderRadius: 12,
                         padding: 12,
                         marginBottom: 16,
@@ -2240,10 +2264,10 @@ export default function MoreScreen() {
                         {exportStartDate ? `(${exportStartDate} — ${exportEndDate})` : "(all time)"}
                       </Text>
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <Text style={{ fontSize: 12, color: "#34C759" }}>
+                        <Text style={{ fontSize: 12, color: colors.income }}>
                           Income {_formatCurrency(exportPreview.summary.total_income)}
                         </Text>
-                        <Text style={{ fontSize: 12, color: "#FF3B30" }}>
+                        <Text style={{ fontSize: 12, color: colors.expense }}>
                           Expenses {_formatCurrency(exportPreview.summary.total_expense)}
                         </Text>
                         <Text style={{ fontSize: 12, color: "#000", fontWeight: "700" }}>
@@ -2260,8 +2284,8 @@ export default function MoreScreen() {
                 onPress={handleExportCSV}
                 disabled={!canStartExport}
               >
-                <View style={[exportStyles.iconBg, { backgroundColor: "#E8F5E9" }]}>
-                  <Ionicons name="document-text-outline" size={24} color="#34C759" />
+                <View style={[exportStyles.iconBg, { backgroundColor: colors.incomeBg }]}>
+                  <Ionicons name="document-text-outline" size={24} color={colors.income} />
                 </View>
                 <View style={exportStyles.optionInfo}>
                   <Text style={exportStyles.optionTitle}>Export as CSV</Text>
@@ -2278,7 +2302,7 @@ export default function MoreScreen() {
                 disabled={!canStartExport}
               >
                 <View style={[exportStyles.iconBg, { backgroundColor: "#FFF3E0" }]}>
-                  <Ionicons name="code-slash-outline" size={24} color="#FF9500" />
+                  <Ionicons name="code-slash-outline" size={24} color={colors.warning} />
                 </View>
                 <View style={exportStyles.optionInfo}>
                   <Text style={exportStyles.optionTitle}>Export as JSON</Text>
@@ -2307,7 +2331,7 @@ export default function MoreScreen() {
               )}
 
               {isExporting && (
-                <Text style={{ textAlign: "center", color: "#007AFF", marginTop: 16 }}>
+                <Text style={{ textAlign: "center", color: colors.primary, marginTop: 16 }}>
                   Preparing export...
                 </Text>
               )}
@@ -2322,7 +2346,7 @@ export default function MoreScreen() {
                   disabled={!canStartExport || isImporting}
                 >
                   <View style={[exportStyles.iconBg, { backgroundColor: "#EFF6FF" }]}>
-                    <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
+                    <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
                   </View>
                   <View style={exportStyles.optionInfo}>
                     <Text style={exportStyles.optionTitle}>Import CSV</Text>
@@ -2331,7 +2355,7 @@ export default function MoreScreen() {
                     </Text>
                   </View>
                   {isImporting ? (
-                    <ActivityIndicator size="small" color="#007AFF" />
+                    <ActivityIndicator size="small" color={colors.primary} />
                   ) : (
                     <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                   )}
@@ -2368,7 +2392,7 @@ export default function MoreScreen() {
                 autoCapitalize="characters"
               />
               {!!deleteAccountError && (
-                <Text style={{ color: "#FF3B30", fontSize: 13, marginTop: 8 }}>
+                <Text style={{ color: colors.expense, fontSize: 13, marginTop: 8 }}>
                   {deleteAccountError}
                 </Text>
               )}
@@ -2385,7 +2409,7 @@ export default function MoreScreen() {
                 <TouchableOpacity
                   style={[
                     exportStyles.optionCard,
-                    { flex: 1, justifyContent: "center", backgroundColor: "#FF3B30" },
+                    { flex: 1, justifyContent: "center", backgroundColor: colors.expense },
                   ]}
                   onPress={handleDeleteAccount}
                   disabled={isDeletingAccount}
@@ -2407,375 +2431,387 @@ export default function MoreScreen() {
   );
 }
 
-const timePickerStyles = StyleSheet.create({
-  container: { flexDirection: "row", height: 220 },
-  column: { flex: 1 },
-  item: { paddingVertical: 14, paddingHorizontal: 16, alignItems: "center" },
-  itemSelected: { backgroundColor: "#E3F2FD", marginHorizontal: 8, borderRadius: 10 },
-  itemText: { fontSize: 17, color: "#555" },
-  itemTextSelected: { color: "#007AFF", fontWeight: "700" },
-});
+const makeTimePickerStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flexDirection: "row", height: 220 },
+    column: { flex: 1 },
+    item: { paddingVertical: 14, paddingHorizontal: 16, alignItems: "center" },
+    itemSelected: { backgroundColor: "#E3F2FD", marginHorizontal: 8, borderRadius: 10 },
+    itemText: { fontSize: 17, color: "#555" },
+    itemTextSelected: { color: c.primary, fontWeight: "700" },
+  });
 
-const automationStyles = StyleSheet.create({
-  promoCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-    borderLeftWidth: 4,
-    borderLeftColor: "#007AFF",
-  },
-  promoLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  promoIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  promoTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 2,
-  },
-  promoSubtitle: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-  iconBg: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "#FFF3CD",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  subLabel: {
-    fontSize: 11,
-    color: "#8E8E93",
-    marginTop: 1,
-  },
-  timeValue: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#007AFF",
-  },
-  setupBadge: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  setupBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#1D4ED8",
-  },
-  previewBox: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#F8F8FF",
-  },
-  previewLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#8E8E93",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 4,
-  },
-  previewTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 2,
-  },
-  previewBody: {
-    fontSize: 13,
-    color: "#555",
-    lineHeight: 18,
-  },
-});
+const makeAutomationStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    promoCard: {
+      backgroundColor: "#FFF",
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+      borderLeftWidth: 4,
+      borderLeftColor: c.primary,
+    },
+    promoLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      flex: 1,
+    },
+    promoIconBg: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: "#EFF6FF",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    promoTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: "#000",
+      marginBottom: 2,
+    },
+    promoSubtitle: {
+      fontSize: 12,
+      color: "#8E8E93",
+    },
+    iconBg: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: "#FFF3CD",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    subLabel: {
+      fontSize: 11,
+      color: "#8E8E93",
+      marginTop: 1,
+    },
+    timeValue: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: c.primary,
+    },
+    setupBadge: {
+      backgroundColor: "#EFF6FF",
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: "#BFDBFE",
+    },
+    setupBadgeText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: "#1D4ED8",
+    },
+    previewBox: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: "#F8F8FF",
+    },
+    previewLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#8E8E93",
+      textTransform: "uppercase",
+      letterSpacing: 0.3,
+      marginBottom: 4,
+    },
+    previewTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#1A1A1A",
+      marginBottom: 2,
+    },
+    previewBody: {
+      fontSize: 13,
+      color: "#555",
+      lineHeight: 18,
+    },
+  });
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F8FA" },
-  safeArea: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#000" },
-  content: { flex: 1, paddingHorizontal: 16 },
-  // User card
-  userCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#E3F2FD",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-  userInfo: { flex: 1 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  userName: { fontSize: 17, fontWeight: "700", color: "#000" },
-  userEmail: { fontSize: 13, color: "#8E8E93", marginTop: 2 },
-  guestBadge: {
-    backgroundColor: "#FFF3CD",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  guestBadgeText: { fontSize: 10, color: "#856404", fontWeight: "600" },
-  // Profile
-  profileRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  profileRowActive: { backgroundColor: "#E3F2FD" },
-  profileLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  profileName: { fontSize: 16, color: "#000" },
-  profileNameActive: { fontWeight: "600", color: "#007AFF" },
-  // Section
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#000", marginBottom: 10 },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  addBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  addBtnText: { fontSize: 14, color: "#007AFF", fontWeight: "500" },
-  // Card
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-    overflow: "hidden",
-  },
-  // List row
-  listRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-  },
-  listRowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  catDot: { width: 12, height: 12, borderRadius: 6 },
-  listRowText: { fontSize: 15, color: "#000" },
-  defaultBadge: {
-    backgroundColor: "#E3F2FD",
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  defaultBadgeText: { fontSize: 10, color: "#007AFF", fontWeight: "600" },
-  lastFour: { fontSize: 12, color: "#8E8E93" },
-  divider: { height: 0.5, backgroundColor: "#E5E5EA", marginLeft: 44 },
-  // Sign out
-  signOutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
-    gap: 10,
-    marginTop: 10,
-    borderWidth: 0.5,
-    borderColor: "#E5E5EA",
-  },
-  signOutText: { color: "#FF3B30", fontSize: 16, fontWeight: "600" },
-  version: { textAlign: "center", color: "#C7C7CC", fontSize: 13, marginTop: 16 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    safeArea: { flex: 1 },
+    header: { paddingHorizontal: 16, paddingVertical: 12 },
+    headerTitle: { fontSize: 20, fontWeight: "700", color: "#000" },
+    content: { flex: 1, paddingHorizontal: 16 },
+    // User card
+    userCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#FFF",
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+    },
+    avatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: "#E3F2FD",
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 14,
+    },
+    userInfo: { flex: 1 },
+    nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    userName: { fontSize: 17, fontWeight: "700", color: "#000" },
+    userEmail: { fontSize: 13, color: "#8E8E93", marginTop: 2 },
+    guestBadge: {
+      backgroundColor: "#FFF3CD",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    guestBadgeText: { fontSize: 10, color: "#856404", fontWeight: "600" },
+    // Profile
+    profileRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    profileRowActive: { backgroundColor: "#E3F2FD" },
+    profileLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+    profileName: { fontSize: 16, color: "#000" },
+    profileNameActive: { fontWeight: "600", color: c.primary },
+    // Section
+    sectionTitle: { fontSize: 15, fontWeight: "700", color: "#000", marginBottom: 10 },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 10,
+    },
+    addBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+    addBtnText: { fontSize: 14, color: c.primary, fontWeight: "500" },
+    // Card
+    card: {
+      backgroundColor: "#FFF",
+      borderRadius: 12,
+      marginBottom: 16,
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+      overflow: "hidden",
+    },
+    // List row
+    listRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+    },
+    listRowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+    catDot: { width: 12, height: 12, borderRadius: 6 },
+    listRowText: { fontSize: 15, color: "#000" },
+    defaultBadge: {
+      backgroundColor: "#E3F2FD",
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: 4,
+    },
+    defaultBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600" },
+    lastFour: { fontSize: 12, color: "#8E8E93" },
+    divider: { height: 0.5, backgroundColor: "#E5E5EA", marginLeft: 44 },
+    // Sign out
+    signOutBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFF",
+      borderRadius: 12,
+      padding: 16,
+      gap: 10,
+      marginTop: 10,
+      borderWidth: 0.5,
+      borderColor: "#E5E5EA",
+    },
+    signOutText: { color: c.expense, fontSize: 16, fontWeight: "600" },
+    version: { textAlign: "center", color: "#C7C7CC", fontSize: 13, marginTop: 16 },
+  });
 
-const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" },
-  content: {
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "80%",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#E5E5EA",
-  },
-  title: { fontSize: 18, fontWeight: "700", color: "#000" },
-  body: { padding: 20 },
-  label: { fontSize: 14, fontWeight: "600", color: "#8E8E93", marginBottom: 8 },
-  input: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 14, fontSize: 16, color: "#000" },
-  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  colorDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  colorDotSelected: { borderWidth: 3, borderColor: "#FFF" },
-  typeGrid: { gap: 8 },
-  typeOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8FA",
-    borderRadius: 10,
-    padding: 12,
-    gap: 10,
-  },
-  typeOptionActive: { backgroundColor: "#007AFF" },
-  typeText: { fontSize: 15, color: "#000" },
-  saveBtn: {
-    backgroundColor: "#007AFF",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  saveBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-});
+const makeModalStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" },
+    content: {
+      backgroundColor: "#FFF",
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      maxHeight: "80%",
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#E5E5EA",
+    },
+    title: { fontSize: 18, fontWeight: "700", color: "#000" },
+    body: { padding: 20 },
+    label: { fontSize: 14, fontWeight: "600", color: "#8E8E93", marginBottom: 8 },
+    input: {
+      backgroundColor: c.background,
+      borderRadius: 10,
+      padding: 14,
+      fontSize: 16,
+      color: "#000",
+    },
+    colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+    colorDot: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    colorDotSelected: { borderWidth: 3, borderColor: "#FFF" },
+    typeGrid: { gap: 8 },
+    typeOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.background,
+      borderRadius: 10,
+      padding: 12,
+      gap: 10,
+    },
+    typeOptionActive: { backgroundColor: c.primary },
+    typeText: { fontSize: 15, color: "#000" },
+    saveBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: "center",
+      marginTop: 24,
+    },
+    saveBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  });
 
-const inviteStyles = StyleSheet.create({
-  inviteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  inviteBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#007AFF",
-  },
-  memberCountBadge: {
-    backgroundColor: "#007AFF",
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 4,
-  },
-  memberCountText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  membersContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: "#E5E5EA",
-    backgroundColor: "#FAFAFA",
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-  },
-  memberAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  memberInitials: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  memberEmail: {
-    fontSize: 13,
-    color: "#000",
-    fontWeight: "500",
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  emptyHint: {
-    fontSize: 12,
-    color: "#8E8E93",
-    paddingVertical: 10,
-    textAlign: "center",
-  },
-});
+const makeInviteStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    inviteBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      backgroundColor: "#EFF6FF",
+      borderWidth: 1,
+      borderColor: "#BFDBFE",
+    },
+    inviteBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.primary,
+    },
+    memberCountBadge: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      marginLeft: 4,
+    },
+    memberCountText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: "#FFF",
+    },
+    membersContainer: {
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      borderTopWidth: 0.5,
+      borderTopColor: "#E5E5EA",
+      backgroundColor: "#FAFAFA",
+    },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+    },
+    memberAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    memberInitials: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: "#FFF",
+    },
+    memberEmail: {
+      fontSize: 13,
+      color: "#000",
+      fontWeight: "500",
+    },
+    statusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginTop: 2,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    statusText: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
+    emptyHint: {
+      fontSize: 12,
+      color: "#8E8E93",
+      paddingVertical: 10,
+      textAlign: "center",
+    },
+  });
 
-const exportStyles = StyleSheet.create({
-  optionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8FA",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    gap: 14,
-  },
-  iconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  optionInfo: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-    marginBottom: 4,
-  },
-  optionDesc: {
-    fontSize: 13,
-    color: "#8E8E93",
-  },
-});
+const makeExportStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    optionCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      gap: 14,
+    },
+    iconBg: {
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    optionInfo: {
+      flex: 1,
+    },
+    optionTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 4,
+    },
+    optionDesc: {
+      fontSize: 13,
+      color: "#8E8E93",
+    },
+  });

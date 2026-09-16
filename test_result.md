@@ -472,6 +472,183 @@ frontend:
   [ ] After mobile sign-out, storage.getItem("session_token") returns null.
   [ ] 401 interceptor in api.ts still clears SecureStore token on session expiry.
 
+- task: "Mobile brand-color migration to shared/constants/colors.json"
+  implemented: true
+  working: "NA"
+  file: "frontend/src/contexts/ThemeContext.tsx, frontend/app/(tabs)/accounts.tsx, frontend/app/(tabs)/more.tsx, frontend/app/(tabs)/\_layout.tsx, frontend/app/index.tsx, frontend/app/accept-invite.tsx, frontend/src/components/AutomationCard.tsx, frontend/src/components/NeumorphicUI.tsx, frontend/src/components/ApplePaySetupGuide.tsx, frontend/app.json"
+  stuck_count: 0
+  priority: "medium"
+  needs_retesting: true
+  status_history:
+  - working: "NA"
+    agent: "main"
+    comment: |
+    Per COLOR_AUDIT.md, mobile's ThemeContext.tsx was running stock Apple HIG
+    colors (primary #007AFF, income #34C759, expense #FF3B30, transfer
+    #5856D6, warning #FF9500) with zero overlap with the brand palette
+    established for web in shared/constants/colors.json. This migrates
+    mobile onto that same source of truth. frontend/ already resolved
+    @shared/constants/colors.json with no changes needed — Metro's
+    extraNodeModules (frontend/metro.config.js:24) and tsconfig.json's
+    "@shared" path + resolveJsonModule (inherited from expo/tsconfig.base)
+    were both already in place.
+
+    frontend/src/contexts/ThemeContext.tsx: lightColors/darkColors rewritten
+    to read every field from colors.json (field names unchanged, so all 24
+    existing useTheme() consumers keep working unmodified). Added the
+    fields mobile was missing: primaryHover, accent, tint, incomeBg,
+    expenseBg, transferBg. Fixed the pre-existing bug where
+    darkColors.textSecondary (#8E8E93) was identical to lightColors — it now
+    reads colors.dark.textSecondary (#9C9A95). colors.json has no dark-mode
+    override for income/expense/transfer/warning/accent/tint (same as web,
+    where the .dark CSS block also leaves those untouched) — darkColors
+    reuses the single defined value for those, does not invent one.
+
+    Sweep of frontend/app/** and frontend/src/**: 80 literal occurrences of
+    the 6 target hex families were replaced with the matching useTheme()
+    token, across accounts.tsx (6), more.tsx (62), AutomationCard.tsx (3),
+    NeumorphicUI.tsx (1), ApplePaySetupGuide.tsx (1), index.tsx (1),
+    \_layout.tsx (1), accept-invite.tsx (5). Each file that needed a fix but
+    didn't already import useTheme() got the import + a
+    `const { colors } = useTheme();` added at the top of its component.
+
+    72 further occurrences were left untouched and are flagged here rather
+    than worked around, per instruction — every one of them sits in a
+    module-scope constant or a StyleSheet.create() object, i.e. code that
+    runs once at module load before any component (and thus any hook) can
+    execute:
+    - frontend/app/(tabs)/transactions.tsx: 14 (entire styles block,
+      StyleSheet.create at line 1530 — no inline JSX occurrences existed
+      in this file at all).
+    - frontend/app/(tabs)/more.tsx: 15 (6 separate StyleSheet.create blocks
+      starting at line 2410: timePickerStyles, automationStyles, styles,
+      modalStyles, inviteStyles, exportStyles).
+    - frontend/app/accept-invite.tsx: 9 (5 in the module-level ERROR_CONFIGS
+      map, 4 in its StyleSheet.create at line 291).
+    - frontend/src/components/ApplePaySetupGuide.tsx: 12 (5 in the
+      module-level STEPS array, 7 in its StyleSheet.create at line 226).
+    - frontend/src/components/GooglePaySetupGuide.tsx: 10 (module-level
+      TASKER_STEPS/AUTOMATE_STEPS arrays + its StyleSheet.create at line
+      377 — this file has zero inline/component-scope occurrences).
+    - frontend/src/components/NeumorphicUI.tsx: 7 (the exported
+      module-level `lightTheme.colors` object, a second, independent
+      palette export unrelated to ThemeContext — out of scope to touch
+      since nothing here runs inside a component).
+    - frontend/app/(tabs)/accounts.tsx: 3 (its StyleSheet.create at
+      line 126).
+    - frontend/app/(tabs)/\_layout.tsx: 1 (shadowColor in its
+      StyleSheet.create at line 99).
+    - frontend/src/components/AutomationCard.tsx: 1 (its
+      StyleSheet.create at line 221).
+      None of these were imported-colors.json-into-a-component workarounds or
+      restyles — they were left exactly as found.
+
+    Untouched per explicit instruction: neutral grays (#8E8E93, #C7C7CC,
+    #E5E5EA) at call sites; the local CATEGORY_COLORS array in
+    frontend/app/(tabs)/more.tsx:60-70 (shared/ dedupe is separate,
+    post-launch work); web/, backend/, all test files.
+
+    frontend/app.json: android.adaptiveIcon.backgroundColor #000 -> #1E6742;
+    expo-splash-screen backgroundColor #000 -> #F9F8F6, added a
+    dark.backgroundColor #1C1C1E variant (confirmed the installed
+    expo-splash-screen@31.0.13 plugin supports a "dark" key before adding
+    it); notification.color and the expo-notifications plugin color
+    #006B3F -> #1E6742. Icon/favicon/foregroundImage asset paths not
+    touched.
+
+    VERIFY:
+    - npx tsc --noEmit (frontend/): PASS, exit 0, no errors.
+    - No console.log introduced (grep confirmed the only console.log in
+      touched files were 4 pre-existing calls in ThemeContext.tsx, none of
+      which I added).
+    - Simulator walkthrough (iPhone 17 Pro, already-booted, already-running
+      SAVIQ dev-client connected to the existing `expo start` Metro
+      process): INCOMPLETE. The login screen was reached and screenshotted
+      cleanly (brand-consistent rendering, no black or unstyled elements,
+      no crash — device log for the app process showed zero error/fatal/
+      exception entries). But every coordinate-based tap attempted after
+      that (10+ attempts, varied x/y, varied duration, a multi-point
+      touch_path, a long-press) had zero effect on ANY on-screen control —
+      confirmed not app-specific by backgrounding to the iOS Home screen
+      and finding taps register nothing there either (e.g. tapping the
+      system Search pill did nothing), while non-coordinate actions
+      (HOME button, expensetracker:// deep link) worked every time. This
+      points to a touch-injection problem in this simulator session, not a
+      defect introduced by this change. Home, Transactions
+      (income+expense rows), Bills, Net Worth, More, and dark mode could
+      NOT be visually confirmed as a result — reporting this honestly
+      rather than claiming a walkthrough that didn't happen.
+      needs_retesting: true because of this gap.
+
+- task: "Web color token migration to shared/constants/colors.json"
+  implemented: true
+  working: true
+  file: "shared/constants/colors.json, shared/constants/index.ts, web/tailwind.config.js, web/src/index.css, web/src/pages/SettingsPage.jsx, design_guidelines.json"
+  stuck_count: 0
+  priority: "medium"
+  needs_retesting: false
+  status_history:
+  - working: true
+    agent: "main"
+    comment: |
+    Per COLOR_AUDIT.md (web was 16/16 canonical tokens, mobile was 1/16 — mobile
+    untouched in this task), created shared/constants/colors.json as the single
+    source of truth and pointed web's Tailwind config, shared/constants/index.ts
+    THEME/TRANSACTION_COLORS, and design_guidelines.json at it. Brand primary
+    upgraded #4A6D5C -> #1E6742 (with new primaryHover/onDark/tint fields) per
+    explicit spec values from the task. shared/constants/index.ts THEME and
+    TRANSACTION_COLORS were previously dead code (imported by neither web nor
+    mobile) — now read from colors.json but still unconsumed; wiring an actual
+    consumer is out of scope for this task.
+
+    web/tailwind.config.js now loads colors.json via fs.readFileSync + JSON.parse
+    (not a bare `require`, since the file is ESM/"type":"module" — this avoids
+    JSON-import-assertion syntax that varies across Node versions) and builds
+    theme.extend.colors from it; every existing Tailwind color key name
+    (brand-primary, income-bg, etc.) is unchanged so no className in web/src
+    needed to change.
+
+    web/src/index.css: light-mode body background/color values were already
+    canonical (unchanged); the .dark override block and .dark body/scrollbar
+    rules were updated to the new dark.\* palette in colors.json
+    (#1C1C1E/#2C2C2E/#3A3A3C/#F2EFEB/#9C9A95/#38383A), and the
+    .bg-brand-primary\/10 rgba base was updated to the new brand primary
+    (rgba(30,103,66,0.2)).
+
+    web/src/pages/SettingsPage.jsx: swept the only stale brand-hex literals
+    found in web/src (#4A6D5C in the local categoryColors swatch array and 3x
+    in the default categoryForm.color) -> #1E6742. Google OAuth brand colors in
+    LoginPage.jsx and Recharts accent colors (#247BA0 etc.) were explicitly
+    out of scope and left untouched.
+
+    design_guidelines.json: colors.brand block updated to match colors.json
+    (primary/primary_hover/on_dark/tint), added a new top-level "dark" section
+    (previously the file had none), and two stale #4A6D5C prose references in
+    components_strategy were updated to #1E6742 for internal consistency.
+
+    frontend/ and backend/ not touched, per task scope.
+
+    VERIFY:
+    - cd web && npm run build: PASS, no new warnings (only pre-existing
+      browserslist-db-is-stale and >500kB-chunk warnings, unrelated to this
+      change).
+    - node --test web/src/lib/\*.test.mjs: PASS, 116/116.
+    - npx playwright test: on first run, all 139 tests failed with
+      "browserType.launch: Executable doesn't exist ... chromium_headless_shell"
+      — Playwright's Chromium binary was never installed in this environment,
+      unrelated to any code change. Ran `npx playwright install chromium`
+      (environment setup only, no source files touched) and reran: 138 passed,
+      1 failed — "Smart Metrics loading transitions to success state"
+      (tests/e2e/smoke.spec.ts:5408) times out waiting for an intermediate
+      "loading" request-state/testid before the mock resolves to success; a
+      timing-sensitive assertion on a fast in-flight state, not a color or
+      selector issue. Confirmed pre-existing and unrelated to this task by
+      `git stash`-ing all changes from this task and rerunning the same test
+      against unmodified HEAD: it fails there too (at a different assertion
+      line each run, consistent with a race rather than a real regression).
+      Per task instructions this was reported, not "fixed" by touching the
+      selector or the test.
+
 metadata:
 created_by: "main_agent"
 version: "1.0"
